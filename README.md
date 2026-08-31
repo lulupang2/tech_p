@@ -43,7 +43,7 @@
 
 ## 확정된 기술 제약
 
-TypeScript, Playwright, PostgreSQL, pgvector, RAG, LangChain 또는 LangGraph, LLM API, Docker, 자동화 테스트, 실제 외부 데이터 수집 파이프라인이 실행 또는 검증 경로에 포함된다.
+TypeScript, Playwright, PostgreSQL, pgvector, RAG, LangGraph.js deterministic workflow, LLM API, Docker, 자동화 테스트, 실제 외부 데이터 수집 파이프라인이 실행 또는 검증 경로에 포함된다.
 
 framework, queue, AI orchestration, frontend, repository layout은 모두 확정됐다. Node runtime 위의 Elysia, Redis + BullMQ, LangGraph.js, SvelteKit, pnpm workspaces다. 근거는 [SSOT §3.3](./docs/SSOT.md)에 있다.
 
