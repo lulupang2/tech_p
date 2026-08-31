@@ -78,4 +78,3 @@
 ## 안전 원칙
 
 near duplicate는 physical delete가 아니라 cluster link다. 실험 결과가 좋아도 원본·citation을 자동으로 제거하지 않는다.
-

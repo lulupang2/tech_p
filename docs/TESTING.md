@@ -239,4 +239,3 @@ live canary와 유료 LLM 평가는 이 blocking pipeline 밖에서 실행하고
 - Playwright는 Bun runtime에서 local launch와 ws connect가 모두 실패했고 Node에서는 전 항목을 통과했다. **collector browser runtime은 Node여야 한다.**
 - 위 세 항목은 모두 Node runtime 전제다. `DEC-002`가 Bun을 선택하면 Vitest와 Testcontainers를 다시 평가해야 하고, browser collector는 별도 Node 애플리케이션이 된다.
 - UI E2E는 `playwright test`가 기본적으로 Node로 실행되므로 영향을 받지 않는다.
-

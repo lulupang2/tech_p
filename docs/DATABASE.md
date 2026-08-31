@@ -181,4 +181,3 @@ schema, normalizer, chunker, taxonomy, embedding, prompt, workflow 버전은 독
 
 - [pgvector: indexing, filtering, hybrid search](https://github.com/pgvector/pgvector)
 - [PostgreSQL Full Text Search](https://www.postgresql.org/docs/current/textsearch.html)
-

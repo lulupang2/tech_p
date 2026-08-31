@@ -136,4 +136,3 @@ Bun을 유지하는 선택도 여전히 가능하다. 그 경우 런타임 이�
 - [FastAPI features](https://fastapi.tiangolo.com/features/)
 - [Playwright supported languages and Node.js targeting](https://playwright.dev/docs/languages)
 - [과거 Bun+Playwright 보고(종료됨, Bun 1.0~1.1 시기): bun#8222](https://github.com/oven-sh/bun/issues/8222)
-

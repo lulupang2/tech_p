@@ -141,4 +141,3 @@ TechPulse는 여러 개발 기술 데이터 소스에서 최근 정보를 수집
 확정된 항목은 다음과 같다. 초기 데이터 소스와 Playwright 대상은 [ADR-0004](./adr/0004-initial-data-sources.md)로 확정됐고, "관심"을 어떤 개별 지표로 보여줄지는 8개 지표로 확정됐다. 근거는 [SSOT §3.1·§3.2](./SSOT.md)에 있다.
 
 관련 제안은 [ADR 목록](./adr/README.md), 검증 방법은 [실험 목록](./experiments/README.md)에 기록한다.
-

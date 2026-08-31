@@ -170,4 +170,3 @@ flowchart LR
 - 라이선스 귀속을 UI·API에서 표시하는 방식
 
 source별 rights matrix는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)로 확정됐고 [ADR-0004](./adr/0004-initial-data-sources.md)가 승인됐다.
-

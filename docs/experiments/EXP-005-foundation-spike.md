@@ -338,4 +338,3 @@ strict 설정은 Elysia가 `new Elysia({ normalize: false })`, Fastify가 `Fasti
 2. **Bun을 유지하고 browser collector를 별도 Node 애플리케이션으로 둔다.** 런타임이 둘로 나뉘고 CI·이미지·의존성 관리가 이원화된다. ws connect가 막혔으므로 분리 범위가 당초 예상보다 크다.
 
 ## 실행 기록 (템플릿)
-

@@ -45,7 +45,9 @@
 
 TypeScript, Playwright, PostgreSQL, pgvector, RAG, LangChain 또는 LangGraph, LLM API, Docker, 자동화 테스트, 실제 외부 데이터 수집 파이프라인이 실행 또는 검증 경로에 포함된다.
 
-framework, queue, provider, repository layout 등 나머지 선택은 [SSOT §5](./docs/SSOT.md)에 미결정으로 남아 있다.
+framework, queue, AI orchestration, frontend, repository layout은 모두 확정됐다. Node runtime 위의 Elysia, Redis + BullMQ, LangGraph.js, SvelteKit, pnpm workspaces다. 근거는 [SSOT §3.3](./docs/SSOT.md)에 있다.
+
+[SSOT §5](./docs/SSOT.md)에 남은 미결정은 LLM·embedding provider와 model, source별 수집 주기와 schedule 설정값, ORM/query builder와 migration tool, hosting·production topology·secret manager·배포 adapter, 인증과 rate limit 수치, chunking·embedding dimensions·retrieval 가중치와 index, 데이터·질문·답변 보존 기간, 성능·품질 수치의 최종 acceptance threshold다.
 
 ## 다음 행동
 

@@ -213,4 +213,3 @@ Stack Exchange가 이 규칙의 적용 대상이다. 근거는 [SOURCE_RIGHTS.md
 - [LangGraph.js overview](https://docs.langchain.com/oss/javascript/langgraph/overview)
 - [LangGraph workflows and agents](https://docs.langchain.com/oss/javascript/langgraph/workflows-agents)
 - [pgvector hybrid search and indexing](https://github.com/pgvector/pgvector)
-

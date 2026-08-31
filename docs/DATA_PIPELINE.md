@@ -18,7 +18,7 @@
 
 ## 3. 초기 소스 후보
 
-모든 항목은 아직 Proposed이며 [ADR-0004](./adr/0004-initial-data-sources.md)와 [EXP-001](./experiments/EXP-001-source-feasibility.md)을 통과해야 한다. 권리 검토 결과는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)에 있고, 아래 표의 확인 사항은 그 결과를 반영한다.
+초기 source는 [ADR-0004](./adr/0004-initial-data-sources.md)(Accepted, 2026-09-01)로 채택되고 [EXP-001](./experiments/EXP-001-source-feasibility.md)(DONE)로 검증된 baseline이다. 권리 검토 결과는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)에 있고, 아래 표의 확인 사항은 그 결과와 실측을 반영한다. **수집 주기는 아직 확정되지 않았다.** [SOURCE_CATALOG §13](./SOURCE_CATALOG.md)의 schedule 값은 제안이며 [SSOT §5](./SSOT.md)의 미결정 항목이다.
 
 | 후보 | 신호 | 방식 | 장점 | 주요 확인 사항 |
 |---|---|---|---|---|
@@ -212,4 +212,3 @@ normalized document와 metric observation은 위 값과 무관하게 MVP 기간 
 - [Official Hacker News API](https://github.com/HackerNews/API)
 - [npm Registry API](https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md)
 - [Playwright locators](https://playwright.dev/docs/locators)
-

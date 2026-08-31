@@ -108,4 +108,3 @@
 - [GitHub release endpoints](https://docs.github.com/en/rest/releases/releases)
 - [Official Hacker News API](https://github.com/HackerNews/API)
 - [npm Registry API](https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md)
-

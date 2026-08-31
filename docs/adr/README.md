@@ -25,4 +25,3 @@ ADR은 중요한 기술 선택의 맥락과 승인을 기록한다. `Proposed` A
 ## 작성 규칙
 
 각 ADR은 Context, Decision drivers, Alternatives, Recommendation, Consequences, Validation, Status를 포함한다. 새 ADR은 [TEMPLATE.md](./TEMPLATE.md)를 복사해 시작한다. 승인 시 날짜와 승인 주체를 기록하고, 같은 변경에서 SSOT·설계·TASKS·[TRACEABILITY](../TRACEABILITY.md)를 동기화한다.
-

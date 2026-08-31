@@ -57,4 +57,3 @@
 - accessibility와 citation navigation 확인
 - 귀속 문구와 지표 단위를 함께 표시했을 때의 레이아웃 검토
 - standalone deployment와 API origin/CORS 구성 비교
-

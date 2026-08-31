@@ -186,4 +186,3 @@ framework별 경계 규칙은 다음과 같다.
 - [BullMQ Job Schedulers](https://docs.bullmq.io/guide/job-schedulers/)
 - [pgvector](https://github.com/pgvector/pgvector)
 - [Playwright auto-waiting](https://playwright.dev/docs/actionability)
-

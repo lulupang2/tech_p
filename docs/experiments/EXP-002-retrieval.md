@@ -66,4 +66,3 @@ PostgreSQL full-text search와 pgvector를 결합한 retrieval이 기간 위반 
 - 품질·latency·index 비용 표
 - 선택할 retrieval config recommendation
 - HNSW/IVFFlat/외부 검색 엔진 ADR 필요 여부
-

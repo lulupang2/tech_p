@@ -154,4 +154,3 @@ Backend와 queue 결정에서 파생되는 구현 조건은 다음과 같다. �
 구현 단계에서 유지되는 제약은 다음 하나다.
 
 - 실험 코드는 폐기를 전제로 `experiments/` 아래에 격리하고 production 경로에 섞지 않는다. production 산출물은 [TASKS.md](../TASKS.md)의 `FND-*` 이후 task에서 만든다.
-

@@ -78,4 +78,3 @@ Redis + BullMQ 조합을 실측했고 **추천 구조가 성립함을 확인했�
 - [BullMQ Job Schedulers](https://docs.bullmq.io/guide/job-schedulers/)
 - [BullMQ retrying jobs](https://docs.bullmq.io/guide/retrying-failing-jobs)
 - [BullMQ deduplication](https://docs.bullmq.io/patterns/deduplication)
-

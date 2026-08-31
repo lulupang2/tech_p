@@ -272,4 +272,3 @@ stack trace, SQL, provider body, secret는 응답에 포함하지 않는다.
 - answer 원문 저장·재조회 endpoint 여부
 - operations API를 HTTP로 둘지 CLI로만 제공할지
 - OpenAPI client generation 범위
-
