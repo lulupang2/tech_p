@@ -1,0 +1,1 @@
+import {test} from "node:test"; import assert from "node:assert"; import {isKnownSource} from "./index.mjs"; test("known", () => { assert.ok(isKnownSource("arxiv")); assert.ok(!isKnownSource("reddit")); });

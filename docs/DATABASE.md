@@ -1,0 +1,184 @@
+# TechPulse Database Design
+
+- 상태: Draft (conceptual schema)
+- 작성일: 2026-09-01
+- 데이터베이스: PostgreSQL + pgvector (확정)
+
+## 1. 설계 원칙
+
+- raw input, normalized artifact, searchable revision을 분리한다.
+- 외부 식별자와 canonical URL을 보존하고 내부 surrogate ID에만 의존하지 않는다.
+- 모든 파생 데이터에 생성 규칙·모델 버전을 기록한다.
+- logical document를 수정해 과거 답변의 근거를 바꾸지 않고 revision을 추가한다.
+- UTC `timestamptz`를 사용하고 원 source timezone이 있으면 별도 metadata로 보존한다.
+- metric observation과 text document를 한 테이블에 억지로 합치지 않는다.
+
+## 2. 개념 ERD
+
+```mermaid
+erDiagram
+    LICENSES ||--o{ SOURCE_RIGHTS : governs
+    LICENSES ||--o{ DOCUMENT_REVISIONS : governs
+    SOURCES ||--o| SOURCE_RIGHTS : governed_by
+    SOURCES ||--o{ COLLECTION_RUNS : executes
+    COLLECTION_RUNS ||--o{ RAW_ITEMS : collects
+    SOURCES ||--o{ RAW_ITEMS : owns
+    RAW_ITEMS ||--o{ DOCUMENT_REVISIONS : normalizes
+    DOCUMENTS ||--o{ DOCUMENT_REVISIONS : versions
+    DOCUMENT_REVISIONS ||--o{ CHUNKS : contains
+    CHUNKS ||--o{ EMBEDDINGS : embeds
+    DOCUMENTS }o--o{ TOPICS : tagged
+    DOCUMENTS }o--o| DUPLICATE_CLUSTERS : groups
+    SOURCES ||--o{ METRIC_OBSERVATIONS : reports
+    TOPICS ||--o{ METRIC_OBSERVATIONS : measures
+    QUERY_RUNS ||--o{ ANSWER_CITATIONS : cites
+    CHUNKS ||--o{ ANSWER_CITATIONS : supports
+```
+
+`duplicate_cluster_id`는 nullable이다. cluster에 속하지 않은 단독 문서가 정상 상태이므로 문서 발행이 cluster 생성에 의존하지 않는다.
+
+## 3. 테이블 카탈로그
+
+### 3.1 수집과 provenance
+
+| 테이블 | 핵심 필드 | 핵심 제약 |
+|---|---|---|
+| `licenses` | id, spdx_id, name, url, requires_attribution, is_share_alike, allows_commercial, notes | `id`는 안정적 slug(`cc-by-4.0`, `cc-by-sa-4.0`, `cc0-1.0`, `mit`, `apache-2.0`, `psf-2.0`) |
+| `sources` | id, key, name, kind, base_url, enabled, schedule_config, policy_reviewed_at | `key` unique |
+| `source_rights` | source_id, allowed_to_fetch, allowed_to_store, allowed_to_embed, allowed_to_display_excerpt, verbatim_only, license_id, attribution_template, raw_retention_days, excerpt_max_chars, reviewed_at, reviewed_by, review_note_ref | source당 최신 1행, 값은 명시적 boolean으로 unknown을 허용으로 처리하지 않음 |
+| `collection_runs` | id, source_id, scheduled_at, started_at, ended_at, status, cursor_before/after, counts, error_summary | source/window 활성 run 중복 금지 |
+| `raw_items` | id, source_id, run_id, external_id, canonical_url, payload, payload_hash, published_at, collected_at, http_metadata, rights_metadata | `(source_id, external_id, payload_hash)` unique |
+| `pipeline_events` | id, raw_item_id, stage, processor_version, status, attempt, error_code, occurred_at | append-only event 또는 동등한 이력 보존 |
+
+`source_rights`는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)의 검토 결과를 실행 시점에 강제하기 위한 테이블이다. 문서와 DB 값이 다르면 수집을 진행하지 않고 검토를 다시 한다. `allowed_to_fetch`가 false이거나 `reviewed_at`이 없으면 collector는 job을 생성하지 않는다.
+
+raw payload column type과 압축·외부 object storage 전환 시점은 데이터 크기 실험 후 결정한다. MVP 추천은 작은 JSON/허용 text를 `jsonb`/`text`로 PostgreSQL에 보존하는 것이다.
+
+### 3.2 정규화 문서
+
+| 테이블 | 핵심 필드 | 핵심 제약 |
+|---|---|---|
+| `documents` | id, artifact_type, canonical_url, duplicate_cluster_id, current_revision_id, created_at | canonical URL은 nullable, 단독 global unique로 가정하지 않음 |
+| `document_revisions` | id, document_id, raw_item_id, title, body_text, author, language, published_at, license_id, normalized_hash, normalizer_version, status, searchable_at | `(document_id, normalized_hash)` unique |
+| `duplicate_clusters` | id, representative_document_id, algorithm_version, confidence, created_at | 원본 문서는 삭제하지 않음 |
+| `topics` | id, slug, display_name, parent_id, aliases, taxonomy_version | `(slug, taxonomy_version)` unique |
+| `document_topics` | document_id, topic_id, method, confidence, classifier_version | `(document_id, topic_id, classifier_version)` unique |
+
+`current_revision_id`는 편의 포인터이며 citation은 항상 `document_revision_id`를 가리킨다.
+
+`document_revisions.license_id`가 필요한 이유는 라이선스가 source 단위로 고정되지 않는 경우가 있기 때문이다. Stack Exchange는 게시일에 따라 CC BY-SA 2.5·3.0·4.0이 갈리고 API가 게시물별 `content_license`를 제공한다. Rust 포럼은 2020-07-17을 기준으로 MIT/Apache-2.0과 CC BY-NC-SA 3.0이 갈린다. 따라서 `source_rights.license_id`는 기본값이고, 게시물이 다른 값을 제시하면 revision의 값이 우선한다. 발췌 표시와 embedding 허용 판단은 revision의 값으로 한다.
+
+### 3.3 검색
+
+| 테이블 | 핵심 필드 | 핵심 제약 |
+|---|---|---|
+| `chunks` | id, document_revision_id, ordinal, heading_path, content, token_count, content_hash, chunker_version, search_vector | `(document_revision_id, ordinal, chunker_version)` unique |
+| `embeddings` | id, chunk_id, provider, model, dimensions, embedding, input_hash, created_at | `(chunk_id, provider, model, input_hash)` unique |
+
+embedding column은 모델 dimensions가 결정된 후 `vector(n)`으로 정의한다. 서로 다른 dimensions를 한 column에 섞지 않는다. 모델 교체 기간에는 row/table/partition 전략을 migration ADR로 정한다.
+
+### 3.4 시계열과 답변 감사
+
+| 테이블 | 핵심 필드 | 핵심 제약 |
+|---|---|---|
+| `metric_observations` | id, source_id, topic_id, subject_key, metric_type, window_start, window_end, value, unit, collected_at, raw_item_id, query_signature, is_incomplete | 자연 키 `(source, subject, metric, window, raw revision)` unique |
+| `query_runs` | id, request_id, question_hash, parsed_query, retrieval_config, workflow_version, model_metadata, status, started_at, ended_at, coverage, usage | request_id indexed |
+| `answer_citations` | query_run_id, citation_key, chunk_id, document_revision_id, claim_index, excerpt | citation key는 query run 내 unique |
+
+원문 질문·답변 저장 여부는 개인정보·평가 요구가 충돌할 수 있으므로 [SECURITY.md](./SECURITY.md)의 보존 결정을 따른다. 기본 추천은 원문 대신 hash와 구조화 metadata를 저장하고, 평가 동의가 있는 환경만 제한 보존하는 것이다.
+
+`metric_type`은 [GLOSSARY §3](./GLOSSARY.md)의 8개 값으로 제한한다. `unit`은 metric마다 허용 값이 정해져 있으므로 check 제약 또는 참조 테이블로 강제한다. 같은 metric에 서로 다른 unit의 값을 섞어 저장하면 비교 계산이 무의미해진다.
+
+`query_signature`와 `is_incomplete`는 검색 기반 관측값의 재현을 위한 필드다. GitHub search처럼 우리가 만든 질의가 값을 결정하는 source는 질의 문자열과 파라미터의 정규화된 서명을 함께 저장하고, 응답이 `incomplete_results`를 보고하면 `is_incomplete`를 true로 둔다. 이 두 필드가 없으면 관측값이 어떤 조건에서 나왔는지 사후에 알 수 없다.
+
+### 3.5 삭제, 감사, 멱등성
+
+다른 문서가 요구하지만 위 카탈로그에 없던 상태를 명시한다.
+
+| 테이블 | 핵심 필드 | 핵심 제약 |
+|---|---|---|
+| `tombstones` | id, scope, target_key, reason, requested_by, effective_at, purge_after, created_at | `scope`는 `source`/`document`/`document_revision`/`raw_item` enum, `(scope, target_key)` 활성 1행 |
+| `audit_events` | id, actor_type, actor_ref, action, target_scope, target_key, correlation_ids, result, occurred_at | append-only, 수정·삭제 불가 |
+| `idempotency_keys` | key, endpoint, request_hash, response_ref, status, created_at, expires_at | `(endpoint, key)` unique, 같은 key에 다른 `request_hash`는 충돌 |
+| `quarantined_items` | id, raw_item_id, stage, parser_version, error_code, redacted_sample, occurred_at, retry_allowed | redacted sample만 저장하며 원문 전체를 복제하지 않음 |
+
+규칙은 다음과 같다.
+
+- tombstone은 검색·citation 제외를 즉시 적용하고, 물리 삭제는 `purge_after` 이후 retention job이 수행한다.
+- tombstone된 revision을 가리키는 과거 citation은 삭제하지 않고 “원 출처가 회수됨” 상태로 표시한다.
+- `audit_events`는 수동 수집, replay, source enable/disable, migration, retention purge, tombstone 생성을 남긴다.
+- `idempotency_keys`는 [API.md](./API.md)의 `Idempotency-Key`와 `409 IDEMPOTENCY_CONFLICT`를 지원하며 만료 기간을 둔다.
+- `quarantined_items`는 dead-letter 상태의 조사 근거이고 재처리 여부는 운영 판단으로 남긴다.
+
+`audit_events`와 `pipeline_events`를 한 테이블로 합치지 않는다. 전자는 사람·운영 행위, 후자는 자동 처리 단계 이력이다.
+
+## 4. 인덱스 전략
+
+### 즉시 필요한 일반 인덱스
+
+- `raw_items(source_id, external_id)`와 `raw_items(payload_hash)`
+- `document_revisions(status, published_at desc)`
+- `documents(duplicate_cluster_id)`
+- `document_topics(topic_id, document_id)`
+- `metric_observations(subject_key, metric_type, window_start)`
+- `collection_runs(source_id, scheduled_at desc)`
+- `tombstones(scope, target_key)`와 `tombstones(purge_after)`
+- `audit_events(occurred_at desc)`와 `audit_events(target_scope, target_key)`
+- `idempotency_keys(expires_at)`
+- `chunks`의 PostgreSQL full-text GIN index
+
+### 벡터 인덱스
+
+초기에는 exact nearest-neighbor scan으로 평가 기준을 만든다. 데이터량과 p95 latency가 목표를 넘을 때 HNSW를 우선 평가한다. HNSW는 IVFFlat보다 speed/recall trade-off가 좋은 대신 build time과 memory 비용이 크다. IVFFlat은 충분한 학습 데이터와 lists/probes 튜닝이 필요하다.
+
+시간·topic filter와 approximate vector index를 함께 쓸 때 recall 감소를 측정한다. 필요하면 filter column B-tree, partial index, partition, iterative scan을 비교한다. index 도입은 [EXP-002](./experiments/EXP-002-retrieval.md)의 결과를 ADR로 승격한 뒤 시행한다.
+
+## 5. 전문 검색
+
+- title과 body에 서로 다른 weight를 줄 수 있는 `tsvector`를 사용한다.
+- 검색 단위는 `chunks`이지만 title은 `document_revisions`에 있다. `chunks.search_vector`는 revision title과 `heading_path`를 높은 weight로, chunk content를 기본 weight로 포함해 생성한다. weight 조합과 `chunker_version`을 함께 기록해 재생성 조건을 명확히 한다.
+- 한국어 형태소 검색을 PostgreSQL 기본 FTS만으로 충분하다고 가정하지 않는다.
+- MVP에서는 기술명·영문 토큰·alias exact match와 vector search를 함께 사용한다.
+- 한국어 lexical 품질이 부족하면 별도 tokenizer/검색 엔진 도입 전, 측정 결과를 ADR에 기록한다.
+
+## 6. 일관성과 트랜잭션
+
+- raw item upsert와 collection count는 한 트랜잭션 또는 재계산 가능한 방식으로 처리한다.
+- document revision, chunks, embeddings가 모두 유효해진 뒤 searchable status를 전환한다.
+- queue를 도입하면 DB commit 이후 job 유실을 막기 위해 transactional outbox를 추천한다.
+- `current_revision_id` 변경과 publish는 원자적으로 처리한다.
+- 삭제는 즉시 hard delete보다 tombstone → 검색 제외 → 보존 정책에 따른 purge 순서를 따른다.
+
+## 7. 마이그레이션과 데이터 버전
+
+마이그레이션 도구와 ORM/query builder는 미결정이다. 선택 기준은 다음과 같다.
+
+- PostgreSQL/pgvector 기능을 직접 표현할 수 있음
+- generated migration의 검토와 rollback/forward-fix 전략
+- TypeScript backend 후보와의 호환성
+- integration test에서 실제 PostgreSQL migration을 검증 가능
+
+schema, normalizer, chunker, taxonomy, embedding, prompt, workflow 버전은 독립적으로 기록한다. 파생 데이터 재처리는 새 버전을 만들고 기존 citation이 가리키는 revision을 파괴하지 않는다.
+
+## 8. 보존·삭제·백업
+
+- 보존 기간은 [DATA_PIPELINE.md](./DATA_PIPELINE.md)의 제안에서 승인 후 확정한다.
+- source 삭제 요청은 raw → document → chunk/embedding → citation 영향 분석 순으로 처리한다.
+- MVP 백업 범위는 PostgreSQL 하나로 단순화하는 것을 추천한다.
+- 복구 연습은 schema migration 후 빈 DB와 백업 DB 양쪽에서 수행한다.
+
+## 9. 미결정 사항
+
+- PostgreSQL 최소 버전과 pgvector 버전 pin
+- ORM/query builder 및 migration tool
+- embedding provider/model/dimensions
+- HNSW 도입 임계 데이터량과 파라미터
+- raw payload retention과 object storage 전환
+- 한국어 FTS 전략
+- query 원문·answer 보존 정책
+
+## 10. 공식 참고 자료
+
+- [pgvector: indexing, filtering, hybrid search](https://github.com/pgvector/pgvector)
+- [PostgreSQL Full Text Search](https://www.postgresql.org/docs/current/textsearch.html)
+

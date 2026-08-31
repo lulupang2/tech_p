@@ -1,0 +1,135 @@
+﻿{
+  "github_releases": {
+    "attempts": 10,
+    "ok": 10,
+    "successRatePct": 100,
+    "statuses": {
+      "200": 10
+    },
+    "distinctFingerprints": 1,
+    "p50Ms": 21,
+    "maxMs": 424,
+    "errors": []
+  },
+  "stack_exchange": {
+    "attempts": 10,
+    "ok": 10,
+    "successRatePct": 100,
+    "statuses": {
+      "200": 10
+    },
+    "distinctFingerprints": 1,
+    "p50Ms": 198,
+    "maxMs": 631,
+    "errors": []
+  },
+  "users_rust_lang": {
+    "attempts": 10,
+    "ok": 10,
+    "successRatePct": 100,
+    "statuses": {
+      "200": 10
+    },
+    "distinctFingerprints": 1,
+    "p50Ms": 158,
+    "maxMs": 557,
+    "errors": []
+  },
+  "arxiv": {
+    "attempts": 10,
+    "ok": 10,
+    "successRatePct": 100,
+    "statuses": {
+      "200": 10
+    },
+    "distinctFingerprints": 1,
+    "p50Ms": 55,
+    "maxMs": 458,
+    "errors": []
+  },
+  "chrome_release_notes": {
+    "attempts": 10,
+    "ok": 10,
+    "successRatePct": 100,
+    "statuses": {
+      "200": 10
+    },
+    "distinctFingerprints": 2,
+    "p50Ms": 568,
+    "maxMs": 1161,
+    "errors": []
+  },
+  "chrome_origin_trials": {
+    "attempts": 10,
+    "ok": 10,
+    "successRatePct": 100,
+    "statuses": {
+      "200": 10
+    },
+    "distinctFingerprints": 1,
+    "p50Ms": 70,
+    "maxMs": 72,
+    "errors": []
+  },
+  "react_blog": {
+    "attempts": 10,
+    "ok": 10,
+    "successRatePct": 100,
+    "statuses": {
+      "200": 10
+    },
+    "distinctFingerprints": 1,
+    "p50Ms": 25,
+    "maxMs": 133,
+    "errors": []
+  },
+  "npm_registry": {
+    "attempts": 10,
+    "ok": 10,
+    "successRatePct": 100,
+    "statuses": {
+      "200": 10
+    },
+    "distinctFingerprints": 1,
+    "p50Ms": 325,
+    "maxMs": 523,
+    "errors": []
+  },
+  "npm_downloads": {
+    "attempts": 10,
+    "ok": 10,
+    "successRatePct": 100,
+    "statuses": {
+      "200": 10
+    },
+    "distinctFingerprints": 1,
+    "p50Ms": 25,
+    "maxMs": 88,
+    "errors": []
+  },
+  "huggingface_hub": {
+    "attempts": 10,
+    "ok": 10,
+    "successRatePct": 100,
+    "statuses": {
+      "200": 10
+    },
+    "distinctFingerprints": 1,
+    "p50Ms": 210,
+    "maxMs": 293,
+    "errors": []
+  },
+  "github_search": {
+    "attempts": 10,
+    "ok": 5,
+    "successRatePct": 50,
+    "statuses": {
+      "200": 5,
+      "403": 5
+    },
+    "distinctFingerprints": 1,
+    "p50Ms": 55,
+    "maxMs": 682,
+    "errors": []
+  }
+}

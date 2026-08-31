@@ -1,0 +1,1 @@
+{"name":"@exp/domain","version":"0.0.0","private":true,"main":"index.mjs","dependencies":{"@exp/contracts":"workspace:*"},"scripts":{"test":"node --test"}}

@@ -1,0 +1,12 @@
+# Disposable spike code for EXP-001 / EXP-005.
+# Nothing here is production code. See AGENTS.md section 1.
+node_modules/
+artifacts/
+ws/node_modules/
+*.log
+server-out*.txt
+server-err*.txt
+ws-endpoint.txt
+repeat-progress.txt
+package-lock.json
+pnpm-lock.yaml

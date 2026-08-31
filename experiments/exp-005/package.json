@@ -1,0 +1,27 @@
+{
+  "name": "exp-005-foundation-spike",
+  "private": true,
+  "type": "module",
+  "description": "Disposable spike for EXP-005. Not production code. See docs/experiments/EXP-005-foundation-spike.md",
+  "scripts": {
+    "pw:node": "node playwright-gate.mjs",
+    "pw:bun": "bun playwright-gate.mjs"
+  },
+  "dependencies": {
+    "@elysiajs/node": "^1.4.5",
+    "@elysiajs/openapi": "^1.4.15",
+    "@fastify/swagger": "^9.8.1",
+    "@fastify/type-provider-typebox": "^6.1.0",
+    "@sinclair/typebox": "^0.34.52",
+    "bullmq": "^6.3.3",
+    "elysia": "^1.4.30",
+    "fastify": "^5.12.1",
+    "ioredis": "^6.0.0",
+    "pg": "^8.23.0",
+    "playwright": "^1.56.1"
+  },
+  "devDependencies": {
+    "@testcontainers/postgresql": "^12.1.0",
+    "vitest": "^4.1.11"
+  }
+}

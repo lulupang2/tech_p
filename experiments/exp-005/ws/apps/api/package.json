@@ -1,0 +1,1 @@
+{"name":"@exp/api","version":"0.0.0","private":true,"dependencies":{"@exp/domain":"workspace:*"},"scripts":{"test":"node --test"}}

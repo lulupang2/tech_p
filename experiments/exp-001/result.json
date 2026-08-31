@@ -1,0 +1,178 @@
+﻿{
+  "github_releases": {
+    "source": "github_releases",
+    "items": 40,
+    "withId": 40,
+    "withUrl": 40,
+    "withPublishedAt": 40,
+    "createdDiffersFromPublished": 40,
+    "etagSupported": true,
+    "conditional304": 304,
+    "repeats": [
+      200,
+      200,
+      200,
+      200
+    ],
+    "notes": [],
+    "rateRemaining": "52",
+    "idPct": 100,
+    "urlPct": 100,
+    "publishedAtPct": 100
+  },
+  "stack_exchange": {
+    "source": "stack_exchange",
+    "items": 30,
+    "withId": 30,
+    "withLink": 30,
+    "withCreation": 30,
+    "withContentLicense": 25,
+    "licenses": {
+      "CC BY-SA 4.0": 24,
+      "CC BY-SA 3.0": 1
+    },
+    "backoffSeen": false,
+    "quotaRemaining": 299,
+    "notes": [],
+    "idPct": 100,
+    "urlPct": 100,
+    "publishedAtPct": 100,
+    "licensePct": 83.3
+  },
+  "users_rust_lang": {
+    "source": "users_rust_lang",
+    "items": 30,
+    "withId": 30,
+    "withSlug": 30,
+    "withCreatedAt": 30,
+    "before2020": 3,
+    "notes": [],
+    "idPct": 100,
+    "urlPct": 100,
+    "publishedAtPct": 100
+  },
+  "arxiv": {
+    "source": "arxiv",
+    "items": 25,
+    "withId": 25,
+    "withPublished": 25,
+    "withSummary": 25,
+    "versioned": 25,
+    "notes": [],
+    "idPct": 100,
+    "urlPct": 100,
+    "publishedAtPct": 100,
+    "summaryPct": 100
+  },
+  "chrome_release_notes": {
+    "source": "chrome_release_notes",
+    "probed": [
+      {
+        "version": 152,
+        "status": 200,
+        "bytes": 106878
+      },
+      {
+        "version": 151,
+        "status": 200,
+        "bytes": 113490
+      },
+      {
+        "version": 150,
+        "status": 200,
+        "bytes": 117591
+      }
+    ],
+    "serverRendered": true,
+    "dateFound": null,
+    "notes": []
+  },
+  "chrome_origin_trials": {
+    "source": "chrome_origin_trials",
+    "status": 200,
+    "bytes": 2402,
+    "requiresJavascript": true,
+    "bodySample": "<!DOCTYPE html> <html lang=\"en\"> <head> <meta charset=\"utf-8\"> <title>Origin"
+  },
+  "react_blog": {
+    "source": "react_blog",
+    "status": 200,
+    "bytes": 17632,
+    "items": 23,
+    "withLink": 23,
+    "withDate": 23,
+    "notes": [],
+    "urlPct": 100,
+    "publishedAtPct": 100
+  },
+  "npm_registry": {
+    "source": "npm_registry",
+    "items": 4,
+    "withTime": 4,
+    "withLatest": 4,
+    "etagSupported": true,
+    "conditional304": 304,
+    "emailsPresent": 4,
+    "notes": []
+  },
+  "npm_downloads": {
+    "source": "npm_downloads",
+    "notes": [],
+    "status": 200,
+    "start": "2026-08-23",
+    "end": "2026-08-29",
+    "days": 7,
+    "sample": [
+      {
+        "downloads": 23308615,
+        "day": "2026-08-23"
+      },
+      {
+        "downloads": 45150223,
+        "day": "2026-08-24"
+      }
+    ],
+    "bulkStatus": 200,
+    "bulkKeys": [
+      "typescript",
+      "playwright"
+    ]
+  },
+  "github_search": {
+    "source": "github_search",
+    "notes": [],
+    "status": 200,
+    "rateRemaining": "9",
+    "totalCount": 1265,
+    "incompleteResults": false,
+    "returned": 20,
+    "ownerFieldPresent": true,
+    "repeatIdentical": true,
+    "issuesStatus": 200,
+    "issuesTotal": 24661,
+    "issuesReturned": 20,
+    "issuesHaveComments": true
+  },
+  "huggingface_hub": {
+    "source": "huggingface_hub",
+    "notes": [],
+    "status": 200,
+    "returned": 20,
+    "hasId": true,
+    "hasDownloads": true,
+    "hasLastModified": false,
+    "hasLikes": true,
+    "sampleKeys": [
+      "_id",
+      "id",
+      "likes",
+      "private",
+      "downloads",
+      "tags",
+      "pipeline_tag",
+      "library_name",
+      "createdAt",
+      "modelId"
+    ]
+  }
+}
