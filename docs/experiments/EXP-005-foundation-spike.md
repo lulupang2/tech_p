@@ -11,7 +11,7 @@
 
 ## 범위
 
-이 실험은 현재 설계 단계에서는 실행하지 않는다. 구현 승인 후 disposable branch 또는 `experiments`용 최소 code로 수행한다. production feature를 만드는 실험이 아니다.
+이 실험은 사용자 승인(2026-09-01) 후 실행되어 완료됐다. `experiments/exp-005/` 아래 최소 code로 수행했다. **이 code는 disposable spike이며 production feature가 아니다.** production 경로에 섞지 않고, 승격할 내용은 해당 `FND-*` task에서 다시 작성한다.
 
 최소 흐름:
 

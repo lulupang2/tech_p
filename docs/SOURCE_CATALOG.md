@@ -1,6 +1,6 @@
 # TechPulse Source Catalog
 
-- 상태: Draft — 대상 목록과 schedule은 제안, `EXP-001`에서 확정
+- 상태: 대상 source와 호출·저장 baseline은 `EXP-001`에서 검증됨(2026-09-01). **schedule 값은 여전히 제안**이며 [SSOT §5](./SSOT.md)의 미결정 항목이다
 - 작성일: 2026-09-01
 - 기준: [ADR-0004](./adr/0004-initial-data-sources.md) (Accepted), [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)
 

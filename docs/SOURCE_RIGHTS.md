@@ -6,7 +6,7 @@
 - 조사 주체: agent research (공식 문서 인용 기반)
 - 승인: 사용자, 2026-09-01. [ADR-0004](./adr/0004-initial-data-sources.md) Accepted
 - 대응 task: `DISC-001` (DONE), `DEC-001` (DONE)
-- 남은 검증: [EXP-001](./experiments/EXP-001-source-feasibility.md)의 기술 게이트
+- 남은 검증: [EXP-001](./experiments/EXP-001-source-feasibility.md)의 기술 게이트는 완료됐다(2026-09-01). 인증 상태의 rate limit 재측정만 `DISC-002` acceptance에 남아 있다
 
 이 문서는 후보 source의 권리·정책 검토 결과를 기록한다. 공식 문서에서 확인한 근거만 적고, 확인하지 못한 항목은 `unverified`로 남긴다. 이 문서는 법률 자문이 아니며, 판단이 필요한 항목은 후보에서 제외하는 쪽을 택한다.
 
