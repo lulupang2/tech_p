@@ -1,5 +1,5 @@
-import pg from 'pg';
-import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { Pool } from '@neondatabase/serverless';
+import { drizzle, type NeonDatabase } from 'drizzle-orm/neon-serverless';
 import { schema } from './schema/index.js';
 import { type DatabaseConfig, validateDatabaseConfig } from './config.js';
 import {
@@ -11,8 +11,8 @@ import {
 } from './migrate.js';
 
 export interface DatabaseClient {
-  readonly db: NodePgDatabase<typeof schema>;
-  readonly pool: pg.Pool;
+  readonly db: NeonDatabase<typeof schema>;
+  readonly pool: Pool;
   readonly isConnected: boolean;
   readonly connect: () => Promise<void>;
   readonly checkHealth: () => Promise<boolean>;
@@ -40,7 +40,7 @@ export function createDatabaseClient(input: DatabaseConfig | string): DatabaseCl
   const normalizedConfig = typeof input === 'string' ? { databaseUrl: input } : input;
   const config = validateDatabaseConfig(normalizedConfig);
 
-  const pool = new pg.Pool({
+  const pool = new Pool({
     connectionString: config.databaseUrl,
     ...(config.maxConnections !== undefined ? { max: config.maxConnections } : {}),
     ...(config.idleTimeoutMillis !== undefined

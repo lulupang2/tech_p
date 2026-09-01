@@ -1,8 +1,8 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
+import { migrate } from 'drizzle-orm/neon-serverless/migrator';
 import { sql } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import type { schema } from './schema/index.js';
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
@@ -29,7 +29,7 @@ export interface VectorExtensionInfo {
  * Reads committed SQL migrations and journal metadata from the migrations folder.
  */
 export async function migrateDatabase(
-  db: NodePgDatabase<typeof schema>,
+  db: NeonDatabase<typeof schema>,
   options: MigrateOptions = {},
 ): Promise<MigrationResult> {
   const start = performance.now();
@@ -51,7 +51,7 @@ export async function migrateDatabase(
  * Verifies whether the pgvector extension is currently installed in the target database.
  */
 export async function checkVectorExtension(
-  db: NodePgDatabase<typeof schema>,
+  db: NeonDatabase<typeof schema>,
 ): Promise<VectorExtensionInfo> {
   const result = await db.execute(
     sql`SELECT extname, extversion FROM pg_extension WHERE extname = 'vector' LIMIT 1;`,
