@@ -102,6 +102,18 @@ fixture에는 취득일, source URL, 권리 검토 상태, 민감정보 제거 �
 
 큐가 선택되면 실제 Redis/queue integration test를 두고 in-memory mock만으로 재시도·동시성을 증명하지 않는다.
 
+### 5.1 Neon and local database environments
+
+`DATABASE_URL` is the only database endpoint input. It must be supplied through the test environment and must not be committed, copied into fixtures, or printed in logs; use the existing URL masking rules when reporting failures. A Neon URL must be the provider-issued PostgreSQL URL and retain its TLS parameters (normally `sslmode=require`); do not reconstruct an endpoint from a project ID or silently downgrade TLS.
+
+The database adapter is the Neon serverless adapter with a bounded `Pool` and lazy client lifecycle. Integration tests therefore assume a reachable PostgreSQL endpoint that supports the PostgreSQL and pgvector contracts used by the migrations; they must exercise the adapter rather than substitute an in-memory database. A serverless function must not create an unbounded pool per invocation.
+
+For Neon integration runs, provision an isolated database/branch, apply migrations with the migration credential, then run the integration suite with a runtime credential. Do not run destructive migration or cleanup steps against a shared production branch. Neon endpoint reachability, TLS negotiation, migration application, pgvector availability, and pooler/direct-endpoint behavior require live credentials and are not verified by the repository's unit tests.
+
+Local Docker remains the deterministic fallback. Start one compose profile (`persistent` for reusable data or `ephemeral` for disposable data) with `pgvector/pgvector:pg17` and point `DATABASE_URL` at the mapped local PostgreSQL service. Testcontainers remains the preferred isolated integration harness; Compose is an operator-run fallback and does not prove Neon behavior.
+
+When `DATABASE_URL` is absent, database integration suites are skipped rather than passed. This is an unavailable verification result, not evidence that migrations, pgvector, Neon connectivity, or serverless pooling work.
+
 ## 6. API contract test
 
 - 모든 endpoint의 성공·validation·authorization·rate limit·timeout 응답
@@ -161,12 +173,13 @@ fake chat/embedding provider와 seeded corpus로 workflow branch를 테스트한
 
 ## 8. E2E 대표 흐름
 
-1. seeded corpus가 포함된 Docker stack 시작
-2. UI에서 “최근 7일 Playwright 업데이트” 질문
-3. 답변에 resolved time range와 citation이 표시됨
-4. citation link, source, published date가 API 결과와 일치함
-5. 데이터 없는 기간 질문은 근거 부족 UI를 표시함
-6. 비교 질문은 단위별 지표를 분리 표시함
+1. 테스트 대상 DB를 선택한다: Neon 격리 branch/database(`DATABASE_URL` 주입) 또는 local Docker stack.
+2. seeded corpus가 포함된 stack 시작
+3. UI에서 “최근 7일 Playwright 업데이트” 질문
+4. 답변에 resolved time range와 citation이 표시됨
+5. citation link, source, published date가 API 결과와 일치함
+6. 데이터 없는 기간 질문은 근거 부족 UI를 표시함
+7. 비교 질문은 단위별 지표를 분리 표시함
 
 Playwright는 Chromium 한 종류로 PR smoke를 수행하고, 지원 브라우저 범위가 확정되면 release matrix를 늘린다.
 
@@ -211,6 +224,8 @@ live canary와 유료 LLM 평가는 이 blocking pipeline 밖에서 실행하고
 이 pipeline의 구현 task는 `FND-003`(install → static → unit)과 `FND-006`(integration, contract, E2E, security 확장)이다. 아직 구현되지 않은 suite는 항상 통과하는 빈 단계로 만들지 않는다.
 
 현재 기본 blocking workflow는 `.github/workflows/ci.yml`이며 `main` push와 모든 pull request에서 실행된다. Branch protection에 등록할 필수 check 이름은 정확히 `CI / install → static → unit`이다. 이 check는 clean checkout과 Node.js 22, pnpm 10.32.1을 사용하고 `pnpm install --frozen-lockfile` → `pnpm run static` → `pnpm run test` 순으로 실행한다.
+
+기본 CI에는 Neon `DATABASE_URL` secret이 없으므로 현재 blocking check는 Neon migration·pgvector·TLS·pooling을 검증하지 않는다. integration job을 활성화할 때는 격리된 Neon branch/database와 secret injection, migration/runtime credential 분리, 실패 시 명확한 unavailable 결과를 먼저 구성한다. secret이 없는 실행에서 integration suite가 skip되면 성공으로 집계하지 않는다.
 
 ## 12. 완료 정의
 

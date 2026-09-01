@@ -99,6 +99,13 @@ flowchart LR
 - 원본 revision은 불변이다. 새 payload hash는 새 revision으로 보존한다.
 - raw 저장 전에는 후속 job을 발행하지 않는다.
 
+### Database endpoint and connection lifecycle
+
+`DATABASE_URL` is injected at runtime and is the sole source of truth for the PostgreSQL target. Neon is the hosted PostgreSQL target, and Node services use the Neon serverless adapter while preserving the PostgreSQL/pgvector contract. The adapter uses a bounded `Pool` and lazy client lifecycle: constructing the client does not connect, and startup/health checks explicitly establish connectivity. Neon deployments retain the provider's TLS settings; credentials and endpoint strings are never committed or emitted in logs.
+
+Local Docker is a fallback PostgreSQL environment for development and deterministic tests, not a second production adapter. Its `pgvector/pgvector:pg17` endpoint exercises the same SQL and extension invariants, but does not prove Neon serverless transport, TLS, pooling, or provider behavior.
+
+Migrations run as an explicit operational step against an isolated Neon branch/database with migration credentials. Runtime API/worker credentials are separate and must not be granted migration privileges. A failed or unavailable migration/health check stops publication; it must not be represented as a successful pipeline run.
 ### 5.4 Normalize
 
 텍스트 artifact와 숫자 관측값을 분리한다.
