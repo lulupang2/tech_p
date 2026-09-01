@@ -13,5 +13,8 @@
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "elysia": "^1.4.0"
   }
 }
