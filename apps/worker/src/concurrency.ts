@@ -97,9 +97,38 @@ export interface RedisSourceConcurrencyLimiterOptions {
   readonly keyPrefix?: string;
 }
 
+export class LeaseOwnershipLostError extends Error {
+  constructor() {
+    super('source concurrency lease ownership was lost during renewal');
+    this.name = 'LeaseOwnershipLostError';
+  }
+}
+
+export class LeaseRenewalError extends Error {
+  constructor(cause: unknown) {
+    super('source concurrency lease renewal failed', { cause });
+    this.name = 'LeaseRenewalError';
+  }
+}
+
+export class LeaseReleaseError extends Error {
+  constructor(message: string, cause?: unknown) {
+    super(message, cause === undefined ? undefined : { cause });
+    this.name = 'LeaseReleaseError';
+  }
+}
+
+export function leaseRenewalIntervalMs(leaseMs: number): number {
+  return Math.max(100, Math.floor(leaseMs / 3));
+}
+
 /**
  * A Redis lease makes the source cap global across worker processes. Expiry is
  * deliberately bounded: a SIGKILL leaves capacity blocked for at most leaseMs.
+ *
+ * Renewal failure is reported after the operation finishes. If the operation
+ * fails, its original error wins and a release failure is attached as cause.
+ * A successful operation with lost ownership fails closed.
  */
 export class RedisSourceConcurrencyLimiter implements SourceConcurrencyLimiter {
   private readonly leaseMs: number;
@@ -148,23 +177,73 @@ export class RedisSourceConcurrencyLimiter implements SourceConcurrencyLimiter {
     }
 
     let renewing = true;
+    let renewalFailure: Error | undefined;
     let renewTimer: NodeJS.Timeout | undefined;
+    let renewalPromise: Promise<void> | undefined;
     const renew = async (): Promise<void> => {
       if (!renewing) return;
-      await this.redis.eval(RENEW_SCRIPT, 1, key, token, Date.now(), this.leaseMs);
+      try {
+        const renewed = await this.redis.eval(
+          RENEW_SCRIPT,
+          1,
+          key,
+          token,
+          Date.now(),
+          this.leaseMs,
+        );
+        if (renewed !== 1) {
+          renewalFailure = new LeaseOwnershipLostError();
+          renewing = false;
+          return;
+        }
+      } catch (error) {
+        renewalFailure = new LeaseRenewalError(error);
+        renewing = false;
+        return;
+      }
       if (renewing) {
-        renewTimer = setTimeout(() => void renew(), Math.max(1_000, this.leaseMs / 3));
+        renewTimer = setTimeout(() => {
+          renewalPromise = renew();
+          void renewalPromise;
+        }, leaseRenewalIntervalMs(this.leaseMs));
       }
     };
-    renewTimer = setTimeout(() => void renew(), Math.max(1_000, this.leaseMs / 3));
+    renewTimer = setTimeout(() => {
+      renewalPromise = renew();
+      void renewalPromise;
+    }, leaseRenewalIntervalMs(this.leaseMs));
+
+    let operationFailed = false;
+    let operationError: unknown;
+    let releaseFailure: Error | undefined;
     try {
-      return await operation();
+      const result = await operation();
+      await renewalPromise;
+      if (renewalFailure) throw renewalFailure;
+      return result;
+    } catch (error) {
+      operationFailed = true;
+      operationError = error;
+      throw error;
     } finally {
       renewing = false;
       clearTimeout(renewTimer);
       renewTimer = undefined;
-      await this.redis.eval(RELEASE_SCRIPT, 1, key, token);
+      try {
+        const released = await this.redis.eval(RELEASE_SCRIPT, 1, key, token);
+        if (released !== 1) {
+          releaseFailure = new LeaseReleaseError(
+            'source concurrency lease ownership was lost during release',
+          );
+        }
+      } catch (error) {
+        releaseFailure = new LeaseReleaseError('source concurrency lease release failed', error);
+      }
+      if (operationFailed && operationError instanceof Error && releaseFailure) {
+        if (operationError.cause === undefined) operationError.cause = releaseFailure;
+      }
     }
+    if (!operationFailed && releaseFailure) throw releaseFailure;
   }
 
   async close(): Promise<void> {

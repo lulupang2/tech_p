@@ -15,7 +15,11 @@ export {
 } from './jobs.js';
 export {
   InMemorySourceConcurrencyLimiter,
+  LeaseOwnershipLostError,
+  LeaseReleaseError,
+  LeaseRenewalError,
   RedisSourceConcurrencyLimiter,
+  leaseRenewalIntervalMs,
   type RedisSourceConcurrencyLimiterOptions,
   type SourceConcurrency,
   type SourceConcurrencyLimiter,
@@ -26,6 +30,9 @@ export {
   directDeliveryBoundary,
   enqueueCollectionJob,
   InMemoryIdempotentDeliveryBoundary,
+  InMemoryJobClaimStore,
+  type JobClaimStore,
+  RedisJobClaimStore,
   processCollectionJob,
   type CollectionOperation,
   type CollectionScheduler,

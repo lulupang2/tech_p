@@ -5,6 +5,7 @@ import type { CollectionJobPayload } from '@techpulse/contracts';
 import {
   COLLECTION_JOB_NAME,
   InMemoryIdempotentDeliveryBoundary,
+  InMemoryJobClaimStore,
   InMemorySourceConcurrencyLimiter,
   WorkerJobValidationError,
   collectionJobNaturalKey,
@@ -100,12 +101,16 @@ describe('versioned collection delivery', () => {
         return job;
       },
     } as unknown as Queue<CollectionJobData>;
-    const first = await enqueueCollectionJob(queue, payload, window, {
-      now: new Date('2026-08-31T00:00:00Z'),
-    });
-    const second = await enqueueCollectionJob(queue, payload, window);
-    assert.equal(first.duplicate, false);
-    assert.equal(second.duplicate, true);
+    const claimStore = new InMemoryJobClaimStore();
+    const [first, second] = await Promise.all([
+      enqueueCollectionJob(queue, payload, window, {
+        claimStore,
+        now: new Date('2026-08-31T00:00:00Z'),
+      }),
+      enqueueCollectionJob(queue, payload, window, { claimStore }),
+    ]);
+    assert.notEqual(first.duplicate, second.duplicate);
+    assert.equal([first, second].filter((result) => !result.duplicate).length, 1);
     assert.equal(calls.length, 1);
     assert.equal(calls[0]?.name, COLLECTION_JOB_NAME);
     assert.equal(calls[0]?.options['jobId'], first.job.id);
@@ -117,16 +122,45 @@ describe('versioned collection delivery', () => {
       delay: 1_000,
     });
   });
-  test('executes a committed natural key once across redelivery', async () => {
+  test('executes a concurrent natural key once and shares the result', async () => {
     const boundary = new InMemoryIdempotentDeliveryBoundary();
     const data = createCollectionJobData(payload, window);
     let calls = 0;
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     const operation = async (jobPayload: CollectionJobPayload): Promise<void> => {
       assert.equal(jobPayload.collectionRunId, payload.collectionRunId);
       calls += 1;
+      await held;
     };
-    assert.equal(await boundary.deliver(data, operation), 'committed');
+    const first = boundary.deliver(data, operation);
+    const second = boundary.deliver(data, operation);
+    assert.equal(calls, 1);
+    release();
+    assert.deepEqual(await Promise.all([first, second]), ['committed', 'committed']);
+    assert.equal(calls, 1);
     assert.equal(await boundary.deliver(data, operation), 'already_committed');
+  });
+
+  test('shares concurrent operation errors without a second execution', async () => {
+    const boundary = new InMemoryIdempotentDeliveryBoundary();
+    const data = createCollectionJobData(payload, window);
+    const failure = new Error('delivery failed');
+    let calls = 0;
+    const operation = async (): Promise<void> => {
+      calls += 1;
+      throw failure;
+    };
+    const [first, second] = await Promise.allSettled([
+      boundary.deliver(data, operation),
+      boundary.deliver(data, operation),
+    ]);
+    assert.equal(first.status, 'rejected');
+    assert.equal(second.status, 'rejected');
+    assert.equal(first.reason, failure);
+    assert.equal(second.reason, failure);
     assert.equal(calls, 1);
   });
 });
