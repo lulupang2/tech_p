@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`~`FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`~`DB-006`, `QUE-001`, `AI-001`, `DEC-008`, `COL-001`~`COL-010` (수집기 11개 전 소스 완료), `PIPE-001` (원시 수집 파이프라인 오케스트레이션 완료), `PIPE-002` (결정적 정규화 완료), `EVAL-001` (골든셋 레이블링 완료). 이후 task는 표의 dependency gate를 따른다.
+- 구현 상태: `FND-001`~`FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`~`DB-006`, `QUE-001`, `AI-001`, `DEC-008`, `COL-001`~`COL-010` (수집기 11개 전 소스 완료), `PIPE-001` (원시 수집 파이프라인 오케스트레이션 완료), `PIPE-002` (결정적 정규화 완료), `PIPE-003` (exact dedup·duplicate cluster 완료), `EVAL-001` (골든셋 레이블링 완료). 이후 task는 표의 dependency gate를 따른다.
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -124,8 +124,8 @@
 | QUE-001 | scheduler와 versioned job delivery | DEC-004, FND-004, CON-001 | DONE | source/schedule window 중복 job 없음; UTC schedule, retry/backoff, concurrency cap과 job schema validation integration test 통과; **EXP-005 미측정 항목 검증**: SIGKILL 후 재시작 복구, 다중 worker 경합과 backpressure, DB commit 후 job 유실에 대한 outbox 필요성 판단 |
 | PIPE-001 | collection run과 raw ingestion orchestration | COL-001, QUE-001, DB-002, OBS-001 | DONE | raw 저장 후에만 후속 단계가 생성됨; worker kill/동일 job 재전달에서 raw logical duplicate 0; run counts와 오류 상태 조회 가능 |
 | PIPE-002 | deterministic normalization | PIPE-001, DB-003 | DONE | JSON/HTML fixture가 공통 document/metric으로 변환; 게시일 unknown은 null; sanitizer가 script/hidden instruction을 제거; normalizer version 기록 |
-| PIPE-003 | exact dedup과 duplicate cluster | PIPE-002 | READY | external ID/canonical URL/hash 우선 규칙 통과; cross-source 원본을 삭제하지 않고 cluster link 생성; 동일 재처리 결과 불변 |
-| EXP-004 | deduplication 실험 실행 | PIPE-003, COL-002, COL-003 | BLOCKED | [EXP-004](./docs/experiments/EXP-004-deduplication.md)의 labeled holdout, confusion matrix, threshold 결과가 기록되고 false-merge gate 평가됨 |
+| PIPE-003 | exact dedup과 duplicate cluster | PIPE-002 | DONE | external ID/canonical URL/hash 우선 규칙 통과; cross-source 원본을 삭제하지 않고 cluster link 생성; 동일 재처리 결과 불변 |
+| EXP-004 | deduplication 실험 실행 | PIPE-003, COL-002, COL-003 | READY | [EXP-004](./docs/experiments/EXP-004-deduplication.md)의 labeled holdout, confusion matrix, threshold 결과가 기록되고 false-merge gate 평가됨 |
 | PIPE-004 | near-duplicate 후보·versioned clustering | EXP-004 | BLOCKED | 승인 algorithm/threshold만 사용; low-confidence는 자동 merge하지 않음; recluster가 기존 provenance/citation을 파괴하지 않음 |
 | PIPE-005 | topic alias/classification과 chunking | PIPE-004, DB-003 | BLOCKED | [TOPIC_TAXONOMY](./docs/TOPIC_TAXONOMY.md)의 deterministic alias가 우선 적용되고 단어 경계·ambiguous 규칙이 unit test로 검증됨; classifier version/confidence 저장; heading-aware stable chunks; 동일 input/version의 chunk hash·ordinal 불변 |
 | PIPE-006 | metric aggregation | COL-003, COL-004, COL-007, COL-009, COL-010, PIPE-003, DB-004 | BLOCKED | 8개 지표가 각각 고유 unit으로 저장되고 서로 합산되지 않음; `community_mentions`는 duplicate cluster 기준; `repo_attention`은 스냅샷 기준이며 수집 시작 이전 구간을 생성하지 않음; `query_signature`와 `is_incomplete`가 검색 기반 관측값에 기록됨; missing window를 0으로 오인하지 않는 테스트 통과 |
