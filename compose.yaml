@@ -29,7 +29,7 @@ x-postgres-healthcheck: &postgres-healthcheck
   start_period: 5s
 
 x-redis-healthcheck: &redis-healthcheck
-  test: ["CMD", "redis-cli", "ping"]
+  test: ['CMD', 'redis-cli', 'ping']
   interval: 5s
   timeout: 3s
   retries: 20
@@ -49,7 +49,7 @@ services:
   redis-persistent:
     image: redis:7.4-alpine
     profiles: [persistent]
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ['redis-server', '--appendonly', 'yes']
     ports:
       - 127.0.0.1:6379:6379
     volumes:
@@ -69,7 +69,7 @@ services:
   redis-ephemeral:
     image: redis:7.4-alpine
     profiles: [ephemeral]
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
     ports:
       - 127.0.0.1:6379:6379
     healthcheck: *redis-healthcheck
