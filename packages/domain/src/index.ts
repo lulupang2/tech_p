@@ -1,2 +1,33 @@
-/** Domain models and ports are introduced in their dependent tasks. */
-export {};
+export {
+  AiPortError,
+  AiProviderError,
+  AiTimeoutError,
+  UnsupportedAiInputError,
+  createDeterministicChatPort,
+  createDeterministicEmbeddingPort,
+} from './ai.js';
+
+export type {
+  AiErrorKind,
+  AiRequestOptions,
+  ChatCompletionMetadata,
+  ChatCompletionRequest,
+  AiErrorMetadata,
+  ChatCompletionResult,
+  ChatMessage,
+  ChatPort,
+  ChatRole,
+  ChatProvider,
+  ChatRequest,
+  ChatResponse,
+  DeterministicChatOptions,
+  DeterministicChatPort,
+  DeterministicEmbeddingOptions,
+  DeterministicEmbeddingPort,
+  EmbeddingMetadata,
+  EmbeddingPort,
+  EmbeddingProvider,
+  EmbeddingRequest,
+  EmbeddingResult,
+  TokenUsage,
+} from './ai.js';
