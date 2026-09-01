@@ -4,7 +4,7 @@
 #   docker compose --profile ephemeral up -d --wait
 # Persistent cleanup (keeps data): docker compose --profile persistent down
 # Persistent data deletion (intentional): docker compose --profile persistent down --volumes
-# Ephemeral cleanup (all data is tmpfs and disappears when containers stop): docker compose --profile ephemeral down
+# Ephemeral cleanup (PostgreSQL data is tmpfs-backed; Redis has no persistent volume): docker compose --profile ephemeral down
 #
 # The fallback PostgreSQL credentials below are deliberately named UNSAFE and are
 # suitable only for a local machine. Override them with TECHPULSE_DEV_POSTGRES_* if needed.
