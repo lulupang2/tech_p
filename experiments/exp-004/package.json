@@ -1,0 +1,9 @@
+{
+  "name": "@techpulse/exp-004-deduplication",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "run": "node experiment.mjs",
+    "test": "node --test experiment.test.mjs"
+  }
+}

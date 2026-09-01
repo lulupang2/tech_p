@@ -1,0 +1,6041 @@
+{
+  "experimentId": "EXP-004",
+  "status": "completed",
+  "datasetVersion": "exp004-synthetic-redacted-v1",
+  "algorithmVersion": "exp004-dedup-v1.0.0",
+  "normalizerVersion": "pipe-002-v1.0.0",
+  "boilerplateRuleVersion": "exp004-boilerplate-v1",
+  "execution": {
+    "generatedAt": "2026-09-02T00:00:00Z",
+    "runtime": "Node.js (see execution environment in report)",
+    "deterministic": true,
+    "network": "none",
+    "llm": "none",
+    "embeddingProvider": "none; v3 is synthetic lexical proxy only"
+  },
+  "dataset": {
+    "pairCount": 240,
+    "trainCount": 160,
+    "holdoutCount": 80,
+    "labels": {
+      "same_revision": 48,
+      "updated_revision": 48,
+      "syndicated_copy": 48,
+      "related_independent": 48,
+      "unrelated": 48
+    },
+    "sourcePatternCount": 6
+  },
+  "variants": {
+    "v1_exact_identity": {
+      "algorithmVariant": "v1_exact_identity",
+      "threshold": 0.9,
+      "trainSelection": {
+        "split": "train",
+        "pairCount": 160,
+        "labelsExposedToSelection": true,
+        "holdoutLabelsExposedToSelection": false,
+        "selectedBy": "max_f1_with_precision_ge_0.95_and_false_merge_rate_le_0.02",
+        "candidateThresholds": [
+          0.5,
+          0.52,
+          0.54,
+          0.56,
+          0.58,
+          0.6,
+          0.62,
+          0.64,
+          0.66,
+          0.68,
+          0.7,
+          0.72,
+          0.74,
+          0.76,
+          0.78,
+          0.8,
+          0.82,
+          0.84,
+          0.86,
+          0.88,
+          0.9
+        ],
+        "thresholdMeasurements": [
+          {
+            "threshold": 0.5,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.52,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.54,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.56,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.58,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.6,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.62,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.64,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.66,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.68,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.7,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.72,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.74,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.76,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.78,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.8,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.82,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.84,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.86,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.88,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.9,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          }
+        ],
+        "selectedTrainMetrics": {
+          "precision": 1,
+          "recall": 0.3333333333333333,
+          "f1": 0.5,
+          "falseMergeRate": 0,
+          "falseSplitRate": 0.6666666666666666
+        }
+      },
+      "errorPairs": [
+        {
+          "pairId": "EXP004-P007",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P013",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P022",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P028",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P037",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P043",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P052",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P058",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P067",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P073",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P082",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P088",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P097",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P103",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P112",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P118",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P127",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P133",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P142",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P148",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P157",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P163",
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P172",
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P178",
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P187",
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P193",
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P202",
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P208",
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P217",
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P223",
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P232",
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        },
+        {
+          "pairId": "EXP004-P238",
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "predictedPositive": false,
+          "score": 0,
+          "provenanceRetained": true
+        }
+      ],
+      "holdoutEvaluation": {
+        "split": "fixed_holdout_once",
+        "pairCount": 80,
+        "confusionMatrix": {
+          "tp": 16,
+          "fp": 0,
+          "fn": 32,
+          "tn": 32
+        },
+        "metrics": {
+          "precision": 1,
+          "recall": 0.3333333333333333,
+          "f1": 0.5,
+          "falseMergeRate": 0,
+          "falseSplitRate": 0.6666666666666666
+        }
+      },
+      "sourceTypeErrorAnalysis": [
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 3,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 2,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "updated_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 2,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 3,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "unrelated",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "same_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 3,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 3,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "related_independent",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 3,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 2,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "updated_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 2,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 3,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "unrelated",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "same_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 3,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 3,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 0,
+            "f1": 0,
+            "falseMergeRate": 0,
+            "falseSplitRate": 1
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "related_independent",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        }
+      ],
+      "manualReviewList": []
+    },
+    "v2_lexical_fingerprint": {
+      "algorithmVariant": "v2_lexical_fingerprint",
+      "threshold": 0.8,
+      "trainSelection": {
+        "split": "train",
+        "pairCount": 160,
+        "labelsExposedToSelection": true,
+        "holdoutLabelsExposedToSelection": false,
+        "selectedBy": "max_f1_with_precision_ge_0.95_and_false_merge_rate_le_0.02",
+        "candidateThresholds": [
+          0.5,
+          0.52,
+          0.54,
+          0.56,
+          0.58,
+          0.6,
+          0.62,
+          0.64,
+          0.66,
+          0.68,
+          0.7,
+          0.72,
+          0.74,
+          0.76,
+          0.78,
+          0.8,
+          0.82,
+          0.84,
+          0.86,
+          0.88,
+          0.9
+        ],
+        "thresholdMeasurements": [
+          {
+            "threshold": 0.5,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.52,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.54,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.56,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.58,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.6,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.62,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.64,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.66,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.68,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.7,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.72,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.74,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.76,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.78,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.8,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.82,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.84,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.86,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.88,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.9,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          }
+        ],
+        "selectedTrainMetrics": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "falseMergeRate": 0,
+          "falseSplitRate": 0
+        }
+      },
+      "errorPairs": [],
+      "holdoutEvaluation": {
+        "split": "fixed_holdout_once",
+        "pairCount": 80,
+        "confusionMatrix": {
+          "tp": 48,
+          "fp": 0,
+          "fn": 0,
+          "tn": 32
+        },
+        "metrics": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "falseMergeRate": 0,
+          "falseSplitRate": 0
+        }
+      },
+      "sourceTypeErrorAnalysis": [
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "updated_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "unrelated",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "same_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "related_independent",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "updated_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "unrelated",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "same_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "related_independent",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        }
+      ],
+      "manualReviewList": [
+        {
+          "pairId": "EXP004-P007",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P013",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P022",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P028",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P037",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P043",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P052",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P058",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P067",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P073",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P082",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P088",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P097",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P103",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P112",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P118",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P127",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P133",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P142",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P148",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        }
+      ]
+    },
+    "v3_embedding_proxy": {
+      "algorithmVariant": "v3_embedding_proxy",
+      "threshold": 0.88,
+      "trainSelection": {
+        "split": "train",
+        "pairCount": 160,
+        "labelsExposedToSelection": true,
+        "holdoutLabelsExposedToSelection": false,
+        "selectedBy": "max_f1_with_precision_ge_0.95_and_false_merge_rate_le_0.02",
+        "candidateThresholds": [
+          0.5,
+          0.52,
+          0.54,
+          0.56,
+          0.58,
+          0.6,
+          0.62,
+          0.64,
+          0.66,
+          0.68,
+          0.7,
+          0.72,
+          0.74,
+          0.76,
+          0.78,
+          0.8,
+          0.82,
+          0.84,
+          0.86,
+          0.88,
+          0.9
+        ],
+        "thresholdMeasurements": [
+          {
+            "threshold": 0.5,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 32,
+              "fn": 0,
+              "tn": 32
+            },
+            "metrics": {
+              "precision": 0.75,
+              "recall": 1,
+              "f1": 0.8571428571428571,
+              "falseMergeRate": 0.5,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.52,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 32,
+              "fn": 0,
+              "tn": 32
+            },
+            "metrics": {
+              "precision": 0.75,
+              "recall": 1,
+              "f1": 0.8571428571428571,
+              "falseMergeRate": 0.5,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.54,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 32,
+              "fn": 0,
+              "tn": 32
+            },
+            "metrics": {
+              "precision": 0.75,
+              "recall": 1,
+              "f1": 0.8571428571428571,
+              "falseMergeRate": 0.5,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.56,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 32,
+              "fn": 0,
+              "tn": 32
+            },
+            "metrics": {
+              "precision": 0.75,
+              "recall": 1,
+              "f1": 0.8571428571428571,
+              "falseMergeRate": 0.5,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.58,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 31,
+              "fn": 0,
+              "tn": 33
+            },
+            "metrics": {
+              "precision": 0.7559055118110236,
+              "recall": 1,
+              "f1": 0.8609865470852018,
+              "falseMergeRate": 0.484375,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.6,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 28,
+              "fn": 0,
+              "tn": 36
+            },
+            "metrics": {
+              "precision": 0.7741935483870968,
+              "recall": 1,
+              "f1": 0.8727272727272727,
+              "falseMergeRate": 0.4375,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.62,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 24,
+              "fn": 0,
+              "tn": 40
+            },
+            "metrics": {
+              "precision": 0.8,
+              "recall": 1,
+              "f1": 0.888888888888889,
+              "falseMergeRate": 0.375,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.64,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 14,
+              "fn": 0,
+              "tn": 50
+            },
+            "metrics": {
+              "precision": 0.8727272727272727,
+              "recall": 1,
+              "f1": 0.9320388349514563,
+              "falseMergeRate": 0.21875,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.66,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 3,
+              "fn": 0,
+              "tn": 61
+            },
+            "metrics": {
+              "precision": 0.9696969696969697,
+              "recall": 1,
+              "f1": 0.9846153846153847,
+              "falseMergeRate": 0.046875,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.68,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 1,
+              "fn": 0,
+              "tn": 63
+            },
+            "metrics": {
+              "precision": 0.9896907216494846,
+              "recall": 1,
+              "f1": 0.9948186528497409,
+              "falseMergeRate": 0.015625,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.7,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.72,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.74,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.76,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.78,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.8,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.82,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.84,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.86,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.88,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.9,
+            "confusionMatrix": {
+              "tp": 84,
+              "fp": 0,
+              "fn": 12,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.875,
+              "f1": 0.9333333333333333,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.125
+            }
+          }
+        ],
+        "selectedTrainMetrics": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "falseMergeRate": 0,
+          "falseSplitRate": 0
+        }
+      },
+      "errorPairs": [],
+      "holdoutEvaluation": {
+        "split": "fixed_holdout_once",
+        "pairCount": 80,
+        "confusionMatrix": {
+          "tp": 48,
+          "fp": 0,
+          "fn": 0,
+          "tn": 32
+        },
+        "metrics": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "falseMergeRate": 0,
+          "falseSplitRate": 0
+        }
+      },
+      "sourceTypeErrorAnalysis": [
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "updated_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "unrelated",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "same_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "related_independent",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "updated_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "unrelated",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "same_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "related_independent",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        }
+      ],
+      "manualReviewList": [
+        {
+          "pairId": "EXP004-P028",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.888794,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P178",
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.895135,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P223",
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.899275,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P193",
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.900583,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P163",
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.90067,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P103",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.901234,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P088",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.904395,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P148",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.904438,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P208",
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.904482,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P043",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.906139,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P133",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.906417,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P118",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.907032,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P013",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.907446,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P058",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.907914,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P238",
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.90928,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P073",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.909548,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P007",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "updated_revision",
+          "score": 0.916474,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P232",
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "label": "updated_revision",
+          "score": 0.91844,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P022",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "updated_revision",
+          "score": 0.918869,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P172",
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "label": "updated_revision",
+          "score": 0.918869,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        }
+      ]
+    },
+    "v4_entity_date_lexical": {
+      "algorithmVariant": "v4_entity_date_lexical",
+      "threshold": 0.8,
+      "trainSelection": {
+        "split": "train",
+        "pairCount": 160,
+        "labelsExposedToSelection": true,
+        "holdoutLabelsExposedToSelection": false,
+        "selectedBy": "max_f1_with_precision_ge_0.95_and_false_merge_rate_le_0.02",
+        "candidateThresholds": [
+          0.5,
+          0.52,
+          0.54,
+          0.56,
+          0.58,
+          0.6,
+          0.62,
+          0.64,
+          0.66,
+          0.68,
+          0.7,
+          0.72,
+          0.74,
+          0.76,
+          0.78,
+          0.8,
+          0.82,
+          0.84,
+          0.86,
+          0.88,
+          0.9
+        ],
+        "thresholdMeasurements": [
+          {
+            "threshold": 0.5,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.52,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.54,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.56,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.58,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.6,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.62,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.64,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.66,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.68,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.7,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.72,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.74,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.76,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.78,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.8,
+            "confusionMatrix": {
+              "tp": 96,
+              "fp": 0,
+              "fn": 0,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 1,
+              "f1": 1,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0
+            }
+          },
+          {
+            "threshold": 0.82,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.84,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.86,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.88,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          },
+          {
+            "threshold": 0.9,
+            "confusionMatrix": {
+              "tp": 32,
+              "fp": 0,
+              "fn": 64,
+              "tn": 64
+            },
+            "metrics": {
+              "precision": 1,
+              "recall": 0.3333333333333333,
+              "f1": 0.5,
+              "falseMergeRate": 0,
+              "falseSplitRate": 0.6666666666666666
+            }
+          }
+        ],
+        "selectedTrainMetrics": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "falseMergeRate": 0,
+          "falseSplitRate": 0
+        }
+      },
+      "errorPairs": [],
+      "holdoutEvaluation": {
+        "split": "fixed_holdout_once",
+        "pairCount": 80,
+        "confusionMatrix": {
+          "tp": 48,
+          "fp": 0,
+          "fn": 0,
+          "tn": 32
+        },
+        "metrics": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "falseMergeRate": 0,
+          "falseSplitRate": 0
+        }
+      },
+      "sourceTypeErrorAnalysis": [
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "article"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "updated_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "artifactTypes": [
+            "release_note",
+            "origin_trial"
+          ],
+          "label": "unrelated",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "same_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "related_independent",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "metric_observation",
+            "release_note"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "artifactTypes": [
+            "question",
+            "question"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "same_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "updated_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "related_independent",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "arxiv_version_update",
+          "sourcePair": [
+            "arxiv",
+            "arxiv"
+          ],
+          "artifactTypes": [
+            "paper_metadata",
+            "paper_metadata"
+          ],
+          "label": "unrelated",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "same_revision",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 2,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "updated_revision",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "syndicated_copy",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 3,
+            "fp": 0,
+            "fn": 0,
+            "tn": 0
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "related_independent",
+          "pairCount": 2,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 2
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        },
+        {
+          "sourcePattern": "rust_forum_release_quote",
+          "sourcePair": [
+            "users_rust_lang",
+            "github_releases"
+          ],
+          "artifactTypes": [
+            "forum_post",
+            "release_note"
+          ],
+          "label": "unrelated",
+          "pairCount": 3,
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 0,
+            "tn": 3
+          },
+          "metrics": {
+            "precision": 1,
+            "recall": 1,
+            "f1": 1,
+            "falseMergeRate": 0,
+            "falseSplitRate": 0
+          }
+        }
+      ],
+      "manualReviewList": [
+        {
+          "pairId": "EXP004-P007",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P013",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P022",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P028",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P037",
+          "sourcePattern": "github_release_react_blog",
+          "sourcePair": [
+            "github_releases",
+            "react_blog"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P043",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P052",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P058",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P067",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P073",
+          "sourcePattern": "chrome_release_origin_trial",
+          "sourcePair": [
+            "chrome_release_notes",
+            "chrome_origin_trials"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P082",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P088",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P097",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P103",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P112",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P118",
+          "sourcePattern": "npm_release_github_release",
+          "sourcePair": [
+            "npm_registry",
+            "github_releases"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P127",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P133",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P142",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P148",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "syndicated_copy",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        }
+      ]
+    }
+  },
+  "recommendation": {
+    "variant": "v2_lexical_fingerprint",
+    "threshold": 0.8,
+    "rule": "exact identity first; otherwise normalized title/body lexical fingerprint score >= selected threshold is a candidate only",
+    "autoMerge": false,
+    "rationale": "No false merge on fixed holdout for the selected lexical variant; lower scores remain manual review candidates.",
+    "gate": {
+      "exactDuplicatePrecision": 1,
+      "nearDuplicatePrecision": 1,
+      "nearDuplicateFalseMergeRate": 0,
+      "passes": true
+    }
+  },
+  "safety": {
+    "action": "cluster_link_only",
+    "physicalDelete": false,
+    "rawSourcePreserved": true,
+    "citationRevisionPreserved": true,
+    "verbatimOnlyNeverBypassed": true,
+    "manualReviewRequiredFor": [
+      "verbatim_only members",
+      "score within ±0.08 of threshold",
+      "conflicting revision or canonical URL identity"
+    ]
+  },
+  "reclusteringMigrationPlan": {
+    "newAlgorithmVersion": "exp004-dedup-v1.0.0",
+    "migration": [
+      "write a versioned recluster run record",
+      "read immutable document revisions and rawItem provenance",
+      "recompute candidates without deleting or rewriting source/raw/revision/citation rows",
+      "create new cluster links in a new algorithm-version namespace",
+      "retain old cluster links until review and record supersession",
+      "route low-confidence and verbatim_only candidates to manual review",
+      "compare old/new cluster membership and provide rollback by disabling the new version"
+    ],
+    "provenanceFields": [
+      "documentId",
+      "revisionId",
+      "rawItemId",
+      "sourceKey",
+      "externalId",
+      "canonicalUrl",
+      "licenseId",
+      "verbatimOnly"
+    ],
+    "rollback": "disable new algorithm version; old links remain authoritative until explicit promotion"
+  },
+  "rawMeasurement": {
+    "datasetFile": "experiments/exp-004/dataset.json",
+    "resultFile": "experiments/exp-004/result.json",
+    "noLiveCorpusClaim": true,
+    "holdoutEvaluatedOnce": true
+  }
+}
