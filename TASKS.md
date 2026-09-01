@@ -267,4 +267,4 @@ flowchart TD
 
 ### corpus가 필요한 작업
 
-`EXP-002`, `EXP-004`, `EVAL-001` 라벨링은 실제 수집 데이터가 필요하므로 collector 구현 이후에만 가능하다.
+`EXP-002`는 실제 수집 retrieval corpus가 준비된 뒤 실행한다. `EXP-004`는 문서화된 synthetic/redacted metadata-only dataset으로 완료되었고, `EVAL-001`은 [EVAL_GOLDEN_SET](./docs/EVAL_GOLDEN_SET.md)의 골든셋 작성이 완료되었으므로 두 task는 실제 수집 데이터 대기 항목이 아니다.
