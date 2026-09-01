@@ -31,3 +31,13 @@ export {
   type NpmRegistryCursor,
   type NpmDownloadsCursor,
 } from './npm.js';
+export {
+  ArxivCollector,
+  type ArxivCollectorOptions,
+  type ArxivCursor,
+  type ParsedArxivEntry,
+  type ParsedArxivFeed,
+  extractArxivId,
+  parseArxivFeed,
+  formatArxivDate,
+} from './arxiv.js';
