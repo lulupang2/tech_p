@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001` 완료. `DB-001`, `QUE-001`, `TST-001`은 선행 dependency가 충족되어 착수 가능하며, 나머지는 표의 상태와 gate를 따른다
+- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`, `QUE-001` 완료. `DB-002`, `AI-001`은 선행 dependency가 충족되어 착수 가능하며, 나머지는 표의 상태와 gate를 따른다
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -45,7 +45,7 @@
 | FND-006 | CI에 integration·contract·E2E·security 단계 확장 | FND-003, FND-004, DB-003 | BLOCKED | [TESTING §11](./docs/TESTING.md)의 단계 순서가 CI에 존재하고 실패가 merge를 차단; live canary와 유료 LLM 평가는 blocking pipeline 밖에서 실행됨; 아직 구현되지 않은 suite는 빈 통과가 아니라 미등록으로 남고 해당 task 완료 시 추가하는 규칙이 문서화됨 |
 | OBS-001 | 구조화 logging과 correlation contract | FND-001 | DONE | request/run/job/source/query ID가 공통 schema로 전달됨; redaction unit test가 token·cookie·payload를 가림 |
 | CON-001 | API/job/domain contract package | FND-001 | DONE | answer request/response, error, collection job schema가 versioned runtime validation과 TS type을 한 source에서 제공; invalid fixture 거부 테스트 통과; **알 수 없는 요청 필드 거부가 명시적으로 설정됨**(framework 기본값이 아님, EXP-005 run 2); 검증 실패가 400으로 매핑됨; 미선언 응답 필드 제거가 회귀 테스트로 고정됨 |
-| TST-001 | 공통 fixture·fake clock/ID/provider harness | FND-002, CON-001 | READY | unit test가 network 없이 deterministic하게 실행; 승인된 runtime의 test runner에서 fake 주입이 성립; fixture provenance/redaction metadata schema가 검증됨 |
+| TST-001 | 공통 fixture·fake clock/ID/provider harness | FND-002, CON-001 | DONE | unit test가 network 없이 deterministic하게 실행; 승인된 runtime의 test runner에서 fake 주입이 성립; fixture provenance/redaction metadata schema가 검증됨 |
 
 ### FND-001 완료 증빙 (2026-09-01)
 
@@ -90,12 +90,22 @@
 
 - `@techpulse/api` test 2개 file·4개 test와 `@techpulse/worker` test 3개 file·7개 test가 통과했다. main gate와 병합된 API/worker runtime 경계에서 두 contract package의 연결을 확인했다.
 
+### TST-001 완료 증빙 (2026-09-01; merge `845f5de`)
+
+- `@techpulse/test-harness`에 `createTestHarness`, fake clock, deterministic ID/UUID generator, offline fake chat/embedding provider, fixture metadata validation 및 reset helper를 구현했다.
+- `pnpm --filter @techpulse/test-harness test`가 1개 test file·12개 test를 통과했다. 유효하지 않은 calendar date 거부, inherited prompt prototype fallback 방어, createTestHarness reset, fractional advance 거부 및 결정적 fake provider 동작을 검증한다.
+
+### Turborepo 루트 태스크 그래프 완료 증빙 (2026-09-01; merge `c5aa0b4`)
+
+- root `turbo.json`에 `build`, `typecheck`, `lint`, `format`, `test`의 dependency-aware task graph(`^build`, `^typecheck` 등)와 cache 설정을 구성했다.
+- root `package.json`의 `build`, `test`, `typecheck` 명령이 `turbo run`을 통해 10개 workspace package(tooling 포함)의 task dependency 순서대로 실행되며, `pnpm run static`과 `verify:static-failure`가 Turbo 하에서도 오류를 정확히 전파한다.
+
 ## 4. Database and persistence
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
-| DB-001 | Drizzle ORM/Drizzle Kit migration bootstrap | DEC-002, FND-004 | READY | [ADR-0009](./docs/adr/0009-drizzle-orm-migrations.md)에 도구 선택과 migration 전략이 기록됨; `packages/database`의 첫 Drizzle migration에 pgvector extension bootstrap을 포함하고, 빈 DB에 migration metadata와 schema를 적용·검증함 |
-| DB-002 | source, run, raw item schema | DB-001 | BLOCKED | source/run/raw/pipeline event table과 FK/unique/check가 migration으로 생성됨; 동일 raw revision 2회 insert가 한 logical row를 유지 |
+| DB-001 | Drizzle ORM/Drizzle Kit migration bootstrap | DEC-002, FND-004 | DONE | [ADR-0009](./docs/adr/0009-drizzle-orm-migrations.md)에 도구 선택과 migration 전략이 기록됨; `packages/database`의 첫 Drizzle migration에 pgvector extension bootstrap을 포함하고, 빈 DB에 migration metadata와 schema를 적용·검증함 |
+| DB-002 | source, run, raw item schema | DB-001 | READY | source/run/raw/pipeline event table과 FK/unique/check가 migration으로 생성됨; 동일 raw revision 2회 insert가 한 logical row를 유지 |
 | DB-003 | document, revision, topic, chunk, embedding schema | DB-002 | BLOCKED | revision 불변성, publish status, topic link, chunk ordinal, versioned embedding uniqueness가 실제 PostgreSQL integration test로 검증됨 |
 | DB-004 | metric observation, query run, citation schema | DB-003 | BLOCKED | metric 자연 키, query/citation FK와 query-run 내 citation key uniqueness가 검증됨; citation이 immutable revision/chunk를 가리킴 |
 | DB-005 | repository ports/adapters 구현 | DB-004, CON-001 | BLOCKED | domain port가 framework type에 의존하지 않음; transaction rollback, pagination, publish/read filter integration test 통과 |
@@ -115,7 +125,7 @@
 | COL-008 | 공통 article collector (RSS/HTTP) | COL-001 | BLOCKED | Chrome release notes와 react.dev/blog를 동일 adapter로 처리; feed 발견과 본문 추출 분리; 이미지·상표 미저장; 라이선스·귀속 metadata 저장 |
 | COL-009 | GitHub search 신호 collector | COL-001 | BLOCKED | 질의 문자열과 수집 시각을 스냅샷 메타로 기록해 재현 가능; 1,000건 상한과 분당 30건 준수; `incomplete_results` 처리; 별 히스토리 소급 재구성을 시도하지 않음 |
 | COL-010 | Hugging Face 지표 collector | COL-001 | BLOCKED | 지표만 저장하고 model card 본문을 수집하지 않음; rate limit 계층과 429 처리; namespace 개인정보 미보관 |
-| QUE-001 | scheduler와 versioned job delivery | DEC-004, FND-004, CON-001 | READY | source/schedule window 중복 job 없음; UTC schedule, retry/backoff, concurrency cap과 job schema validation integration test 통과; **EXP-005 미측정 항목 검증**: SIGKILL 후 재시작 복구, 다중 worker 경합과 backpressure, DB commit 후 job 유실에 대한 outbox 필요성 판단 |
+| QUE-001 | scheduler와 versioned job delivery | DEC-004, FND-004, CON-001 | DONE | source/schedule window 중복 job 없음; UTC schedule, retry/backoff, concurrency cap과 job schema validation integration test 통과; **EXP-005 미측정 항목 검증**: SIGKILL 후 재시작 복구, 다중 worker 경합과 backpressure, DB commit 후 job 유실에 대한 outbox 필요성 판단 |
 | PIPE-001 | collection run과 raw ingestion orchestration | COL-001, QUE-001, DB-002, OBS-001 | BLOCKED | raw 저장 후에만 후속 단계가 생성됨; worker kill/동일 job 재전달에서 raw logical duplicate 0; run counts와 오류 상태 조회 가능 |
 | PIPE-002 | deterministic normalization | PIPE-001, DB-003 | BLOCKED | JSON/HTML fixture가 공통 document/metric으로 변환; 게시일 unknown은 null; sanitizer가 script/hidden instruction을 제거; normalizer version 기록 |
 | PIPE-003 | exact dedup과 duplicate cluster | PIPE-002 | BLOCKED | external ID/canonical URL/hash 우선 규칙 통과; cross-source 원본을 삭제하지 않고 cluster link 생성; 동일 재처리 결과 불변 |
@@ -125,11 +135,23 @@
 | PIPE-006 | metric aggregation | COL-003, COL-004, COL-007, COL-009, COL-010, PIPE-003, DB-004 | BLOCKED | 8개 지표가 각각 고유 unit으로 저장되고 서로 합산되지 않음; `community_mentions`는 duplicate cluster 기준; `repo_attention`은 스냅샷 기준이며 수집 시작 이전 구간을 생성하지 않음; `query_signature`와 `is_incomplete`가 검색 기반 관측값에 기록됨; missing window를 0으로 오인하지 않는 테스트 통과 |
 | PIPE-007 | replay, dead-letter, source disable flow | PIPE-001, PIPE-005 | BLOCKED | run/raw/stage 범위 replay가 멱등; 영구 실패와 policy failure를 구분; disabled source는 새 job을 만들지 않음; 운영 audit event 기록 |
 
+### DB-001 완료 증빙 (2026-09-01; merge `6033926`)
+
+- `packages/database`에 Drizzle ORM, Node pg driver, Drizzle Kit 설정, pgvector bootstrap migration(`0000_bootstrap_pgvector.sql`), migration runner 및 lazy client factory를 구현했다. import 시점에 DB 연결이나 credential 로깅을 하지 않는다.
+- `pnpm --filter @techpulse/database test`가 4개 test file·15개 deterministic test를 통과했다(DB 미연결 시 자동 skip).
+- 실제 Docker Compose PostgreSQL 17 + pgvector 환경에서 migration 2회 적용 멱등성(동일 migration hash 유지, 중복 실행 없음)과 vector distance 쿼리를 포함한 16개 테스트가 모두 통과했다.
+
+### QUE-001 완료 증빙 (2026-09-01; merge `b7e1070`)
+
+- `apps/worker`에 BullMQ versioned collection scheduler, natural-key deduplication, Redis/in-memory source concurrency limiter, TTL 이전 자동 lease renewal, safe error handling 및 PostgreSQL delivery boundary callback을 구현했다.
+- `pnpm --filter @techpulse/worker test`가 5개 test file·19개 unit test를 통과했다(Redis 미연결 시 integration test skip).
+- 실제 Docker Compose Redis 환경에서 `redis.integration.test.ts` 4개 테스트가 모두 통과했다: 첫 acquire, concurrency cap-1 경합, lease release, BullMQ 중복 억제, child-process SIGKILL 후 bounded lease 복구를 검증했다.
+
 ## 6. Models, retrieval, and RAG
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
-| AI-001 | provider-neutral chat/embedding ports와 fakes | FND-001, CON-001, TST-001 | BLOCKED | domain/RAG가 provider SDK를 import하지 않음; timeout/usage/model metadata contract와 deterministic fake가 테스트됨 |
+| AI-001 | provider-neutral chat/embedding ports와 fakes | FND-001, CON-001, TST-001 | READY | domain/RAG가 provider SDK를 import하지 않음; timeout/usage/model metadata contract와 deterministic fake가 테스트됨 |
 | EVAL-001 | 골든 corpus와 질의 라벨 작성 | DEC-001, COL-002, COL-003 | BLOCKED | [EVAL_GOLDEN_SET](./docs/EVAL_GOLDEN_SET.md)의 38개 질문과 5개 주입 항목에 relevance·allowed·forbidden claim 라벨이 채워짐; 검토자와 검토일 기록; `insufficient_evidence`·`unsupported_intent` 기대값이 6개 이상 |
 | EXP-003 | model provider 평가 실행 | AI-001, EVAL-001, PIPE-005 | BLOCKED | [EXP-003](./docs/experiments/EXP-003-model-providers.md)의 최소 2개 후보 품질·latency·비용·policy scorecard와 raw measurement가 기록됨 |
 | DEC-007 | chat/embedding provider와 model 승인 | EXP-003 | GATE | ADR-0006이 Accepted/Rejected로 변경; model IDs, dimensions, budget, data policy가 SSOT/RAG/DATABASE에 반영됨 |
