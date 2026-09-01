@@ -11,6 +11,10 @@ export {
   rawItems,
   schema,
   sources,
+  duplicateClusters,
+  documents,
+  documentRevisions,
+  chunks,
   type DatabaseSchema,
   type RawItemInsert,
   upsertRawItem,
@@ -35,6 +39,7 @@ export {
 } from './migrate.js';
 export {
   createDocumentRepository,
+  createDuplicateClusterRepository,
   createSourceRepository,
   createCollectionRunRepository,
   createRawItemRepository,

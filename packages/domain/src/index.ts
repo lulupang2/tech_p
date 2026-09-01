@@ -46,6 +46,10 @@ export type {
   PipelineEventRecord,
   CreatePipelineEventInput,
   PipelineEventRepositoryPort,
+  DuplicateClusterRecord,
+  CreateDuplicateClusterInput,
+  UpdateDuplicateClusterInput,
+  DuplicateClusterRepositoryPort,
   DocumentRecord,
   DocumentRevisionRecord,
   ChunkRecord,
@@ -126,3 +130,28 @@ export type {
   NormalizationServicePort,
   NormalizationServiceOptions,
 } from './normalization.js';
+
+export {
+  DEDUPLICATION_ALGORITHM_VERSION,
+  DEDUPLICATION_STAGE,
+  normalizeCanonicalUrl,
+  tokenizeTextForFingerprint,
+  computeSimHash,
+  computeTitleFingerprint,
+  computeBodyFingerprint,
+  computeHammingDistance,
+  computeFingerprintSimilarity,
+  computeExactBodyHash,
+  createDeduplicationService,
+} from './deduplication.js';
+
+export type {
+  DeduplicationMatchReason,
+  DeduplicationMatch,
+  NearDuplicateCandidate,
+  DeduplicationTargetDoc,
+  ExistingDedupDocument,
+  DeduplicationResult,
+  DeduplicationServiceOptions,
+  DeduplicationServicePort,
+} from './deduplication.js';

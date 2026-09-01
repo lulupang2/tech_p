@@ -7,10 +7,10 @@ import {
 export const WORKER_JOB_SCHEMA_VERSION = 1 as const;
 export const COLLECTION_JOB_NAME = 'collection' as const;
 export const NORMALIZATION_JOB_NAME = 'normalization' as const;
+export const DEDUPLICATION_JOB_NAME = 'deduplication' as const;
 export const MAX_JOB_ATTEMPTS = 5 as const;
 export const RETRY_BACKOFF_BASE_MS = 1_000 as const;
 export const RETRY_BACKOFF_MAX_MS = 16_000 as const;
-
 type UnknownRecord = Record<string, unknown>;
 
 export interface ScheduleWindow {
@@ -33,6 +33,17 @@ export interface NormalizationJobData {
   readonly runId: string;
   readonly externalId: string;
   readonly payloadHash: string;
+}
+
+export interface DeduplicationJobData {
+  readonly schemaVersion: typeof WORKER_JOB_SCHEMA_VERSION;
+  readonly stage: 'deduplication';
+  readonly documentId: string;
+  readonly revisionId?: string | null;
+  readonly rawItemId?: string | null;
+  readonly sourceKey?: SourceKey | null;
+  readonly runId?: string | null;
+  readonly externalId?: string | null;
 }
 
 export class WorkerJobValidationError extends Error {
@@ -200,6 +211,76 @@ export function parseNormalizationJobData(value: unknown): NormalizationJobData 
     runId: value['runId'],
     externalId: value['externalId'],
     payloadHash: value['payloadHash'],
+  };
+}
+
+export function createDeduplicationJobData(input: {
+  readonly documentId: string;
+  readonly revisionId?: string | null;
+  readonly rawItemId?: string | null;
+  readonly sourceKey?: SourceKey | null;
+  readonly runId?: string | null;
+  readonly externalId?: string | null;
+}): DeduplicationJobData {
+  return {
+    schemaVersion: WORKER_JOB_SCHEMA_VERSION,
+    stage: 'deduplication',
+    documentId: input.documentId,
+    revisionId: input.revisionId ?? null,
+    rawItemId: input.rawItemId ?? null,
+    sourceKey: input.sourceKey ?? null,
+    runId: input.runId ?? null,
+    externalId: input.externalId ?? null,
+  };
+}
+
+export function parseDeduplicationJobData(value: unknown): DeduplicationJobData {
+  if (!isRecord(value)) {
+    throw new WorkerJobValidationError('Deduplication job data must be a non-null object');
+  }
+
+  assertOnlyKeys(
+    value,
+    [
+      'schemaVersion',
+      'stage',
+      'documentId',
+      'revisionId',
+      'rawItemId',
+      'sourceKey',
+      'runId',
+      'externalId',
+    ],
+    'deduplication job data',
+  );
+
+  if (value['schemaVersion'] !== WORKER_JOB_SCHEMA_VERSION) {
+    throw new WorkerJobValidationError(
+      `Invalid worker job schemaVersion: expected ${WORKER_JOB_SCHEMA_VERSION}, received ${String(value['schemaVersion'])}`,
+    );
+  }
+
+  if (value['stage'] !== 'deduplication') {
+    throw new WorkerJobValidationError(
+      `Invalid stage: expected 'deduplication', received '${String(value['stage'])}'`,
+    );
+  }
+
+  if (typeof value['documentId'] !== 'string' || value['documentId'].trim().length === 0) {
+    throw new WorkerJobValidationError('documentId must be a non-empty string');
+  }
+
+  return {
+    schemaVersion: WORKER_JOB_SCHEMA_VERSION,
+    stage: 'deduplication',
+    documentId: value['documentId'],
+    revisionId: typeof value['revisionId'] === 'string' ? value['revisionId'] : null,
+    rawItemId: typeof value['rawItemId'] === 'string' ? value['rawItemId'] : null,
+    sourceKey: (typeof value['sourceKey'] === 'string'
+      ? value['sourceKey']
+      : null) as SourceKey | null,
+    runId: typeof value['runId'] === 'string' ? value['runId'] : null,
+    externalId: typeof value['externalId'] === 'string' ? value['externalId'] : null,
   };
 }
 

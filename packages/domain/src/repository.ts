@@ -206,6 +206,38 @@ export interface SaveNormalizedDocumentResult {
   readonly isNewRevision: boolean;
 }
 
+export interface DuplicateClusterRecord {
+  readonly id: string;
+  readonly representativeDocumentId: string | null;
+  readonly algorithmVersion: string;
+  readonly confidence: number;
+  readonly createdAt: Date;
+}
+
+export interface CreateDuplicateClusterInput {
+  readonly id?: string;
+  readonly representativeDocumentId?: string | null;
+  readonly algorithmVersion?: string;
+  readonly confidence?: number;
+}
+
+export interface UpdateDuplicateClusterInput {
+  readonly representativeDocumentId?: string | null;
+  readonly confidence?: number;
+}
+
+export interface DuplicateClusterRepositoryPort {
+  readonly findById: (id: string) => Promise<DuplicateClusterRecord | null>;
+  readonly create: (input: CreateDuplicateClusterInput) => Promise<DuplicateClusterRecord>;
+  readonly update: (
+    id: string,
+    input: UpdateDuplicateClusterInput,
+  ) => Promise<DuplicateClusterRecord>;
+  readonly listByRepresentativeDocumentId: (
+    docId: string,
+  ) => Promise<readonly DuplicateClusterRecord[]>;
+}
+
 export interface DocumentRepositoryPort {
   readonly findById: (id: string) => Promise<DocumentRecord | null>;
   readonly findRevisionById: (revisionId: string) => Promise<DocumentRevisionRecord | null>;
@@ -213,6 +245,15 @@ export interface DocumentRepositoryPort {
     documentId: string,
     normalizedHash: string,
   ) => Promise<DocumentRevisionRecord | null>;
+  readonly findByCanonicalUrl?: (canonicalUrl: string) => Promise<DocumentRecord | null>;
+  readonly findRevisionByNormalizedHash?: (
+    normalizedHash: string,
+  ) => Promise<DocumentRevisionRecord | null>;
+  readonly assignDuplicateCluster: (
+    documentId: string,
+    duplicateClusterId: string | null,
+  ) => Promise<DocumentRecord>;
+  readonly listDocumentsByClusterId: (clusterId: string) => Promise<readonly DocumentRecord[]>;
   readonly saveNormalizedDocument: (
     input: SaveNormalizedDocumentInput,
   ) => Promise<SaveNormalizedDocumentResult>;
@@ -226,6 +267,8 @@ export interface DocumentRepositoryPort {
     revisionId: string,
     searchableAt?: Date,
   ) => Promise<DocumentRevisionRecord>;
+  readonly listAllDocuments?: () => Promise<readonly DocumentRecord[]>;
+  readonly listAllRevisions?: () => Promise<readonly DocumentRevisionRecord[]>;
 }
 
 export interface MetricObservationRecord {
