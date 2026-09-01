@@ -127,6 +127,63 @@ describe('COL-001 Collector Port & Source Policy Guard', () => {
       );
       assert.equal((sanitized.publisher as Record<string, unknown>)['email'], undefined);
     });
+    test('strips username, name, user_id, avatar_template from users_rust_lang payload', () => {
+      const discoursePolicy = SOURCE_POLICIES['users_rust_lang'];
+      const discoursePayload = {
+        id: 50001,
+        title: 'Async Rust Channels',
+        username: 'rust_ace',
+        name: 'Jane Rustacean',
+        user_id: 1234,
+        avatar_template: '/avatar/{size}.png',
+        post_stream: {
+          posts: [
+            {
+              id: 901,
+              username: 'rust_ace',
+              name: 'Jane Rustacean',
+              user_id: 1234,
+              avatar_template: '/avatar/{size}.png',
+              cooked: '<p>Content</p>',
+            },
+          ],
+        },
+        details: {
+          created_by: {
+            username: 'rust_ace',
+            name: 'Jane Rustacean',
+            user_id: 1234,
+            avatar_template: '/avatar/{size}.png',
+          },
+        },
+      };
+
+      const sanitized = stripPii(discoursePayload, discoursePolicy);
+      assert.equal(sanitized.id, 50001);
+      assert.equal(sanitized.title, 'Async Rust Channels');
+      assert.equal((sanitized as Record<string, unknown>)['username'], undefined);
+      assert.equal((sanitized as Record<string, unknown>)['name'], undefined);
+      assert.equal((sanitized as Record<string, unknown>)['user_id'], undefined);
+      assert.equal((sanitized as Record<string, unknown>)['avatar_template'], undefined);
+
+      const post0 = (sanitized.post_stream as Record<string, unknown>).posts as Array<
+        Record<string, unknown>
+      >;
+      assert.equal(post0[0]?.['username'], undefined);
+      assert.equal(post0[0]?.['name'], undefined);
+      assert.equal(post0[0]?.['user_id'], undefined);
+      assert.equal(post0[0]?.['avatar_template'], undefined);
+      assert.equal(post0[0]?.['cooked'], '<p>Content</p>');
+
+      const createdBy = (sanitized.details as Record<string, unknown>).created_by as Record<
+        string,
+        unknown
+      >;
+      assert.equal(createdBy?.['username'], undefined);
+      assert.equal(createdBy?.['name'], undefined);
+      assert.equal(createdBy?.['user_id'], undefined);
+      assert.equal(createdBy?.['avatar_template'], undefined);
+    });
   });
 
   describe('Opaque Cursor Encoding & Decoding', () => {
