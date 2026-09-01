@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`, `QUE-001` 완료. `DB-002`, `AI-001`은 선행 dependency가 충족되어 착수 가능하며, 나머지는 표의 상태와 gate를 따른다
+- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`, `QUE-001`, `AI-001` 완료. `DB-002`는 구현·review 완료 후 Docker PostgreSQL integration 검증 대기로 `READY`이며, 나머지는 표의 상태와 dependency gate를 따른다
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -105,7 +105,7 @@
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
 | DB-001 | Drizzle ORM/Drizzle Kit migration bootstrap | DEC-002, FND-004 | DONE | [ADR-0009](./docs/adr/0009-drizzle-orm-migrations.md)에 도구 선택과 migration 전략이 기록됨; `packages/database`의 첫 Drizzle migration에 pgvector extension bootstrap을 포함하고, 빈 DB에 migration metadata와 schema를 적용·검증함 |
-| DB-002 | source, run, raw item schema | DB-001 | READY | source/run/raw/pipeline event table과 FK/unique/check가 migration으로 생성됨; 동일 raw revision 2회 insert가 한 logical row를 유지 |
+| DB-002 | source, run, raw item schema | DB-001 | READY | source/run/raw/pipeline event table과 FK/unique/check가 migration으로 생성됨; 동일 raw revision 2회 insert가 한 logical row를 유지; 구현·review 완료, Docker PostgreSQL integration은 환경 blocker |
 | DB-003 | document, revision, topic, chunk, embedding schema | DB-002 | BLOCKED | revision 불변성, publish status, topic link, chunk ordinal, versioned embedding uniqueness가 실제 PostgreSQL integration test로 검증됨 |
 | DB-004 | metric observation, query run, citation schema | DB-003 | BLOCKED | metric 자연 키, query/citation FK와 query-run 내 citation key uniqueness가 검증됨; citation이 immutable revision/chunk를 가리킴 |
 | DB-005 | repository ports/adapters 구현 | DB-004, CON-001 | BLOCKED | domain port가 framework type에 의존하지 않음; transaction rollback, pagination, publish/read filter integration test 통과 |
@@ -147,11 +147,20 @@
 - `pnpm --filter @techpulse/worker test`가 5개 test file·19개 unit test를 통과했다(Redis 미연결 시 integration test skip).
 - 실제 Docker Compose Redis 환경에서 `redis.integration.test.ts` 4개 테스트가 모두 통과했다: 첫 acquire, concurrency cap-1 경합, lease release, BullMQ 중복 억제, child-process SIGKILL 후 bounded lease 복구를 검증했다.
 
+### DB-002 구현·검토 증빙 (2026-09-02; merge `bc2d449`)
+
+- `packages/database`에 source/run/raw/pipeline event schema와 `0001_complete_puck.sql`, `0002_mature_post.sql` migration을 추가했다. source/run 관계, raw revision natural key, FK/check 제약과 raw/pipeline event 불변성 트리거를 반영했다.
+- review fixes `9c5e4cb`, `f58fc94`가 raw/event immutability와 composite FK migration ordering을 보완했다. `pnpm run test`에서 database 17개 테스트가 통과했고, Docker PostgreSQL integration 2개는 환경 blocker로 skip됐다.
+
+### AI-001 구현·검토 증빙 (2026-09-02; merge `cc20a66`)
+
+- `packages/domain/src/ai.ts`에 provider-neutral chat/embedding port, typed model/usage/dimensions/latency metadata, timeout·abort·provider error contract와 deterministic fake를 구현했다.
+- review fix `c5eb8ee`가 실제 async latency, mid-flight AbortSignal/timeout 처리와 typed `provider_error` metadata를 보완했다. `pnpm run test`에서 domain 7개 테스트가 통과했고, provider SDK/network/API key 참조는 없다.
 ## 6. Models, retrieval, and RAG
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
-| AI-001 | provider-neutral chat/embedding ports와 fakes | FND-001, CON-001, TST-001 | READY | domain/RAG가 provider SDK를 import하지 않음; timeout/usage/model metadata contract와 deterministic fake가 테스트됨 |
+| AI-001 | provider-neutral chat/embedding ports와 fakes | FND-001, CON-001, TST-001 | READY | domain/RAG가 provider SDK를 import하지 않음; timeout/usage/model metadata contract와 deterministic fake가 테스트됨; 구현·review 완료 |
 | EVAL-001 | 골든 corpus와 질의 라벨 작성 | DEC-001, COL-002, COL-003 | BLOCKED | [EVAL_GOLDEN_SET](./docs/EVAL_GOLDEN_SET.md)의 38개 질문과 5개 주입 항목에 relevance·allowed·forbidden claim 라벨이 채워짐; 검토자와 검토일 기록; `insufficient_evidence`·`unsupported_intent` 기대값이 6개 이상 |
 | EXP-003 | model provider 평가 실행 | AI-001, EVAL-001, PIPE-005 | BLOCKED | [EXP-003](./docs/experiments/EXP-003-model-providers.md)의 최소 2개 후보 품질·latency·비용·policy scorecard와 raw measurement가 기록됨 |
 | DEC-007 | chat/embedding provider와 model 승인 | EXP-003 | GATE | ADR-0006이 Accepted/Rejected로 변경; model IDs, dimensions, budget, data policy가 SSOT/RAG/DATABASE에 반영됨 |
@@ -237,7 +246,7 @@ flowchart TD
 
 ### 구현 순서
 
-`CON-001`과 `OBS-001`은 각각 `5c2045d`와 `1d59cb3`에서 완료됐고, 현재 main gate 및 영향 범위 테스트로 확인됐다. `DB-001`은 Drizzle Kit migration 생성·검토, pgvector extension bootstrap과 빈 DB 적용을 먼저 수행한다. `QUE-001`은 `DEC-004`·`FND-004`·`CON-001`, `TST-001`은 `FND-002`·`CON-001`이 모두 `DONE`이므로 `DB-001`과 병렬 착수 가능하다. 이후에는 `DB-001` 완료 뒤 `DB-002`~`DB-006`으로 진행한다.
+`CON-001`과 `OBS-001`은 각각 `5c2045d`와 `1d59cb3`에서 완료됐고, 현재 main gate 및 영향 범위 테스트로 확인됐다. `DB-001`은 Drizzle Kit migration 생성·검토, pgvector extension bootstrap과 빈 DB 적용을 먼저 수행한다. `QUE-001`은 `DEC-004`·`FND-004`·`CON-001`, `TST-001`은 `FND-002`·`CON-001`이 모두 `DONE`이므로 `DB-001`과 병렬 착수 가능하다. `DB-002`와 `AI-001`은 구현·review를 완료했고, 이후에는 DB-002의 Docker PostgreSQL integration 환경 검증을 해소한 뒤 `DB-003` 및 `AI-002`로 진행한다.
 
 ### 아직 사람이 처리해야 할 것
 
