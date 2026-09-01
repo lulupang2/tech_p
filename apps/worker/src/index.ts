@@ -42,6 +42,7 @@ export {
   type EnqueueOptions,
   type EnqueueResult,
 } from './scheduler.js';
+export { createIngestionJobHandler, type IngestionJobHandlerOptions } from './ingestion.js';
 import { loadWorkerConfig, type Environment, type WorkerConfig } from './config.js';
 import {
   createStructuredLogger,
