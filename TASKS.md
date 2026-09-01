@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`, `FND-002`, `FND-004` 완료. production workspace skeleton·공통 tooling·로컬 dependency Compose가 존재한다
+- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005` 완료. production workspace skeleton·공통 tooling·CI 기본 pipeline·runtime config가 존재한다
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -39,9 +39,9 @@
 |---|---|---|---|---|
 | FND-001 | 승인된 workspace/app/package skeleton 생성 | DEC-002, DEC-003, DEC-004, DEC-005, DEC-006 | DONE | pnpm workspace에 `apps/{web,api,worker}`와 `packages/{contracts,domain,database,collectors,rag,observability}` 생성; **`web`은 SvelteKit, `api`는 Elysia on Node, `worker`는 Node 진입점**; web이 contracts만 import하고 database/collectors/rag를 import하지 않음; 각 package의 focused build·test 명령이 성공; application feature는 없음 |
 | FND-002 | 공통 TypeScript·format·lint·test 설정 | FND-001 | DONE | strict typecheck와 format/lint/test 명령이 workspace root 및 package filter에서 동작; intentional failing sample로 CI failure가 확인됨; merge `6967384`에서 검증 완료 |
-| FND-003 | CI 기본 pipeline | FND-002 | READY | clean checkout에서 install with lockfile → static → unit 순서가 성공; cache 없이도 재현 가능; branch protection용 필수 check 이름 문서화 |
+| FND-003 | CI 기본 pipeline | FND-002 | DONE | clean checkout에서 install with lockfile → static → unit 순서가 성공; cache 없이도 재현 가능; branch protection용 필수 check 이름 `CI / install → static → unit` 문서화; merge `31ac743` 및 foundation gate 검증 완료 |
 | FND-004 | 로컬 dependency Compose 구성 | FND-001, DEC-004 | DONE | PostgreSQL+pgvector와 승인 queue dependency가 healthcheck를 통과; persistent/ephemeral profile 구분; secret 기본값이 production에 안전하지 않음을 명시; merge `6967384`에 반영된 Compose 변경(`ebd1b5f`)에서 검증 완료 |
-| FND-005 | runtime config와 secret validation | FND-001 | READY | API/worker별 필요한 env schema가 startup에 검증됨; secret 값은 log/error에 없음; `.env.example`에는 placeholder만 있음 |
+| FND-005 | runtime config와 secret validation | FND-001 | DONE | API/worker별 필요한 env schema가 startup에 검증됨; secret 값은 log/error에 없음; `.env.example`에는 placeholder만 있음; merge `2d82c74` 및 API/worker static·config test 검증 완료 |
 | FND-006 | CI에 integration·contract·E2E·security 단계 확장 | FND-003, FND-004, DB-003 | BLOCKED | [TESTING §11](./docs/TESTING.md)의 단계 순서가 CI에 존재하고 실패가 merge를 차단; live canary와 유료 LLM 평가는 blocking pipeline 밖에서 실행됨; 아직 구현되지 않은 suite는 빈 통과가 아니라 미등록으로 남고 해당 task 완료 시 추가하는 규칙이 문서화됨 |
 | OBS-001 | 구조화 logging과 correlation contract | FND-001 | READY | request/run/job/source/query ID가 공통 schema로 전달됨; redaction unit test가 token·cookie·payload를 가림 |
 | CON-001 | API/job/domain contract package | FND-001 | READY | answer request/response, error, collection job schema가 versioned runtime validation과 TS type을 한 source에서 제공; invalid fixture 거부 테스트 통과; **알 수 없는 요청 필드 거부가 명시적으로 설정됨**(framework 기본값이 아님, EXP-005 run 2); 검증 실패가 400으로 매핑됨; 미선언 응답 필드 제거가 회귀 테스트로 고정됨 |
@@ -61,11 +61,20 @@
 - `pnpm --filter @techpulse/domain run static`이 package-filter typecheck·lint·format을 통과했고, `pnpm --filter @techpulse/domain test`가 1개 테스트를 통과했다.
 - `pnpm run verify:static-failure`가 의도적 `TS2322` 오류로 static 단계가 실패하는 것을 확인한 뒤 성공 종료했다.
 
+### FND-003 완료 증빙 (2026-09-01; merge `31ac743`)
+
+- `.github/workflows/ci.yml`의 필수 check `CI / install → static → unit`이 clean checkout에서 Node.js 22·pnpm 10.32.1로 `pnpm install --frozen-lockfile` → `pnpm run static` → `pnpm run test` 순서를 실행한다. cache action 없이 구성됐고 foundation gate에서 순서와 성공을 검증했다.
+
 ### FND-004 완료 증빙 (2026-09-01; merge `6967384`, Compose 변경 `ebd1b5f`)
 
 - `docker compose --profile persistent up -d --wait`에서 `pgvector/pgvector:pg17` PostgreSQL과 `redis:7.4-alpine` Redis가 모두 `healthy`가 됐고, 확인 후 `down`으로 정리했다.
 - `docker compose --profile ephemeral up -d --wait`에서 동일 두 dependency가 모두 `healthy`가 됐고, 확인 후 `down`으로 정리했다.
 - Compose 정의에서 persistent profile은 PostgreSQL·Redis named volume을 사용하고 ephemeral profile은 PostgreSQL `tmpfs`와 Redis 비영속 설정을 사용한다. 기본 credential은 `unsafe-local-development-only`로 명시되어 production용이 아님을 알린다.
+
+### FND-005 완료 증빙 (2026-09-01; merge `2d82c74`)
+
+- `pnpm --filter @techpulse/api static`과 `pnpm --filter @techpulse/worker static`이 typecheck·lint·format을 모두 통과했다.
+- `pnpm --filter @techpulse/api test`와 `pnpm --filter @techpulse/worker test`가 각각 2개 test file·4개 test를 통과했다. missing/invalid env, secret redaction, valid defaults를 검증하며 오류에 공급값을 노출하지 않는다.
 
 ## 4. Database and persistence
 
@@ -175,7 +184,7 @@ flowchart TD
 
 ## 10. 현재 상태와 다음 행동
 
-**구현 단계다.** `FND-001`, `FND-002`, `FND-004`가 2026-09-01에 완료됐고, `FND-003`은 이제 착수 가능하다. 후속 task 상태는 §3 표를 따른다.
+**구현 단계다.** `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`가 2026-09-01에 완료됐고, `OBS-001`과 `CON-001`이 현재 착수 가능하다. 후속 task 상태는 §3 표를 따른다.
 
 ### 확정된 기술 스택
 
@@ -192,7 +201,7 @@ flowchart TD
 
 ### 구현 순서
 
-`FND-003`은 `FND-002` 완료로, `FND-005`, `CON-001`, `OBS-001`은 `FND-001` 완료로 현재 병렬 착수 가능하다. `TST-001`은 `FND-002`와 `CON-001` 완료 뒤 착수한다. 그 뒤 `DB-001`~`DB-006`으로 진행한다.
+`OBS-001`과 `CON-001`은 `FND-001` 완료로 현재 병렬 착수 가능하다. `TST-001`은 `FND-002`와 `CON-001` 완료 뒤 착수한다. `FND-003`과 `FND-005`는 완료됐으며, 그 뒤 `DB-001`~`DB-006`으로 진행한다.
 
 ### 아직 사람이 처리해야 할 것
 
