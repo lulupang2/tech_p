@@ -64,3 +64,19 @@ export {
   type HtmlNode,
   type FetchLike,
 } from './article.js';
+export {
+  GitHubSearchCollector,
+  GitHubSearchError,
+  GitHubSearchAuthenticationError,
+  GitHubSearchRateLimitError,
+  GitHubSearchHttpError,
+  GITHUB_SEARCH_MAX_PER_PAGE,
+  GITHUB_SEARCH_MAX_RESULTS,
+  GITHUB_SEARCH_DEFAULT_RATE_INTERVAL_MS,
+  type GitHubSearchEndpoint,
+  type GitHubSearchRateLimit,
+  type GitHubSearchCursor,
+  type GitHubSearchCollectorConfig,
+  type GitHubSearchCollectorOptions,
+  type GitHubSearchApiResponse,
+} from './github-search.js';

@@ -117,7 +117,15 @@ export const SOURCE_POLICIES: Readonly<Record<SourceKey, SourcePolicy>> = {
     maxRedirects: 3,
     verbatimOnly: false,
     defaultLicenseId: null,
-    piiFieldsToStrip: ['owner', 'user', 'milestone.creator', 'assignee', 'assignees'],
+    piiFieldsToStrip: [
+      'owner',
+      'user',
+      'milestone.creator',
+      'assignee',
+      'assignees',
+      'author',
+      'assets.uploader',
+    ],
   },
   huggingface_hub: {
     sourceKey: 'huggingface_hub',
