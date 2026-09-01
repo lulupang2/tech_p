@@ -172,7 +172,7 @@ jobs:
 
       - name: Run live canary suite
         env:
-          TECHPULSE_LIVE_CANARY: "true"
+          TECHPULSE_LIVE_CANARY: 'true'
         run: pnpm --filter @techpulse/collectors run test
 
   rag-evaluation:
@@ -200,5 +200,5 @@ jobs:
 
       - name: Run RAG evaluation suite
         env:
-          TECHPULSE_EVAL_PAID_LLM: "true"
+          TECHPULSE_EVAL_PAID_LLM: 'true'
         run: pnpm --filter @techpulse/rag run test
