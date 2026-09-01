@@ -13,6 +13,10 @@ describe('DB-002 schema migration', () => {
     assert.match(migration, /timestamp with time zone DEFAULT now\(\)/u);
     assert.match(migration, /raw_items_run_id_collection_runs_id_fk/u);
     assert.match(migration, /pipeline_events_raw_item_id_raw_items_id_fk/u);
+    const followUp = readFileSync(resolve(DEFAULT_MIGRATIONS_FOLDER, '0002_mature_post.sql'), 'utf8');
+    assert.match(followUp, /raw_items_source_run_consistency_fk/u);
+    assert.match(followUp, /CREATE TRIGGER raw_items_immutable_mutation/u);
+    assert.match(followUp, /CREATE TRIGGER pipeline_events_append_only/u);
   });
 
   test('migration creates parent tables before foreign-key constraints', () => {

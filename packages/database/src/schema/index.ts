@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   boolean,
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -56,6 +57,7 @@ export const collectionRuns = pgTable(
     createdAt: utcTimestamp('created_at'),
   },
   (table) => [
+    unique('collection_runs_source_id_unique').on(table.sourceId, table.id),
     index('collection_runs_source_scheduled_idx').on(table.sourceId, table.scheduledAt),
     check(
       'collection_runs_status_valid',
@@ -75,9 +77,7 @@ export const rawItems = pgTable(
     sourceId: uuid('source_id')
       .notNull()
       .references(() => sources.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
-    runId: uuid('run_id')
-      .notNull()
-      .references(() => collectionRuns.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    runId: uuid('run_id').notNull(),
     externalId: text('external_id').notNull(),
     canonicalUrl: text('canonical_url').notNull(),
     payload: jsonb('payload').$type<unknown>().notNull(),
@@ -88,6 +88,11 @@ export const rawItems = pgTable(
     rightsMetadata: jsonb('rights_metadata').$type<Record<string, unknown>>().notNull().default({}),
   },
   (table) => [
+    foreignKey({
+      columns: [table.sourceId, table.runId],
+      foreignColumns: [collectionRuns.sourceId, collectionRuns.id],
+      name: 'raw_items_source_run_consistency_fk',
+    }).onDelete('restrict').onUpdate('cascade'),
     unique('raw_items_revision_identity_unique').on(table.sourceId, table.externalId, table.payloadHash),
     index('raw_items_source_external_idx').on(table.sourceId, table.externalId),
     index('raw_items_payload_hash_idx').on(table.payloadHash),

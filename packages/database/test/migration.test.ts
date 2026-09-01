@@ -25,9 +25,10 @@ describe('migration files and metadata structure', () => {
     };
 
     assert.ok(Array.isArray(journal.entries));
-    assert.equal(journal.entries.length, 2);
+    assert.equal(journal.entries.length, 3);
     assert.equal(journal.entries[0]?.tag, '0000_bootstrap_pgvector');
     assert.equal(journal.entries[1]?.tag, '0001_complete_puck');
+    assert.equal(journal.entries[2]?.tag, '0002_mature_post');
   });
 
   test('meta/0000_snapshot.json exists and defines schema snapshot', () => {
@@ -74,7 +75,7 @@ describeIntegration('PostgreSQL Compose real migration integration', () => {
         created_at: string;
       }>('SELECT id, hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id ASC;');
 
-      assert.equal(firstMigrations.rows.length, 2);
+      assert.equal(firstMigrations.rows.length, 3);
       const recordedHash = firstMigrations.rows[0]?.hash;
       assert.ok(recordedHash);
 
@@ -92,7 +93,7 @@ describeIntegration('PostgreSQL Compose real migration integration', () => {
         hash: string;
         created_at: string;
       }>('SELECT id, hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id ASC;');
-      assert.equal(secondMigrations.rows.length, 2);
+      assert.equal(secondMigrations.rows.length, 3);
       assert.equal(secondMigrations.rows[0]?.hash, recordedHash);
 
       // 9. Execute smoke pgvector query to verify vector calculations

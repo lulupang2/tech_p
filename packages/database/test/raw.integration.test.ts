@@ -3,6 +3,7 @@ import { describe, test } from 'vitest';
 import {
   collectionRuns,
   createDatabaseClient,
+  pipelineEvents,
   rawItems,
   sources,
   upsertRawItem,
@@ -65,6 +66,51 @@ describe('DB-002 PostgreSQL integration', () => {
             error instanceof Error &&
             error.cause instanceof Error &&
             error.cause.message.includes('raw_items_payload_hash_sha256'),
+        );
+        const [secondSource] = await client.db
+          .insert(sources)
+          .values({
+            key: `${sourceKey}-other`,
+            name: 'DB-002 second fixture',
+            kind: 'text',
+            baseUrl: 'https://other.example.com',
+            scheduleConfig: {},
+          })
+          .returning();
+        assert.ok(secondSource);
+        await assert.rejects(
+          client.db.insert(rawItems).values({ ...values, sourceId: secondSource.id }),
+          (error: unknown) =>
+            error instanceof Error &&
+            error.cause instanceof Error &&
+            error.cause.message.includes('raw_items_source_run_consistency_fk'),
+        );
+
+        const [event] = await client.db
+          .insert(pipelineEvents)
+          .values({
+            rawItemId: first.id,
+            stage: 'normalize',
+            processorVersion: 'test-1',
+            status: 'succeeded',
+          })
+          .returning();
+        assert.ok(event);
+        await assert.rejects(
+          client.pool.query('UPDATE raw_items SET payload = $1 WHERE id = $2', [{ changed: true }, first.id]),
+          /immutable/u,
+        );
+        await assert.rejects(
+          client.pool.query('DELETE FROM raw_items WHERE id = $1', [first.id]),
+          /immutable/u,
+        );
+        await assert.rejects(
+          client.pool.query('UPDATE pipeline_events SET status = $1 WHERE id = $2', ['failed', event.id]),
+          /immutable/u,
+        );
+        await assert.rejects(
+          client.pool.query('DELETE FROM pipeline_events WHERE id = $1', [event.id]),
+          /immutable/u,
         );
       } finally {
         await client.close();
