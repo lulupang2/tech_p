@@ -4,7 +4,7 @@ import {
   createStructuredLogger,
   type CorrelationContext,
   type StructuredEvent,
-} from '../../../packages/observability/src/index.js';
+} from '@techpulse/observability';
 import { node } from '@elysiajs/node';
 import { Elysia } from 'elysia';
 import { pathToFileURL } from 'node:url';

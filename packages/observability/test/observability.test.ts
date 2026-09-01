@@ -57,9 +57,36 @@ describe('correlation context', () => {
       { requestId: 'req-header', runId: 'run-header', sourceId: 'source-header' },
     );
   });
+  test('skips malformed higher-precedence headers for a valid fallback', () => {
+    assert.deepEqual(
+      correlationContextFromHeaders({
+        'x-run-id': 'run id with spaces',
+        'x-query-run-id': 'query-run-valid',
+      }),
+      { runId: 'query-run-valid' },
+    );
+  });
+
+  test('keeps valid higher-precedence headers over valid fallbacks', () => {
+    assert.deepEqual(
+      correlationContextFromHeaders({
+        'x-run-id': 'run-primary',
+        'x-query-run-id': 'query-run-secondary',
+      }),
+      { runId: 'run-primary' },
+    );
+  });
 });
 
 describe('structured events', () => {
+  test('adds a UTC RFC3339 timestamp by default', () => {
+    const event = createStructuredLogger({ service: 'api', sink: () => {} }).info('api.starting');
+    const timestamp = event.timestamp;
+
+    assert.ok(timestamp);
+    assert.match(timestamp, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u);
+    assert.equal(new Date(timestamp).toISOString(), timestamp);
+  });
   test('has a versioned JSON-safe shape and carries optional IDs', () => {
     const event = createStructuredEvent({
       event: 'api.request.received',

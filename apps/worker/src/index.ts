@@ -5,7 +5,7 @@ import {
   normalizeCorrelationContext,
   type CorrelationContext,
   type StructuredEvent,
-} from '../../../packages/observability/src/index.js';
+} from '@techpulse/observability';
 import { pathToFileURL } from 'node:url';
 
 export const workerLogger = createStructuredLogger({ service: 'worker' });

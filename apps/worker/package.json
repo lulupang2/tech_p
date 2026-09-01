@@ -12,6 +12,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@techpulse/observability": "workspace:*"
+  },
   "devDependencies": {
     "tsx": "^4.20.5"
   }

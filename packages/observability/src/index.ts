@@ -97,7 +97,7 @@ function headerValue(
   if ('get' in headers && typeof headers.get === 'function') {
     for (const name of names) {
       const value = headers.get(name);
-      if (value !== null) return value;
+      if (isValidCorrelationId(value)) return value;
     }
     return undefined;
   }
@@ -106,7 +106,7 @@ function headerValue(
   for (const name of names) {
     const lowerName = name.toLowerCase();
     const entry = entries.find(([key]) => key.toLowerCase() === lowerName);
-    if (entry?.[1] !== undefined) return entry[1];
+    if (entry && isValidCorrelationId(entry[1])) return entry[1];
   }
   return undefined;
 }
@@ -203,7 +203,7 @@ export class StructuredLogger {
   readonly service: string;
   readonly context: CorrelationContext;
   private readonly sink: LogSink;
-  private readonly clock: (() => string) | undefined;
+  private readonly clock: () => string;
 
   constructor(options: StructuredLoggerOptions) {
     const service = options.service.trim();
@@ -211,7 +211,7 @@ export class StructuredLogger {
     this.service = service;
     this.context = normalizeCorrelationContext(options.context);
     this.sink = options.sink ?? ((line) => console.log(line));
-    this.clock = options.clock;
+    this.clock = options.clock ?? (() => new Date().toISOString());
   }
 
   withContext(context: unknown): StructuredLogger {
@@ -219,7 +219,7 @@ export class StructuredLogger {
       service: this.service,
       context: mergeCorrelationContext(this.context, context),
       sink: this.sink,
-      ...(this.clock === undefined ? {} : { clock: this.clock }),
+      clock: this.clock,
     });
   }
 
@@ -230,7 +230,7 @@ export class StructuredLogger {
       level,
       context: this.context,
       fields,
-      ...(this.clock === undefined ? {} : { timestamp: this.clock() }),
+      timestamp: this.clock(),
     });
     this.sink(serializeStructuredEvent(structuredEvent), structuredEvent);
     return structuredEvent;
