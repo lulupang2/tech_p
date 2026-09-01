@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`, `QUE-001`, `AI-001` 완료. `DB-002`는 구현·review 완료 후 Docker PostgreSQL integration 검증 대기로 `READY`이며, 나머지는 표의 상태와 dependency gate를 따른다
+- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`, `QUE-001`, `AI-001`, `DEC-008` 완료. `DB-002`는 구현·review 완료 후 Docker PostgreSQL integration 검증 대기로 `READY`이며, 나머지는 표의 상태와 dependency gate를 따른다
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -31,6 +31,7 @@
 | DEC-004 | queue/scheduler 승인 | EXP-005 | DONE | ADR-0003이 Accepted(2026-09-01); **Redis + BullMQ**를 전달·예약 계층으로 확정, business completion은 PostgreSQL에 기록; job은 멱등해야 하며 자연 키 unique + upsert로 확보; source별 상이한 주기·concurrency 요구 반영; SSOT §3.3·ARCHITECTURE §2·§6 동기화 완료 |
 | DEC-005 | frontend 승인 | - | DONE | **SvelteKit 확정.** ADR-0005(Next.js)가 Accepted됐으나 같은 날 [ADR-0008](./docs/adr/0008-frontend-sveltekit.md)로 대체되어 `Superseded`; RAG·DB·수집 로직은 backend API에만 두고 server 기능은 UI 전달과 최소 BFF로 제한; SSOT §3.3·ARCHITECTURE §6 동기화 완료. frontend 코드가 없는 시점의 변경이라 마이그레이션 비용 0 |
 | DEC-006 | repository layout/package manager/orchestration 승인 | - | DONE | [ADR-0010](./docs/adr/0010-turborepo-monorepo.md)이 Accepted(2026-09-01); pnpm workspaces + Turborepo와 승인 package 경계·의존 방향이 SSOT §3.3·ARCHITECTURE §6·§7에 반영됨. [ADR-0007](./docs/adr/0007-repository-layout.md)는 Superseded |
+| DEC-008 | database hosting과 serverless connection 전략 승인 | - | DONE | 사용자가 Neon serverless PostgreSQL 전환을 명시 승인했고 [ADR-0011](./docs/adr/0011-neon-serverless-postgresql.md)이 Accepted(2026-09-02); Drizzle/Drizzle Kit·PostgreSQL/pgvector를 유지하면서 pooled runtime endpoint, direct migration endpoint, credential 분리, pooler session 제약과 local Docker fallback을 SSOT·ARCHITECTURE·DATABASE·SECURITY에 반영 |
 | EXP-005 | foundation stack spike 실행 | - | DONE | [EXP-005](./docs/experiments/EXP-005-foundation-spike.md) 5개 run 측정 완료(2026-09-01); Playwright는 Bun 실패·Node 통과, 계약 스키마 단일 소스·BullMQ 멱등성·pgvector·Vitest·Testcontainers·pnpm focused test 모두 통과; 미측정 항목이 구현 task로 이관됨; spike code 폐기 범위 명시 |
 
 ## 3. Project foundation
@@ -137,7 +138,7 @@
 
 ### DB-001 완료 증빙 (2026-09-01; merge `6033926`)
 
-- `packages/database`에 Drizzle ORM, Node pg driver, Drizzle Kit 설정, pgvector bootstrap migration(`0000_bootstrap_pgvector.sql`), migration runner 및 lazy client factory를 구현했다. import 시점에 DB 연결이나 credential 로깅을 하지 않는다.
+- `packages/database`에 Drizzle ORM, Neon serverless adapter, Drizzle Kit 설정, pgvector bootstrap migration(`0000_bootstrap_pgvector.sql`), migration runner 및 lazy client factory를 구현했다. import 시점에 DB 연결이나 credential 로깅을 하지 않는다.
 - `pnpm --filter @techpulse/database test`가 4개 test file·15개 deterministic test를 통과했다(DB 미연결 시 자동 skip).
 - 실제 Docker Compose PostgreSQL 17 + pgvector 환경에서 migration 2회 적용 멱등성(동일 migration hash 유지, 중복 실행 없음)과 vector distance 쿼리를 포함한 16개 테스트가 모두 통과했다.
 
@@ -152,9 +153,14 @@
 - `packages/database`에 source/run/raw/pipeline event schema와 `0001_complete_puck.sql`, `0002_mature_post.sql` migration을 추가했다. source/run 관계, raw revision natural key, FK/check 제약과 raw/pipeline event 불변성 트리거를 반영했다.
 - review fixes `9c5e4cb`, `f58fc94`가 raw/event immutability와 composite FK migration ordering을 보완했다. `pnpm run test`에서 database 17개 테스트가 통과했고, Docker PostgreSQL integration 2개는 환경 blocker로 skip됐다.
 
-### AI-001 구현·검토 증빙 (2026-09-02; merge `cc20a66`)
+### DEC-008 완료 증빙 (2026-09-02; merge `43cb706` 및 Neon 변경 통합)
 
-- `packages/domain/src/ai.ts`에 provider-neutral chat/embedding port, typed model/usage/dimensions/latency metadata, timeout·abort·provider error contract와 deterministic fake를 구현했다.
+- `packages/database`의 runtime client, migration runner, vector schema helper가 `@neondatabase/serverless`와 `drizzle-orm/neon-serverless`를 사용하도록 전환됐다. `DATABASE_URL`은 runtime pooled endpoint, `DATABASE_URL_DIRECT`는 Drizzle Kit migration endpoint로 문서화했고 `.env.example`에는 placeholder만 둔다.
+- Neon adapter focused test 3개 file·13개 test가 통과했고, adapter review는 API/lifecycle/credential redaction에 Critical/High/Medium/Low 이슈 없음으로 PASS했다.
+- `pnpm install --frozen-lockfile`, `pnpm run static`(typecheck·ESLint·Prettier), `pnpm run test`(10개 workspace, 10개 성공)이 Neon 변경 통합 후 통과했다. database는 17개 테스트 통과·2개 PostgreSQL integration skip, worker는 19개 테스트 통과·4개 Redis integration skip이다.
+- 현재 실행 환경에는 `DATABASE_URL`·`DATABASE_URL_DIRECT`가 없어 live Neon 연결 smoke는 실행하지 않았다. Docker PostgreSQL integration도 Docker Linux engine blocker로 실행하지 않았다.
+
+### AI-001 완료 증빙 (2026-09-02; merge `cc20a66`)
 - review fix `c5eb8ee`가 실제 async latency, mid-flight AbortSignal/timeout 처리와 typed `provider_error` metadata를 보완했다. `pnpm run test`에서 domain 7개 테스트가 통과했고, provider SDK/network/API key 참조는 없다.
 ## 6. Models, retrieval, and RAG
 
