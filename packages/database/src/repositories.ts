@@ -1,4 +1,4 @@
-import { eq, and, desc, count } from 'drizzle-orm';
+import { eq, and, desc, count, sql } from 'drizzle-orm';
 import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import type {
   DocumentRepositoryPort,
@@ -6,6 +6,7 @@ import type {
   CollectionRunRepositoryPort,
   RawItemRepositoryPort,
   PipelineEventRepositoryPort,
+  MetricObservationRepositoryPort,
   DocumentRecord,
   DocumentRevisionRecord,
   ChunkRecord,
@@ -21,6 +22,11 @@ import type {
   PipelineEventStatus,
   CreatePipelineEventInput,
   DocumentFilter,
+  SaveNormalizedDocumentInput,
+  SaveNormalizedDocumentResult,
+  MetricObservationRecord,
+  InsertMetricObservationInput,
+  MetricObservationFilter,
   PaginationParams,
   PaginatedResult,
 } from '@techpulse/domain';
@@ -32,6 +38,7 @@ import {
   collectionRuns,
   rawItems,
   pipelineEvents,
+  metricObservations,
   type schema,
 } from './schema/index.js';
 
@@ -51,7 +58,6 @@ export function createDocumentRepository(db: NeonDatabase<typeof schema>): Docum
         createdAt: row.createdAt,
       };
     },
-
     async findRevisionById(revisionId: string): Promise<DocumentRevisionRecord | null> {
       const row = await db.query.documentRevisions.findFirst({
         where: eq(documentRevisions.id, revisionId),
@@ -73,6 +79,158 @@ export function createDocumentRepository(db: NeonDatabase<typeof schema>): Docum
         searchableAt: row.searchableAt,
         createdAt: row.createdAt,
       };
+    },
+
+    async findRevisionByHash(
+      documentId: string,
+      normalizedHash: string,
+    ): Promise<DocumentRevisionRecord | null> {
+      const row = await db.query.documentRevisions.findFirst({
+        where: and(
+          eq(documentRevisions.documentId, documentId),
+          eq(documentRevisions.normalizedHash, normalizedHash),
+        ),
+      });
+      if (!row) return null;
+      return {
+        id: row.id,
+        documentId: row.documentId,
+        rawItemId: row.rawItemId,
+        title: row.title,
+        bodyText: row.bodyText,
+        author: row.author,
+        language: row.language,
+        publishedAt: row.publishedAt,
+        licenseId: row.licenseId,
+        normalizedHash: row.normalizedHash,
+        normalizerVersion: row.normalizerVersion,
+        status: row.status,
+        searchableAt: row.searchableAt,
+        createdAt: row.createdAt,
+      };
+    },
+
+    async saveNormalizedDocument(
+      input: SaveNormalizedDocumentInput,
+    ): Promise<SaveNormalizedDocumentResult> {
+      return await db.transaction(async (tx) => {
+        let docRow: typeof documents.$inferSelect | undefined;
+
+        if (input.canonicalUrl) {
+          docRow = await tx.query.documents.findFirst({
+            where: eq(documents.canonicalUrl, input.canonicalUrl),
+          });
+        }
+
+        if (!docRow) {
+          const [createdDoc] = await tx
+            .insert(documents)
+            .values({
+              artifactType: input.artifactType,
+              canonicalUrl: input.canonicalUrl ?? null,
+            })
+            .returning();
+          docRow = createdDoc;
+        }
+
+        if (!docRow) {
+          throw new Error('Failed to create or find document');
+        }
+
+        const existingRev = await tx.query.documentRevisions.findFirst({
+          where: and(
+            eq(documentRevisions.documentId, docRow.id),
+            eq(documentRevisions.normalizedHash, input.normalizedHash),
+          ),
+        });
+
+        if (existingRev) {
+          return {
+            document: {
+              id: docRow.id,
+              artifactType: docRow.artifactType,
+              canonicalUrl: docRow.canonicalUrl,
+              duplicateClusterId: docRow.duplicateClusterId,
+              currentRevisionId: docRow.currentRevisionId,
+              createdAt: docRow.createdAt,
+            },
+            revision: {
+              id: existingRev.id,
+              documentId: existingRev.documentId,
+              rawItemId: existingRev.rawItemId,
+              title: existingRev.title,
+              bodyText: existingRev.bodyText,
+              author: existingRev.author,
+              language: existingRev.language,
+              publishedAt: existingRev.publishedAt,
+              licenseId: existingRev.licenseId,
+              normalizedHash: existingRev.normalizedHash,
+              normalizerVersion: existingRev.normalizerVersion,
+              status: existingRev.status,
+              searchableAt: existingRev.searchableAt,
+              createdAt: existingRev.createdAt,
+            },
+            isNewRevision: false,
+          };
+        }
+
+        const [newRev] = await tx
+          .insert(documentRevisions)
+          .values({
+            documentId: docRow.id,
+            rawItemId: input.rawItemId,
+            title: input.title,
+            bodyText: input.bodyText,
+            author: input.author,
+            language: input.language ?? 'en',
+            publishedAt: input.publishedAt,
+            licenseId: input.licenseId,
+            normalizedHash: input.normalizedHash,
+            normalizerVersion: input.normalizerVersion,
+            status: input.status ?? 'pending',
+          })
+          .returning();
+
+        if (!newRev) {
+          throw new Error('Failed to insert document revision');
+        }
+
+        if (!docRow.currentRevisionId) {
+          await tx
+            .update(documents)
+            .set({ currentRevisionId: newRev.id })
+            .where(eq(documents.id, docRow.id));
+          docRow.currentRevisionId = newRev.id;
+        }
+
+        return {
+          document: {
+            id: docRow.id,
+            artifactType: docRow.artifactType,
+            canonicalUrl: docRow.canonicalUrl,
+            duplicateClusterId: docRow.duplicateClusterId,
+            currentRevisionId: docRow.currentRevisionId,
+            createdAt: docRow.createdAt,
+          },
+          revision: {
+            id: newRev.id,
+            documentId: newRev.documentId,
+            rawItemId: newRev.rawItemId,
+            title: newRev.title,
+            bodyText: newRev.bodyText,
+            author: newRev.author,
+            language: newRev.language,
+            publishedAt: newRev.publishedAt,
+            licenseId: newRev.licenseId,
+            normalizedHash: newRev.normalizedHash,
+            normalizerVersion: newRev.normalizerVersion,
+            status: newRev.status,
+            searchableAt: newRev.searchableAt,
+            createdAt: newRev.createdAt,
+          },
+          isNewRevision: true,
+        };
+      });
     },
 
     async listDocuments(
@@ -522,6 +680,145 @@ export function createPipelineEventRepository(
         errorCode: row.errorCode,
         occurredAt: row.occurredAt,
       }));
+    },
+  };
+}
+
+export function createMetricObservationRepository(
+  db: NeonDatabase<typeof schema>,
+): MetricObservationRepositoryPort {
+  return {
+    async upsert(input: InsertMetricObservationInput): Promise<MetricObservationRecord> {
+      const row = await db.transaction(async (tx) => {
+        const [inserted] = await tx
+          .insert(metricObservations)
+          .values({
+            ...(input.id ? { id: input.id } : {}),
+            sourceId: input.sourceId,
+            topicId: input.topicId ?? null,
+            subjectKey: input.subjectKey,
+            metricType: input.metricType,
+            windowStart: input.windowStart,
+            windowEnd: input.windowEnd,
+            value: input.value,
+            unit: input.unit,
+            collectedAt: input.collectedAt ?? new Date(),
+            rawItemId: input.rawItemId,
+            querySignature: input.querySignature,
+            isIncomplete: input.isIncomplete,
+          })
+          .onConflictDoNothing({
+            target: [
+              metricObservations.sourceId,
+              metricObservations.subjectKey,
+              metricObservations.metricType,
+              metricObservations.windowStart,
+              metricObservations.windowEnd,
+              metricObservations.rawItemId,
+            ],
+          })
+          .returning();
+
+        if (inserted) return inserted;
+
+        const existing = await tx.query.metricObservations.findFirst({
+          where: and(
+            eq(metricObservations.sourceId, input.sourceId),
+            eq(metricObservations.subjectKey, input.subjectKey),
+            eq(metricObservations.metricType, input.metricType),
+            eq(metricObservations.windowStart, input.windowStart),
+            eq(metricObservations.windowEnd, input.windowEnd),
+            input.rawItemId
+              ? eq(metricObservations.rawItemId, input.rawItemId)
+              : sql`${metricObservations.rawItemId} IS NULL`,
+          ),
+        });
+
+        if (!existing) {
+          throw new Error('Metric observation conflict resolution failed');
+        }
+        return existing;
+      });
+
+      return {
+        id: row.id,
+        sourceId: row.sourceId,
+        topicId: row.topicId,
+        subjectKey: row.subjectKey,
+        metricType: row.metricType,
+        windowStart: row.windowStart,
+        windowEnd: row.windowEnd,
+        value: row.value,
+        unit: row.unit,
+        collectedAt: row.collectedAt,
+        rawItemId: row.rawItemId,
+        querySignature: row.querySignature,
+        isIncomplete: row.isIncomplete,
+      };
+    },
+
+    async upsertBatch(
+      inputs: readonly InsertMetricObservationInput[],
+    ): Promise<readonly MetricObservationRecord[]> {
+      const results: MetricObservationRecord[] = [];
+      for (const input of inputs) {
+        results.push(await this.upsert(input));
+      }
+      return results;
+    },
+
+    async listBySubject(
+      subjectKey: string,
+      filter: MetricObservationFilter = {},
+      pagination: PaginationParams = {},
+    ): Promise<PaginatedResult<MetricObservationRecord>> {
+      const limit = Math.max(1, Math.min(pagination.limit ?? 20, 100));
+      const offset = Math.max(0, pagination.offset ?? 0);
+
+      const conditions = [eq(metricObservations.subjectKey, subjectKey)];
+      if (filter.sourceId) conditions.push(eq(metricObservations.sourceId, filter.sourceId));
+      if (filter.topicId) conditions.push(eq(metricObservations.topicId, filter.topicId));
+      if (filter.metricType) conditions.push(eq(metricObservations.metricType, filter.metricType));
+      if (filter.windowStartAfter)
+        conditions.push(sql`${metricObservations.windowStart} >= ${filter.windowStartAfter}`);
+      if (filter.windowEndBefore)
+        conditions.push(sql`${metricObservations.windowEnd} <= ${filter.windowEndBefore}`);
+
+      const whereClause = and(...conditions);
+
+      const [totalRow] = await db
+        .select({ total: count() })
+        .from(metricObservations)
+        .where(whereClause);
+
+      const rows = await db
+        .select()
+        .from(metricObservations)
+        .where(whereClause)
+        .orderBy(desc(metricObservations.windowStart))
+        .limit(limit)
+        .offset(offset);
+
+      return {
+        items: rows.map((r) => ({
+          id: r.id,
+          sourceId: r.sourceId,
+          topicId: r.topicId,
+          subjectKey: r.subjectKey,
+          metricType: r.metricType,
+          windowStart: r.windowStart,
+          windowEnd: r.windowEnd,
+          value: r.value,
+          unit: r.unit,
+          collectedAt: r.collectedAt,
+          rawItemId: r.rawItemId,
+          querySignature: r.querySignature,
+          isIncomplete: r.isIncomplete,
+        })),
+        total: Number(totalRow?.total ?? 0),
+        limit,
+        offset,
+      };
     },
   };
 }

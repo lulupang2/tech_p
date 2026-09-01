@@ -185,10 +185,37 @@ export interface DocumentFilter {
   readonly publishedAfter?: Date;
   readonly publishedBefore?: Date;
 }
+export interface SaveNormalizedDocumentInput {
+  readonly artifactType: string;
+  readonly canonicalUrl?: string | null;
+  readonly title: string;
+  readonly bodyText: string;
+  readonly author?: string | null;
+  readonly language?: string;
+  readonly publishedAt?: Date | null;
+  readonly licenseId?: string | null;
+  readonly normalizedHash: string;
+  readonly normalizerVersion: string;
+  readonly rawItemId?: string | null;
+  readonly status?: string;
+}
+
+export interface SaveNormalizedDocumentResult {
+  readonly document: DocumentRecord;
+  readonly revision: DocumentRevisionRecord;
+  readonly isNewRevision: boolean;
+}
 
 export interface DocumentRepositoryPort {
   readonly findById: (id: string) => Promise<DocumentRecord | null>;
   readonly findRevisionById: (revisionId: string) => Promise<DocumentRevisionRecord | null>;
+  readonly findRevisionByHash: (
+    documentId: string,
+    normalizedHash: string,
+  ) => Promise<DocumentRevisionRecord | null>;
+  readonly saveNormalizedDocument: (
+    input: SaveNormalizedDocumentInput,
+  ) => Promise<SaveNormalizedDocumentResult>;
   readonly listDocuments: (
     filter: DocumentFilter,
     pagination?: PaginationParams,
@@ -201,6 +228,58 @@ export interface DocumentRepositoryPort {
   ) => Promise<DocumentRevisionRecord>;
 }
 
+export interface MetricObservationRecord {
+  readonly id: string;
+  readonly sourceId: string;
+  readonly topicId: string | null;
+  readonly subjectKey: string;
+  readonly metricType: string;
+  readonly windowStart: Date;
+  readonly windowEnd: Date;
+  readonly value: number;
+  readonly unit: string;
+  readonly collectedAt: Date;
+  readonly rawItemId: string | null;
+  readonly querySignature: string | null;
+  readonly isIncomplete: boolean;
+}
+
+export interface InsertMetricObservationInput {
+  readonly id?: string;
+  readonly sourceId: string;
+  readonly topicId?: string | null;
+  readonly subjectKey: string;
+  readonly metricType: string;
+  readonly windowStart: Date;
+  readonly windowEnd: Date;
+  readonly value: number;
+  readonly unit: string;
+  readonly collectedAt?: Date;
+  readonly rawItemId?: string | null;
+  readonly querySignature?: string | null;
+  readonly isIncomplete?: boolean;
+}
+
+export interface MetricObservationFilter {
+  readonly sourceId?: string;
+  readonly topicId?: string;
+  readonly subjectKey?: string;
+  readonly metricType?: string;
+  readonly windowStartAfter?: Date;
+  readonly windowEndBefore?: Date;
+}
+
+export interface MetricObservationRepositoryPort {
+  readonly upsert: (input: InsertMetricObservationInput) => Promise<MetricObservationRecord>;
+  readonly upsertBatch: (
+    inputs: readonly InsertMetricObservationInput[],
+  ) => Promise<readonly MetricObservationRecord[]>;
+  readonly listBySubject: (
+    subjectKey: string,
+    filter?: MetricObservationFilter,
+    pagination?: PaginationParams,
+  ) => Promise<PaginatedResult<MetricObservationRecord>>;
+}
 export interface SourceRepositoryPort {
   readonly findByKey: (key: string) => Promise<SourceRecord | null>;
   readonly listEnabled: () => Promise<readonly SourceRecord[]>;

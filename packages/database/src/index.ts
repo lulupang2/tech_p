@@ -39,5 +39,6 @@ export {
   createCollectionRunRepository,
   createRawItemRepository,
   createPipelineEventRepository,
+  createMetricObservationRepository,
 } from './repositories.js';
 export { createSearchService } from './search.js';
