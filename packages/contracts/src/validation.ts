@@ -8,11 +8,15 @@ import {
   CollectionJobPayloadSchema,
   ReplayJobPayloadSchema,
   ErrorEnvelopeSchema,
+  HealthLiveResponseSchema,
+  HealthReadyResponseSchema,
   type AnswerRequest,
   type AnswerResponse,
   type CollectionJobPayload,
   type ReplayJobPayload,
   type ErrorEnvelope,
+  type HealthLiveResponse,
+  type HealthReadyResponse,
   type ValidationIssue,
 } from './schemas.js';
 
@@ -50,6 +54,8 @@ const answerResponseValidator = TypeCompiler.Compile(AnswerResponseSchema);
 const collectionJobPayloadValidator = TypeCompiler.Compile(CollectionJobPayloadSchema);
 const replayJobPayloadValidator = TypeCompiler.Compile(ReplayJobPayloadSchema);
 const errorEnvelopeValidator = TypeCompiler.Compile(ErrorEnvelopeSchema);
+const healthLiveResponseValidator = TypeCompiler.Compile(HealthLiveResponseSchema);
+const healthReadyResponseValidator = TypeCompiler.Compile(HealthReadyResponseSchema);
 
 function pathFromPointer(pointer: string | undefined): string {
   if (!pointer) return '';
@@ -150,6 +156,22 @@ export function parseReplayJobPayload(value: unknown): ReplayJobPayload {
 
 export function safeParseReplayJobPayload(value: unknown): SafeParseResult<ReplayJobPayload> {
   return safeParseSchema<ReplayJobPayload>(replayJobPayloadValidator, value);
+}
+
+export function parseHealthLiveResponse(value: unknown): HealthLiveResponse {
+  return parseSchema<HealthLiveResponse>(healthLiveResponseValidator, value);
+}
+
+export function safeParseHealthLiveResponse(value: unknown): SafeParseResult<HealthLiveResponse> {
+  return safeParseSchema<HealthLiveResponse>(healthLiveResponseValidator, value);
+}
+
+export function parseHealthReadyResponse(value: unknown): HealthReadyResponse {
+  return parseSchema<HealthReadyResponse>(healthReadyResponseValidator, value);
+}
+
+export function safeParseHealthReadyResponse(value: unknown): SafeParseResult<HealthReadyResponse> {
+  return safeParseSchema<HealthReadyResponse>(healthReadyResponseValidator, value);
 }
 
 export type BadRequestValidationResponse = {

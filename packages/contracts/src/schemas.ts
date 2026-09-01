@@ -183,6 +183,7 @@ export const ErrorCodeSchema = Type.Union([
   Type.Literal('IDEMPOTENCY_CONFLICT'),
   Type.Literal('REQUEST_TOO_LARGE'),
   Type.Literal('RATE_LIMITED'),
+  Type.Literal('INTERNAL_SERVER_ERROR'),
   Type.Literal('MODEL_PROVIDER_ERROR'),
   Type.Literal('DEPENDENCY_UNAVAILABLE'),
   Type.Literal('ANSWER_TIMEOUT'),
@@ -228,3 +229,37 @@ export const CollectionJobPayloadSchema = Type.Object(
   { additionalProperties: false },
 );
 export type CollectionJobPayload = Static<typeof CollectionJobPayloadSchema>;
+
+export const HealthStatusSchema = Type.Union([
+  Type.Literal('ok'),
+  Type.Literal('degraded'),
+  Type.Literal('unavailable'),
+]);
+export type HealthStatus = Static<typeof HealthStatusSchema>;
+
+export const HealthLiveResponseSchema = Type.Object(
+  {
+    status: Type.Literal('ok'),
+    timestamp: dateTime,
+  },
+  { additionalProperties: false },
+);
+export type HealthLiveResponse = Static<typeof HealthLiveResponseSchema>;
+
+export const HealthReadyDependenciesSchema = Type.Object(
+  {
+    database: HealthStatusSchema,
+  },
+  { additionalProperties: false },
+);
+export type HealthReadyDependencies = Static<typeof HealthReadyDependenciesSchema>;
+
+export const HealthReadyResponseSchema = Type.Object(
+  {
+    status: HealthStatusSchema,
+    timestamp: dateTime,
+    dependencies: HealthReadyDependenciesSchema,
+  },
+  { additionalProperties: false },
+);
+export type HealthReadyResponse = Static<typeof HealthReadyResponseSchema>;

@@ -194,7 +194,7 @@
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
-| API-001 | API shell, error model, health/readiness | DEC-002, CON-001, DB-005, FND-005, OBS-001 | BLOCKED | versioned JSON/error contract와 request ID; liveness는 dependency와 무관, readiness는 DB 상태 반영; stack/provider error 비노출 |
+| API-001 | API shell, error model, health/readiness | DEC-002, CON-001, DB-005, FND-005, OBS-001 | DONE | versioned JSON/error contract와 request ID; liveness는 dependency와 무관, readiness는 DB 상태 반영; stack/provider error 비노출 |
 | API-002 | source/topic endpoints | API-001, COL-001, DB-005 | BLOCKED | source freshness를 secret 없이 반환; topic search cursor/limit validation; OpenAPI contract test 통과 |
 | API-003 | synchronous answer endpoint | API-001, RAG-005, RAG-006 | BLOCKED | resolved range, answer/insufficient status, observations, citations, coverage 반환; deadline/body cap/idempotency contract test 통과 |
 | SEC-001 | public API abuse controls | API-003, FND-005 | BLOCKED | CORS allowlist, security headers, rate/concurrency/provider budget limit; oversized/injection/fuzz 입력에서 정보 유출·무제한 호출 없음 |
@@ -303,3 +303,11 @@ flowchart TD
 - `@techpulse/domain`과 `@techpulse/contracts`에 versioned run/raw/stage replay job contract를 추가했다. target ID와 stage를 검증하고 자연 키로 중복 replay를 멱등 억제한다.
 - worker 경계는 disabled source enqueue 억제, retryable/quarantine/dead-letter disposition 분류, UTC audit event redaction callback을 제공한다. 원본·document revision·citation을 수정하지 않는다.
 - 검증: `packages/domain` replay focused 3개 테스트와 contracts 11개 테스트 통과, worker/domain typecheck·lint·format 통과; concrete queue/database audit adapter 연결은 배포 adapter 바인딩 전 provider-neutral port로 유지한다.
+
+### API-001 완료 증빙 (2026-09-02)
+
+- Node runtime 위 Elysia 기반의 API shell(`apps/api`)을 구현했다. `@techpulse/contracts`와 `@techpulse/observability` 기반으로 versioned error model(`ErrorEnvelope`, `ContractError`)과 correlation context/request ID 처리를 구성했다.
+- `GET /health/live`는 데이터베이스나 외부 의존성을 호출하지 않고 프로세스 가용 상태를 즉시 반환한다.
+- `GET /health/ready`는 데이터베이스 연결 상태를 검사하여 정상 시 200, 비정상 또는 장애 시 503을 반환하며 연결 문자열, 인증 정보, SQL 에러 등의 내부 정보는 일체 노출하지 않는다.
+- validation 오류(400), 경로 부재(404), unhandled 500 내부 에러는 일관되게 sanitized `ErrorEnvelope` 규격으로 응답하며 `X-Request-Id` 응답 헤더가 항상 포함된다.
+- 검증: `apps/api` 4개 test file·11개 test 통과, `packages/contracts` 2개 test file·13개 test 통과, `apps/api` 및 `packages/contracts` static/typecheck/lint/format 통과.

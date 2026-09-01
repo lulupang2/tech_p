@@ -6,10 +6,14 @@ import {
   parseAnswerRequest,
   parseAnswerResponse,
   parseCollectionJobPayload,
+  parseHealthLiveResponse,
+  parseHealthReadyResponse,
   sanitizeAnswerResponse,
   safeParseAnswerRequest,
   safeParseCollectionJobPayload,
   safeParseErrorEnvelope,
+  safeParseHealthLiveResponse,
+  safeParseHealthReadyResponse,
 } from '../src/index.js';
 import {
   jobWithUnknownField,
@@ -121,5 +125,36 @@ test('maps validation failures to deterministic HTTP 400 response', () => {
         retryable: false,
       },
     },
+  });
+});
+
+describe('health contracts', () => {
+  test('validates live response contract', () => {
+    const live = { status: 'ok' as const, timestamp: '2026-09-02T12:00:00.000Z' };
+    expect(parseHealthLiveResponse(live)).toEqual(live);
+    expect(safeParseHealthLiveResponse({ status: 'bad', timestamp: 'invalid' }).success).toBe(
+      false,
+    );
+  });
+
+  test('validates ready response contract', () => {
+    const ready = {
+      status: 'ok' as const,
+      timestamp: '2026-09-02T12:00:00.000Z',
+      dependencies: { database: 'ok' as const },
+    };
+    expect(parseHealthReadyResponse(ready)).toEqual(ready);
+    expect(safeParseHealthReadyResponse(ready).success).toBe(true);
+    expect(
+      parseHealthReadyResponse({
+        status: 'unavailable' as const,
+        timestamp: '2026-09-02T12:00:00.000Z',
+        dependencies: { database: 'unavailable' as const },
+      }),
+    ).toEqual({
+      status: 'unavailable',
+      timestamp: '2026-09-02T12:00:00.000Z',
+      dependencies: { database: 'unavailable' },
+    });
   });
 });
