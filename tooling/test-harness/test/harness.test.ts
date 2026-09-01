@@ -40,6 +40,12 @@ describe('clock and ID injection', () => {
     clock.reset();
     expect(clock.nowMs()).toBe(Date.parse('2026-09-01T03:00:00.000Z'));
   });
+  test('rejects fractional advances to preserve millisecond precision', () => {
+    const clock = createFakeClock('2026-09-01T03:00:00.000Z');
+
+    expect(() => clock.advance(0.5)).toThrow(RangeError);
+    expect(clock.nowMs()).toBe(Date.parse('2026-09-01T03:00:00.000Z'));
+  });
 
   test('ID sequences reset to the same output', () => {
     const ids = createIdGenerator({ prefix: 'req', seed: 'test' });
@@ -49,6 +55,23 @@ describe('clock and ID injection', () => {
     expect([ids.next(), ids.next('job')]).toEqual(first);
     expect(ids.count).toBe(2);
   });
+});
+test('createTestHarness reset restores all deterministic state', async () => {
+  const harness = createTestHarness({
+    now: '2026-09-01T03:00:00.000Z',
+    id: { prefix: 'request', seed: 'reset' },
+  });
+  const firstId = harness.ids.next();
+  await harness.chat.complete({ prompt: 'recorded' });
+  await harness.embedding.embed('recorded');
+  harness.clock.advance(1000);
+
+  harness.reset();
+
+  expect(harness.clock.now().toISOString()).toBe('2026-09-01T03:00:00.000Z');
+  expect(harness.ids.next()).toBe(firstId);
+  expect(harness.chat.calls).toHaveLength(0);
+  expect(harness.embedding.calls).toHaveLength(0);
 });
 
 describe('deterministic provider fakes', () => {
@@ -87,6 +110,13 @@ describe('deterministic provider fakes', () => {
     await expect(embedding.embed('input')).rejects.toBe(failure);
     expect(embedding.calls).toEqual(['input']);
   });
+  test('uses fallback for inherited response keys', async () => {
+    const chat = createFakeChatProvider({ response: 'fallback', responses: { known: 'mapped' } });
+
+    await expect(chat.complete({ prompt: 'toString' })).resolves.toMatchObject({
+      content: 'fallback',
+    });
+  });
 });
 
 describe('fixture provenance and redaction metadata', () => {
@@ -94,6 +124,21 @@ describe('fixture provenance and redaction metadata', () => {
     const fixture = buildFixture({ id: 'source-1', payload: { value: 42 }, provenance, redaction });
     expect(fixture.metadata).toEqual({ provenance, redaction });
     expect(parseFixtureMetadata(fixture.metadata)).toEqual(fixture.metadata);
+  });
+  test('rejects impossible calendar dates without normalizing them', () => {
+    expect(() =>
+      parseFixtureMetadata({
+        provenance: { ...provenance, acquiredAt: '2026-02-31T00:00:00.000Z' },
+        redaction,
+      }),
+    ).toThrow(/ISO UTC timestamp/u);
+
+    expect(
+      parseFixtureMetadata({
+        provenance: { ...provenance, acquiredAt: '2024-02-29T00:00:00.000Z' },
+        redaction,
+      }).provenance.acquiredAt,
+    ).toBe('2024-02-29T00:00:00.000Z');
   });
 
   test('rejects missing provenance and redaction metadata', () => {

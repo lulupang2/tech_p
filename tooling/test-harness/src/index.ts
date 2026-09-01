@@ -13,6 +13,10 @@ export interface Clock {
 
 export interface FakeClock extends Clock {
   set(value: Date | string | number): void;
+  /**
+   * Advance by whole milliseconds; fractional values are rejected so Date and
+   * nowMs() retain one consistent millisecond precision.
+   */
   advance(milliseconds: number): void;
   reset(): void;
 }
@@ -36,8 +40,8 @@ export function createFakeClock(initial: Date | string | number): FakeClock {
       currentMilliseconds = toEpochMilliseconds(value);
     },
     advance: (milliseconds) => {
-      if (!Number.isFinite(milliseconds)) {
-        throw new RangeError(`Invalid clock advance: ${String(milliseconds)}`);
+      if (!Number.isInteger(milliseconds)) {
+        throw new RangeError('Clock advance must be a finite integer number of milliseconds');
       }
       currentMilliseconds += milliseconds;
     },
@@ -155,7 +159,9 @@ export function createFakeChatProvider(options: FakeChatProviderOptions = {}): F
       calls.push(structuredClone(request));
       if (options.failWith !== undefined) throw options.failWith;
       const input = chatInput(request);
-      const content = responses[input] ?? response;
+      const content = Object.prototype.hasOwnProperty.call(responses, input)
+        ? (responses[input] ?? response)
+        : response;
       return {
         content,
         model,
@@ -313,10 +319,29 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function isIsoUtc(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})\.(\d{3})Z$/u.exec(value);
+  if (match === null) return false;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6]);
+  const milliseconds = Number(match[7]);
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
   return (
-    typeof value === 'string' &&
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u.test(value) &&
-    Number.isFinite(Date.parse(value))
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    day <= (daysInMonth[month - 1] ?? 0) &&
+    hour <= 23 &&
+    minute <= 59 &&
+    second <= 59 &&
+    milliseconds <= 999
   );
 }
 

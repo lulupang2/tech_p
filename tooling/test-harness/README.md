@@ -38,6 +38,7 @@ const vector = await harness.embedding.embed('offline input');
 // beforeEach/afterEach may call reset() to reuse one harness safely.
 harness.reset();
 ```
+`FakeClock.advance` accepts only whole milliseconds. Fractional advances are rejected to prevent `Date` (integer millisecond precision) and `nowMs()` from diverging.
 
 ## Fixture metadata
 
