@@ -8,10 +8,21 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
+    "db:check": "drizzle-kit check",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "format": "pnpm --dir ../.. exec prettier --check packages/database",
     "lint": "eslint .",
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.10"
   }
 }
