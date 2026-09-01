@@ -53,7 +53,7 @@ threshold grid `0.50`부터 `0.90`까지 `0.02` 간격을 사용했다. grid 탐
 
 ## Source/type error analysis
 
-`result.json`의 각 variant `sourceTypeErrorAnalysis`는 6개 source pattern × 5개 label별 pair 수, confusion matrix, precision/recall을 보존한다. 선택 variant의 holdout에는 오류 pair가 없었다. exact-only variant의 32개 false split은 updated/syndicated cross-source 유형에서 발생하며, source별 세부 행과 `errorPairs`에 pair ID로 기록했다. score가 선택 threshold ±0.08 안에 있는 holdout pair 20개는 `manualReviewList`로 기록했으며, 그 목록은 label·source/type·score·`verbatimOnly`와 함께 보존된다.
+`result.json`의 각 variant `sourceTypeErrorAnalysis`는 6개 source pattern × 5개 label별 pair 수, confusion matrix, precision/recall을 보존한다. 선택 variant의 holdout에는 오류 pair가 없었다. exact-only variant의 32개 false split은 updated/syndicated cross-source 유형에서 발생하며, source별 세부 행과 `errorPairs`에 pair ID로 기록했다. score가 선택 threshold ±0.08 안에 있는 holdout pair 최대 20개와 `verbatimOnly` member가 있는 모든 holdout pair는 `manualReviewList`로 기록했으며, 그 목록은 label·source/type·score·`verbatimOnly`와 함께 보존된다.
 
 ## Recommendation과 safety gate
 

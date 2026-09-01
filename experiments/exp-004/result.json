@@ -1718,7 +1718,176 @@
           }
         }
       ],
-      "manualReviewList": []
+      "manualReviewList": [
+        {
+          "pairId": "EXP004-P124",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P127",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P130",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P133",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "syndicated_copy",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P139",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P142",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P145",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P148",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "syndicated_copy",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P154",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P157",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P160",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P121",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P136",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P151",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        }
+      ]
     },
     "v2_lexical_fingerprint": {
       "algorithmVariant": "v2_lexical_fingerprint",
@@ -2900,6 +3069,78 @@
       ],
       "manualReviewList": [
         {
+          "pairId": "EXP004-P130",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P145",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P160",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P124",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0.242857,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P139",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0.242857,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P154",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0.242857,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
           "pairId": "EXP004-P007",
           "sourcePattern": "github_release_react_blog",
           "sourcePair": [
@@ -3137,6 +3378,54 @@
           "label": "syndicated_copy",
           "score": 0.81,
           "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P157",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P121",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P136",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P151",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
           "verbatimOnly": true
         }
       ]
@@ -4321,6 +4610,78 @@
       ],
       "manualReviewList": [
         {
+          "pairId": "EXP004-P160",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0.332677,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P130",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0.335857,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P145",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0.36583,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P124",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0.492075,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P154",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0.545208,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P139",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0.580625,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
           "pairId": "EXP004-P028",
           "sourcePattern": "github_release_react_blog",
           "sourcePair": [
@@ -4559,6 +4920,78 @@
           "score": 0.918869,
           "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
           "verbatimOnly": false
+        },
+        {
+          "pairId": "EXP004-P142",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0.921375,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P157",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0.922795,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P127",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0.924246,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P121",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P136",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P151",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
         }
       ]
     },
@@ -5742,6 +6175,78 @@
       ],
       "manualReviewList": [
         {
+          "pairId": "EXP004-P130",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P145",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P160",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "unrelated",
+          "score": 0,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P124",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0.242857,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P139",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0.242857,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P154",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "related_independent",
+          "score": 0.242857,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
           "pairId": "EXP004-P007",
           "sourcePattern": "github_release_react_blog",
           "sourcePair": [
@@ -5979,6 +6484,54 @@
           "label": "syndicated_copy",
           "score": 0.81,
           "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P157",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "updated_revision",
+          "score": 0.81,
+          "reason": "score within ±0.08 of selected threshold; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P121",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P136",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
+          "verbatimOnly": true
+        },
+        {
+          "pairId": "EXP004-P151",
+          "sourcePattern": "stack_exchange_repeat_question",
+          "sourcePair": [
+            "stack_exchange",
+            "stack_exchange"
+          ],
+          "label": "same_revision",
+          "score": 1,
+          "reason": "verbatim_only member requires manual review; preserve both members and provenance until review",
           "verbatimOnly": true
         }
       ]

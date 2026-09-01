@@ -347,18 +347,29 @@ function sourceTypeErrorAnalysis(pairs, variant, threshold) {
 }
 
 function manualReviewList(pairs, variant, threshold) {
-  return pairs
-    .map((pair) => ({ pair, score: variantScore(pair, variant) }))
+  const scoredPairs = pairs.map((pair) => ({ pair, score: variantScore(pair, variant) }));
+  const thresholdCandidates = scoredPairs
     .filter(({ score }) => Math.abs(score - threshold) <= 0.08)
     .sort((left, right) => left.score - right.score || left.pair.pairId.localeCompare(right.pair.pairId))
-    .slice(0, 20)
+    .slice(0, 20);
+  const verbatimCandidates = scoredPairs.filter(
+    ({ pair }) => pair.fixtureA.rights.verbatimOnly || pair.fixtureB.rights.verbatimOnly,
+  );
+  const candidates = new Map(thresholdCandidates.map(({ pair, score }) => [pair.pairId, { pair, score }]));
+  for (const candidate of verbatimCandidates) candidates.set(candidate.pair.pairId, candidate);
+
+  return [...candidates.values()]
+    .sort((left, right) => left.score - right.score || left.pair.pairId.localeCompare(right.pair.pairId))
     .map(({ pair, score }) => ({
       pairId: pair.pairId,
       sourcePattern: pair.sourcePattern,
       sourcePair: pair.sourcePair,
       label: pair.label,
       score: Number(score.toFixed(6)),
-      reason: 'score within ±0.08 of selected threshold; preserve both members and provenance until review',
+      reason:
+        Math.abs(score - threshold) <= 0.08
+          ? 'score within ±0.08 of selected threshold; preserve both members and provenance until review'
+          : 'verbatim_only member requires manual review; preserve both members and provenance until review',
       verbatimOnly: pair.fixtureA.rights.verbatimOnly || pair.fixtureB.rights.verbatimOnly,
     }));
 }
