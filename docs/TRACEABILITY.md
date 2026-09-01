@@ -13,9 +13,9 @@
 | FR-001 실제 외부 데이터 수집 | DATA_PIPELINE §2~4, SOURCE_CATALOG, SOURCE_RIGHTS | COL-002, COL-003, COL-004, COL-006, COL-007, COL-008, COL-009, COL-010, QUE-001, PIPE-001 | fixture contract, integration, live canary |
 | FR-002 브라우저 수집 | DATA_PIPELINE §6 | COL-005 | fixture contract, canary, security |
 | FR-003 원본 보존 | DATA_PIPELINE §5.3, DATABASE §3.1 | DB-002, PIPE-001 | integration |
-| FR-004 정규화 | DATA_PIPELINE §5.4, TOPIC_TAXONOMY | PIPE-002, PIPE-005, DB-003 | unit, component |
+| FR-004 정규화 | DATA_PIPELINE §5.4, §5.6, TOPIC_TAXONOMY | PIPE-002, PIPE-005, DB-003 | domain topic/chunk unit, database integration |
 | FR-005 중복 제거 | DATA_PIPELINE §5.5 | PIPE-003, EXP-004, PIPE-004 | unit, integration, experiment |
-| FR-006 임베딩 | DATA_PIPELINE §5.7 | AI-002, PIPE-005, PIPE-008 | component, integration |
+| FR-006 임베딩 | DATA_PIPELINE §5.7 | AI-002, PIPE-005, PIPE-008 | chunk unit, component, integration |
 | FR-007 자연어 질의 | RAG §4 | RAG-001 | component |
 | FR-008 기간 검색 | RAG §4~5, DATABASE §4 | RAG-001, RAG-002, DB-006 | unit, integration, RAG eval |
 | FR-009 근거 기반 답변 | RAG §6, §8 | RAG-004, RAG-005 | component, RAG eval |

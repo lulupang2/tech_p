@@ -21,6 +21,11 @@
 | duplicate cluster membership | 특정 algorithm version이 immutable document revision을 cluster에 연결했다는 append-only evidence row | DATABASE §3.2 |
 | metric observation | 기간과 단위가 있는 숫자 관측값. 텍스트 문서와 분리 저장 | DATABASE §3.4 |
 | topic | canonical 기술 entity와 alias 집합 | DATABASE §3.2 |
+| taxonomy_version | topic alias·계층·source mapping 사전의 불변 버전 | TOPIC_TAXONOMY §1, DATABASE §3.2 |
+| classifier_version | topic 분류 방식과 실행 규칙의 버전. 결과 evidence에 저장 | DATA_PIPELINE §5.6, DATABASE §3.2 |
+| deterministic alias classification | 허용 taxonomy의 alias·경계·문맥/source 제약만 사용해 재현하는 topic 분류 방식 | TOPIC_TAXONOMY §1, DATA_PIPELINE §5.6 |
+| heading path | chunk가 속한 heading 계층의 순서 있는 경로 | DATA_PIPELINE §5.7, DATABASE §3.3 |
+| chunker_version | heading-aware chunk 생성 규칙의 버전 | DATA_PIPELINE §5.7, DATABASE §3.3 |
 | query run | 하나의 질의 처리 실행 기록. 검색 설정과 citation을 포함 | DATABASE §3.4 |
 | tombstone | 검색·인용에서 제외하고 이후 purge 대상임을 표시하는 상태 | DATABASE §3.5 |
 | license_id | 콘텐츠 재사용 조건을 식별하는 slug. source 기본값과 게시물별 값이 다를 수 있고 게시물 값이 우선한다 | DATABASE §3.1, §3.2 |

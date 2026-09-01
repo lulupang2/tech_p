@@ -17,6 +17,13 @@ import type {
   DocumentRecord,
   DocumentRevisionRecord,
   ChunkRecord,
+  TopicRecord,
+  DocumentTopicRecord,
+  UpsertTopicInput,
+  SaveDocumentTopicInput,
+  TopicRepositoryPort,
+  SaveChunkInput,
+  ChunkRepositoryPort,
   SourceRecord,
   CollectionRunRecord,
   CollectionRunStatus,
@@ -49,8 +56,47 @@ import {
   rawItems,
   pipelineEvents,
   metricObservations,
+  topics,
+  documentTopics,
   type schema,
 } from './schema/index.js';
+
+function toTopicRecord(row: typeof topics.$inferSelect): TopicRecord {
+  return {
+    id: row.id,
+    slug: row.slug,
+    displayName: row.displayName,
+    parentId: row.parentId,
+    aliases: row.aliases,
+    taxonomyVersion: row.taxonomyVersion,
+    createdAt: row.createdAt,
+  };
+}
+
+function toDocumentTopicRecord(row: typeof documentTopics.$inferSelect): DocumentTopicRecord {
+  return {
+    documentId: row.documentId,
+    topicId: row.topicId,
+    method: row.method,
+    confidence: row.confidence,
+    classifierVersion: row.classifierVersion,
+    createdAt: row.createdAt,
+  };
+}
+
+function toChunkRecord(row: typeof chunks.$inferSelect): ChunkRecord {
+  return {
+    id: row.id,
+    documentRevisionId: row.documentRevisionId,
+    ordinal: row.ordinal,
+    headingPath: row.headingPath,
+    content: row.content,
+    tokenCount: row.tokenCount,
+    contentHash: row.contentHash,
+    chunkerVersion: row.chunkerVersion,
+    createdAt: row.createdAt,
+  };
+}
 
 export function createDocumentRepository(db: NeonDatabase<typeof schema>): DocumentRepositoryPort {
   return {
@@ -393,6 +439,37 @@ export function createDocumentRepository(db: NeonDatabase<typeof schema>): Docum
       };
     },
 
+    async upsertTopic(input: UpsertTopicInput): Promise<TopicRecord> {
+      const [row] = await db
+        .insert(topics)
+        .values({
+          ...(input.id ? { id: input.id } : {}),
+          slug: input.slug,
+          displayName: input.displayName,
+          ...(input.parentId !== undefined ? { parentId: input.parentId } : {}),
+          aliases: input.aliases ? [...input.aliases] : [],
+          taxonomyVersion: input.taxonomyVersion,
+        })
+        .onConflictDoUpdate({
+          target: [topics.slug, topics.taxonomyVersion],
+          set: {
+            displayName: input.displayName,
+            ...(input.parentId !== undefined ? { parentId: input.parentId } : {}),
+            aliases: input.aliases ? [...input.aliases] : [],
+          },
+        })
+        .returning();
+      if (!row) throw new Error(`Failed to upsert topic ${input.slug}`);
+      return toTopicRecord(row);
+    },
+
+    async findTopicBySlug(slug: string, taxonomyVersion: string): Promise<TopicRecord | null> {
+      const row = await db.query.topics.findFirst({
+        where: and(eq(topics.slug, slug), eq(topics.taxonomyVersion, taxonomyVersion)),
+      });
+      return row ? toTopicRecord(row) : null;
+    },
+
     async listChunksByRevision(revisionId: string): Promise<readonly ChunkRecord[]> {
       const rows = await db
         .select()
@@ -400,17 +477,102 @@ export function createDocumentRepository(db: NeonDatabase<typeof schema>): Docum
         .where(eq(chunks.documentRevisionId, revisionId))
         .orderBy(chunks.ordinal);
 
-      return rows.map((c) => ({
-        id: c.id,
-        documentRevisionId: c.documentRevisionId,
-        ordinal: c.ordinal,
-        headingPath: c.headingPath,
-        content: c.content,
-        tokenCount: c.tokenCount,
-        contentHash: c.contentHash,
-        chunkerVersion: c.chunkerVersion,
-        createdAt: c.createdAt,
-      }));
+      return rows.map(toChunkRecord);
+    },
+
+    async saveDocumentTopics(
+      inputs: readonly SaveDocumentTopicInput[],
+    ): Promise<readonly DocumentTopicRecord[]> {
+      if (inputs.length === 0) return [];
+      await db
+        .insert(documentTopics)
+        .values(
+          inputs.map((input) => ({
+            documentId: input.documentId,
+            topicId: input.topicId,
+            method: input.method,
+            confidence: input.confidence,
+            classifierVersion: input.classifierVersion,
+          })),
+        )
+        .onConflictDoNothing({
+          target: [
+            documentTopics.documentId,
+            documentTopics.topicId,
+            documentTopics.classifierVersion,
+          ],
+        });
+
+      const rows = await db
+        .select()
+        .from(documentTopics)
+        .where(eq(documentTopics.documentId, inputs[0]?.documentId ?? ''));
+      const keys = new Set(inputs.map((input) => `${input.topicId}|${input.classifierVersion}`));
+      return rows
+        .filter((row) => keys.has(`${row.topicId}|${row.classifierVersion}`))
+        .map(toDocumentTopicRecord);
+    },
+
+    async listDocumentTopics(
+      documentId: string,
+      classifierVersion?: string,
+    ): Promise<readonly DocumentTopicRecord[]> {
+      const conditions = [eq(documentTopics.documentId, documentId)];
+      if (classifierVersion) {
+        conditions.push(eq(documentTopics.classifierVersion, classifierVersion));
+      }
+      const rows = await db
+        .select()
+        .from(documentTopics)
+        .where(and(...conditions));
+      return rows.map(toDocumentTopicRecord);
+    },
+
+    async saveChunks(inputs: readonly SaveChunkInput[]): Promise<readonly ChunkRecord[]> {
+      if (inputs.length === 0) return [];
+      await db.transaction(async (tx) => {
+        for (const input of inputs) {
+          await tx
+            .insert(chunks)
+            .values({
+              id: input.id,
+              documentRevisionId: input.documentRevisionId,
+              ordinal: input.ordinal,
+              headingPath: input.headingPath ? [...input.headingPath] : [],
+              content: input.content,
+              tokenCount: input.tokenCount,
+              contentHash: input.contentHash,
+              chunkerVersion: input.chunkerVersion,
+            })
+            .onConflictDoNothing({
+              target: [chunks.documentRevisionId, chunks.ordinal, chunks.chunkerVersion],
+            });
+
+          const existing = await tx.query.chunks.findFirst({
+            where: and(
+              eq(chunks.documentRevisionId, input.documentRevisionId),
+              eq(chunks.ordinal, input.ordinal),
+              eq(chunks.chunkerVersion, input.chunkerVersion),
+            ),
+          });
+          if (!existing) throw new Error(`Chunk ${input.ordinal} was not persisted`);
+          if (existing.contentHash !== input.contentHash || existing.content !== input.content) {
+            throw new Error(
+              `Chunk ${input.ordinal} already exists with different content for ${input.chunkerVersion}`,
+            );
+          }
+        }
+      });
+
+      const rows = await db
+        .select()
+        .from(chunks)
+        .where(eq(chunks.documentRevisionId, inputs[0]?.documentRevisionId ?? ''))
+        .orderBy(chunks.ordinal);
+      const keys = new Set(inputs.map((input) => `${input.ordinal}|${input.chunkerVersion}`));
+      return rows
+        .filter((row) => keys.has(`${row.ordinal}|${row.chunkerVersion}`))
+        .map(toChunkRecord);
     },
 
     async publishRevision(
@@ -419,6 +581,27 @@ export function createDocumentRepository(db: NeonDatabase<typeof schema>): Docum
       searchableAt = new Date(),
     ): Promise<DocumentRevisionRecord> {
       return await db.transaction(async (tx) => {
+        const revisionChunks = await tx
+          .select({
+            content: chunks.content,
+            tokenCount: chunks.tokenCount,
+            contentHash: chunks.contentHash,
+          })
+          .from(chunks)
+          .where(eq(chunks.documentRevisionId, revisionId));
+        if (
+          revisionChunks.length === 0 ||
+          revisionChunks.some(
+            (chunk) =>
+              chunk.content.trim().length === 0 ||
+              chunk.tokenCount < 1 ||
+              chunk.contentHash.trim().length !== 64 ||
+              !/^[0-9a-f]{64}$/iu.test(chunk.contentHash),
+          )
+        ) {
+          throw new Error(`Revision ${revisionId} cannot be published before valid chunks exist`);
+        }
+
         const [updatedRevision] = await tx
           .update(documentRevisions)
           .set({
@@ -459,6 +642,39 @@ export function createDocumentRepository(db: NeonDatabase<typeof schema>): Docum
         };
       });
     },
+  };
+}
+
+/** Topic adapter kept separate from the document adapter for domain dependency direction. */
+export function createTopicRepository(db: NeonDatabase<typeof schema>): TopicRepositoryPort {
+  const documentRepository = createDocumentRepository(db);
+  if (
+    !documentRepository.upsertTopic ||
+    !documentRepository.findTopicBySlug ||
+    !documentRepository.saveDocumentTopics ||
+    !documentRepository.listDocumentTopics
+  ) {
+    throw new Error('Document adapter does not expose PIPE-005 topic methods');
+  }
+  return {
+    upsert: documentRepository.upsertTopic,
+    findBySlug: documentRepository.findTopicBySlug,
+    listByDocument: documentRepository.listDocumentTopics,
+    saveDocumentTopics: documentRepository.saveDocumentTopics,
+  };
+}
+
+/** Chunk adapter is append-only by (revision, ordinal, chunker version). */
+export function createChunkRepository(db: NeonDatabase<typeof schema>): ChunkRepositoryPort {
+  const documentRepository = createDocumentRepository(db);
+  if (!documentRepository.saveChunks)
+    throw new Error('Document adapter does not expose chunk methods');
+  return {
+    listByRevision: async (revisionId, chunkerVersion) => {
+      const rows = await documentRepository.listChunksByRevision(revisionId);
+      return chunkerVersion ? rows.filter((row) => row.chunkerVersion === chunkerVersion) : rows;
+    },
+    saveChunks: documentRepository.saveChunks,
   };
 }
 

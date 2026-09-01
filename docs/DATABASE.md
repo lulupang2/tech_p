@@ -63,7 +63,7 @@ raw payload column type과 압축·외부 object storage 전환 시점은 데이
 | `duplicate_clusters` | id, representative_document_id, algorithm_version, confidence, created_at | 원본 문서는 삭제하지 않음 |
 | `duplicate_cluster_memberships` | id, cluster_id, document_id, revision_id, raw_item_id, algorithm_version, confidence, status, created_at | append-only; `(cluster, document, revision, algorithm_version)` unique; revision/raw FK는 restrict |
 | `topics` | id, slug, display_name, parent_id, aliases, taxonomy_version | `(slug, taxonomy_version)` unique |
-| `document_topics` | document_id, topic_id, method, confidence, classifier_version | `(document_id, topic_id, classifier_version)` unique |
+| `document_topics` | document_id, topic_id, method, confidence, classifier_version, created_at | `(document_id, topic_id, classifier_version)` unique; taxonomy/classifier versions are append-only |
 
 `current_revision_id`는 편의 포인터이며 citation은 항상 `document_revision_id`를 가리킨다.
 
@@ -73,10 +73,12 @@ raw payload column type과 압축·외부 object storage 전환 시점은 데이
 
 | 테이블 | 핵심 필드 | 핵심 제약 |
 |---|---|---|
-| `chunks` | id, document_revision_id, ordinal, heading_path, content, token_count, content_hash, chunker_version, search_vector | `(document_revision_id, ordinal, chunker_version)` unique |
+| `chunks` | id, document_revision_id, ordinal, heading_path, content, token_count, content_hash, chunker_version, search_vector | `(document_revision_id, ordinal, chunker_version)` unique; content hash is SHA-256 |
 | `embeddings` | id, chunk_id, provider, model, dimensions, embedding, input_hash, created_at | `(chunk_id, provider, model, input_hash)` unique |
 
 embedding column은 모델 dimensions가 결정된 후 `vector(n)`으로 정의한다. 서로 다른 dimensions를 한 column에 섞지 않는다. 모델 교체 기간에는 row/table/partition 전략을 migration ADR로 정한다.
+
+PIPE-005 adapter는 topic을 `(slug, taxonomy_version)`으로 upsert하고 document topic evidence를 on-conflict-do-nothing으로 append한다. taxonomy/classifier version이 바뀌면 이전 `document_topics` 행을 삭제하지 않는다. chunk는 `(document_revision_id, ordinal, chunker_version)`으로 멱등 저장하며 내용 충돌은 거부한다. revision publish는 유효한 chunk가 존재할 때만 허용한다.
 
 ### 3.4 시계열과 답변 감사
 

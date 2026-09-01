@@ -167,6 +167,73 @@ export interface ChunkRecord {
   readonly createdAt: Date;
 }
 
+export interface TopicRecord {
+  readonly id: string;
+  readonly slug: string;
+  readonly displayName: string;
+  readonly parentId: string | null;
+  readonly aliases: readonly string[];
+  readonly taxonomyVersion: string;
+  readonly createdAt: Date;
+}
+
+export interface DocumentTopicRecord {
+  readonly documentId: string;
+  readonly topicId: string;
+  readonly method: string;
+  readonly confidence: number;
+  readonly classifierVersion: string;
+  readonly createdAt: Date;
+}
+
+export interface UpsertTopicInput {
+  readonly id?: string;
+  readonly slug: string;
+  readonly displayName: string;
+  readonly parentId?: string | null;
+  readonly aliases?: readonly string[];
+  readonly taxonomyVersion: string;
+}
+
+export interface SaveDocumentTopicInput {
+  readonly documentId: string;
+  readonly topicId: string;
+  readonly method: string;
+  readonly confidence: number;
+  readonly classifierVersion: string;
+}
+
+export interface TopicRepositoryPort {
+  readonly upsert: (input: UpsertTopicInput) => Promise<TopicRecord>;
+  readonly findBySlug: (slug: string, taxonomyVersion: string) => Promise<TopicRecord | null>;
+  readonly listByDocument: (
+    documentId: string,
+    classifierVersion?: string,
+  ) => Promise<readonly DocumentTopicRecord[]>;
+  readonly saveDocumentTopics: (
+    inputs: readonly SaveDocumentTopicInput[],
+  ) => Promise<readonly DocumentTopicRecord[]>;
+}
+
+export interface SaveChunkInput {
+  readonly id?: string;
+  readonly documentRevisionId: string;
+  readonly ordinal: number;
+  readonly headingPath?: readonly string[];
+  readonly content: string;
+  readonly tokenCount: number;
+  readonly contentHash: string;
+  readonly chunkerVersion: string;
+}
+
+export interface ChunkRepositoryPort {
+  readonly listByRevision: (
+    revisionId: string,
+    chunkerVersion?: string,
+  ) => Promise<readonly ChunkRecord[]>;
+  readonly saveChunks: (inputs: readonly SaveChunkInput[]) => Promise<readonly ChunkRecord[]>;
+}
+
 export interface PaginationParams {
   readonly limit?: number;
   readonly offset?: number;
@@ -295,6 +362,17 @@ export interface DocumentRepositoryPort {
     pagination?: PaginationParams,
   ) => Promise<PaginatedResult<DocumentRecord>>;
   readonly listChunksByRevision: (revisionId: string) => Promise<readonly ChunkRecord[]>;
+  /** Optional PIPE-005 enrichment methods preserve compatibility with pre-PIPE-005 fakes. */
+  readonly upsertTopic?: (input: UpsertTopicInput) => Promise<TopicRecord>;
+  readonly findTopicBySlug?: (slug: string, taxonomyVersion: string) => Promise<TopicRecord | null>;
+  readonly listDocumentTopics?: (
+    documentId: string,
+    classifierVersion?: string,
+  ) => Promise<readonly DocumentTopicRecord[]>;
+  readonly saveDocumentTopics?: (
+    inputs: readonly SaveDocumentTopicInput[],
+  ) => Promise<readonly DocumentTopicRecord[]>;
+  readonly saveChunks?: (inputs: readonly SaveChunkInput[]) => Promise<readonly ChunkRecord[]>;
   readonly publishRevision: (
     documentId: string,
     revisionId: string,

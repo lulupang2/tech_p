@@ -56,6 +56,13 @@ export type {
   DocumentRecord,
   DocumentRevisionRecord,
   ChunkRecord,
+  TopicRecord,
+  DocumentTopicRecord,
+  UpsertTopicInput,
+  SaveDocumentTopicInput,
+  TopicRepositoryPort,
+  SaveChunkInput,
+  ChunkRepositoryPort,
   PaginationParams,
   PaginatedResult,
   DocumentFilter,
@@ -149,6 +156,35 @@ export {
   computeExactBodyHash,
   createDeduplicationService,
 } from './deduplication.js';
+
+export {
+  TOPIC_TAXONOMY_VERSION,
+  TOPIC_CLASSIFIER_VERSION,
+  TOPIC_TAXONOMY,
+  classifyTopics,
+  createTopicClassifier,
+} from './topic-classification.js';
+export type {
+  TopicTaxonomyEntry,
+  TopicClassificationInput,
+  TopicClassification,
+} from './topic-classification.js';
+
+export {
+  CHUNKER_VERSION,
+  DEFAULT_CHUNK_MAX_TOKENS,
+  chunkDocument,
+  createChunker,
+} from './chunking.js';
+export type { ChunkingInput, ChunkDraft, ChunkingResult } from './chunking.js';
+
+export { createEnrichmentService } from './enrichment.js';
+export type {
+  EnrichmentInput,
+  EnrichmentResult,
+  EnrichmentServiceOptions,
+  EnrichmentServicePort,
+} from './enrichment.js';
 
 export type {
   DeduplicationMatchReason,

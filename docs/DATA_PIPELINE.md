@@ -131,7 +131,9 @@ cluster membership는 `algorithm_version`, `confidence`, immutable `revision_id`
 
 ### 5.6 Enrich and classify
 
-- deterministic alias dictionary로 기술 entity를 먼저 식별한다. dictionary는 [TOPIC_TAXONOMY.md](./TOPIC_TAXONOMY.md)이며 alias 매칭은 단어 경계를 지키고 `ambiguous` topic의 단독 토큰 매칭을 금지한다.
+- deterministic alias dictionary로 기술 entity를 먼저 식별한다. dictionary는 [TOPIC_TAXONOMY.md](./TOPIC_TAXONOMY.md)의 `taxonomy_version` `2026-09-01.1`을 실행한 것이며, 대소문자 무시·단어 경계·한국어 조사 결합을 지원한다.
+- `ambiguous` alias는 단독 토큰으로 분류하지 않고 문맥 또는 명시된 source 제약이 확인될 때만 분류한다. 한 문서의 여러 canonical topic은 모두 보존한다.
+- 결과는 `method`, deterministic `classifier_version`, `taxonomy_version`, `confidence`를 포함한다. 현재 구현은 `deterministic-alias-2026-09-01.1`이며 provider SDK·LLM을 호출하지 않는다.
 - LLM topic extraction은 structured output과 허용 taxonomy를 사용한다.
 - 토픽 결과에는 방식, 모델/규칙 버전, confidence를 기록한다.
 - 낮은 confidence는 검색 필터의 hard truth로 사용하지 않는다.
@@ -140,13 +142,15 @@ cluster membership는 `algorithm_version`, `confidence`, immutable `revision_id`
 
 - 제목, section path, 게시 시각, source를 chunk metadata에 유지한다.
 - 문장·heading 경계를 우선하고 표와 코드 블록을 의미 없이 절단하지 않는다.
+- 현재 chunker는 `heading-aware-v1.0.0`이며 heading path를 유지하고, 코드 fence·연속 표 단위를 원자적으로 보존한다. 각 chunk는 stable `ordinal`, content SHA-256 `content_hash`, deterministic `token_count`를 가진다.
+- 동일 revision·ordinal·chunker version은 idempotent하게 저장하며, 같은 version에서 내용이 달라지면 기존 chunk를 덮어쓰지 않고 실패시킨다.
 - chunk 크기·overlap은 모델 token limit과 [EXP-002](./experiments/EXP-002-retrieval.md) 결과로 결정한다.
 - embedding에는 provider, model, dimensions, input hash, created_at을 기록한다.
 - 같은 `(chunk, model, input_hash)`는 재호출하지 않는다.
 
 ### 5.8 Publish
 
-document revision의 필수 chunk와 embedding이 모두 준비된 트랜잭션에서만 `published`로 바꾼다. 질의 경로는 `published` revision만 검색한다.
+ document revision의 유효한 chunk가 하나 이상 준비된 트랜잭션에서만 searchable/published로 바꾼다. chunk가 없거나 빈 content·잘못된 token count/hash이면 publish를 거부한다. embedding은 승인된 provider가 생긴 뒤 필수 조건을 추가하며, 질의 경로는 `published` revision만 검색한다.
 
 ## 6. Playwright collector 규칙
 

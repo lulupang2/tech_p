@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`~`FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`~`DB-006`, `QUE-001`, `AI-001`, `DEC-008`, `COL-001`~`COL-010` (수집기 11개 전 소스 완료), `PIPE-001` (원시 수집 파이프라인 오케스트레이션 완료), `PIPE-002` (결정적 정규화 완료), `PIPE-003` (exact dedup·duplicate cluster 완료), `EXP-004` (240-pair synthetic/redacted holdout 실험 완료), `EVAL-001` (골든셋 레이블링 완료). 이후 task는 표의 dependency gate를 따른다.
+- 구현 상태: `FND-001`~`FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`~`DB-006`, `QUE-001`, `AI-001`, `DEC-008`, `COL-001`~`COL-010` (수집기 11개 전 소스 완료), `PIPE-001` (원시 수집 파이프라인 오케스트레이션 완료), `PIPE-002` (결정적 정규화 완료), `PIPE-003` (exact dedup·duplicate cluster 완료), `PIPE-004` (near-duplicate versioned clustering 완료), `PIPE-005` (deterministic topic classification·heading-aware chunking 완료), `EXP-004` (240-pair synthetic/redacted holdout 실험 완료), `EVAL-001` (골든셋 레이블링 완료). 이후 task는 표의 dependency gate를 따른다.
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -127,7 +127,7 @@
 | PIPE-003 | exact dedup과 duplicate cluster | PIPE-002 | DONE | external ID/canonical URL/hash 우선 규칙 통과; cross-source 원본을 삭제하지 않고 cluster link 생성; 동일 재처리 결과 불변 |
 | EXP-004 | deduplication 실험 실행 | PIPE-003, COL-002, COL-003 | DONE | [EXP-004](./docs/experiments/EXP-004-deduplication.md)의 240-pair labeled synthetic/redacted dataset(160 train/80 fixed holdout), 고정 normalization/boilerplate, blinded train threshold search, 4 variant confusion matrix 및 source/type error analysis가 기록됨; 추천 `v2_lexical_fingerprint` threshold 0.80의 holdout precision 1.0000·false-merge rate 0.0000 gate 통과; raw provenance·`verbatim_only` safeguard와 reclustering migration plan 포함 |
 | PIPE-004 | near-duplicate 후보·versioned clustering | EXP-004 | DONE | 승인 lexical algorithm `exp004-dedup-v1.0.0`·threshold `0.80`·fixed boilerplate만 사용; candidate/link suggestion만 반환하고 low-confidence·threshold-near·`verbatim_only`는 manual review; versioned append-only membership가 immutable revision/raw provenance와 citation을 보존 |
-| PIPE-005 | topic alias/classification과 chunking | PIPE-004, DB-003 | READY | [TOPIC_TAXONOMY](./docs/TOPIC_TAXONOMY.md)의 deterministic alias가 우선 적용되고 단어 경계·ambiguous 규칙이 unit test로 검증됨; classifier version/confidence 저장; heading-aware stable chunks; 동일 input/version의 chunk hash·ordinal 불변 |
+| PIPE-005 | topic alias/classification과 chunking | PIPE-004, DB-003 | DONE | [TOPIC_TAXONOMY](./docs/TOPIC_TAXONOMY.md) `2026-09-01.1`의 deterministic alias가 대소문자·단어 경계·한국어 조사를 처리하고 ambiguous alias의 context/source 제약과 multiple topics를 unit test로 검증함; `deterministic-alias-2026-09-01.1`/confidence를 versioned `document_topics`에 멱등 저장; `heading-aware-v1.0.0` stable chunks가 heading path·code/table unit·SHA-256·ordinal/token count를 보존하고 valid chunk 전 publish를 차단함 |
 | PIPE-006 | metric aggregation | COL-003, COL-004, COL-007, COL-009, COL-010, PIPE-003, DB-004 | BLOCKED | 8개 지표가 각각 고유 unit으로 저장되고 서로 합산되지 않음; `community_mentions`는 duplicate cluster 기준; `repo_attention`은 스냅샷 기준이며 수집 시작 이전 구간을 생성하지 않음; `query_signature`와 `is_incomplete`가 검색 기반 관측값에 기록됨; missing window를 0으로 오인하지 않는 테스트 통과 |
 | PIPE-007 | replay, dead-letter, source disable flow | PIPE-001, PIPE-005 | BLOCKED | run/raw/stage 범위 replay가 멱등; 영구 실패와 policy failure를 구분; disabled source는 새 job을 만들지 않음; 운영 audit event 기록 |
 
@@ -275,3 +275,10 @@ flowchart TD
 - near-duplicate 결과는 자동 merge하지 않는 candidate/link suggestion이며 confidence, algorithm version, threshold, manual-review 이유와 후보 revision/raw/canonical/license provenance를 포함한다. threshold 근처·`verbatim_only` 후보는 review 대상으로 유지되고 기존 source/raw/revision/citation row는 수정·삭제하지 않는다.
 - `duplicate_cluster_memberships` append-only table과 migration `0005_gray_domino.sql`이 cluster/document/immutable revision/raw IDs, algorithm version, confidence, review status를 version namespace별로 보존한다. exact cluster linking은 기존 pointer 호환성을 유지하면서 membership evidence를 멱등 저장한다.
 - 검증: domain deduplication 17개, worker deduplication 6개, database schema/migration 9개 테스트 통과(통합 DB 1개 skip); domain/worker/database typecheck 통과.
+
+### PIPE-005 완료 증빙 (2026-09-02)
+
+- `@techpulse/domain`에 taxonomy `2026-09-01.1` 기반 provider-neutral deterministic alias classifier를 구현했다. 대소문자 무시·영문 단어 경계·한국어 조사 결합을 처리하고, ambiguous alias는 문맥 또는 허용 source 제약 없이는 분류하지 않으며, 한 문서의 여러 topic과 `deterministic-alias-2026-09-01.1`/confidence를 반환한다.
+- `@techpulse/database` adapter는 `(slug, taxonomy_version)` topic upsert, versioned `document_topics` append-only idempotent save/list와 `(revision, ordinal, chunker_version)` chunk idempotent save/list를 제공한다. 기존 evidence를 삭제하지 않고 같은 version의 내용 충돌은 거부한다.
+- `heading-aware-v1.0.0` chunker는 heading path, stable ordinal, SHA-256 content hash, deterministic token count를 기록하고 code fence/table unit을 보존한다. valid chunk가 없거나 content/token/hash가 유효하지 않으면 revision publish를 거부한다.
+- 검증: `packages/domain` PIPE-005 focused 2개 test file·5개 test 통과, domain/database typecheck 통과; PostgreSQL adapter/publish integration fixture는 `DATABASE_URL` 미설정 환경에서 skip된다. ADR-0006 Proposed 상태를 유지하며 provider SDK·LLM 구현은 추가하지 않았다.

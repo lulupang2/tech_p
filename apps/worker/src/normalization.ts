@@ -1,5 +1,6 @@
 import type {
   DocumentRepositoryPort,
+  EnrichmentServicePort,
   MetricObservationRepositoryPort,
   NormalizationResult,
   NormalizationServicePort,
@@ -16,6 +17,8 @@ export interface NormalizationJobHandlerOptions {
   readonly metricObservationRepository: MetricObservationRepositoryPort;
   readonly pipelineEventRepository: PipelineEventRepositoryPort;
   readonly sourceRepository?: SourceRepositoryPort;
+  /** Optional PIPE-005 stage; absent keeps normalization fakes/backward compatibility intact. */
+  readonly enrichmentService?: EnrichmentServicePort;
 }
 
 export interface NormalizationExecutionResult {
@@ -46,6 +49,7 @@ export function createNormalizationJobHandler(
     metricObservationRepository,
     pipelineEventRepository,
     sourceRepository,
+    enrichmentService,
   } = options;
 
   return async (jobData: NormalizationJobData): Promise<NormalizationExecutionResult> => {
@@ -98,7 +102,7 @@ export function createNormalizationJobHandler(
       // 5. Persist normalized documents
       let documentsSaved = 0;
       for (const doc of normResult.documents) {
-        await documentRepository.saveNormalizedDocument({
+        const savedDocument = await documentRepository.saveNormalizedDocument({
           artifactType: doc.artifactType,
           canonicalUrl: doc.canonicalUrl,
           title: doc.title,
@@ -112,6 +116,15 @@ export function createNormalizationJobHandler(
           rawItemId: doc.rawItemId ?? rawItemId,
           status: doc.status,
         });
+        if (enrichmentService) {
+          await enrichmentService.enrich({
+            documentId: savedDocument.document.id,
+            revisionId: savedDocument.revision.id,
+            title: doc.title,
+            bodyText: doc.bodyText,
+            sourceKey,
+          });
+        }
         documentsSaved++;
       }
 

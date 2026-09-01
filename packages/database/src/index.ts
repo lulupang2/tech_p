@@ -15,7 +15,10 @@ export {
   duplicateClusterMemberships,
   documents,
   documentRevisions,
+  topics,
+  documentTopics,
   chunks,
+  embeddings,
   type DatabaseSchema,
   type RawItemInsert,
   upsertRawItem,
@@ -40,6 +43,8 @@ export {
 } from './migrate.js';
 export {
   createDocumentRepository,
+  createTopicRepository,
+  createChunkRepository,
   createDuplicateClusterRepository,
   createSourceRepository,
   createCollectionRunRepository,
