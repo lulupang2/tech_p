@@ -18,11 +18,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "drizzle-orm": "^0.45.2",
-    "pg": "^8.23.0"
+    "@neondatabase/serverless": "^1.1.0",
+    "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
-    "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.10"
   }
 }

@@ -12,7 +12,7 @@ import {
   unique,
   uuid,
 } from 'drizzle-orm/pg-core';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
 
 const utcTimestamp = (name: string) =>
   timestamp(name, { withTimezone: true, mode: 'date' }).notNull().defaultNow();
@@ -141,7 +141,7 @@ export type RawItemInsert = typeof rawItems.$inferInsert;
  * returns the original row without mutating its immutable payload or provenance.
  */
 export async function upsertRawItem(
-  db: NodePgDatabase<typeof schema>,
+  db: NeonDatabase<typeof schema>,
   values: RawItemInsert,
 ): Promise<typeof rawItems.$inferSelect> {
   const inserted = await db
