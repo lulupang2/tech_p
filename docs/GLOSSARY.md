@@ -80,6 +80,7 @@
 | `DEC-` | 승인 gate task | [TASKS.md](../TASKS.md) |
 | `DISC-` | 조사 task | TASKS.md |
 | `FND-`, `OBS-`, `CON-`, `TST-`, `DB-`, `COL-`, `QUE-`, `PIPE-`, `AI-`, `EVAL-`, `RAG-`, `API-`, `SEC-`, `WEB-`, `OPS-`, `DOC-`, `MVP-` | 구현 task | TASKS.md |
+| `@techpulse/` | pnpm workspace package namespace | ADR-0007, FND-001 |
 
 `EXP-`는 TASKS.md에서 task ID로도 등장하지만 같은 번호가 같은 실험을 가리키므로 충돌이 아니다. `SEC-`는 task 전용이며 위협 ID로 쓰지 않는다.
 
