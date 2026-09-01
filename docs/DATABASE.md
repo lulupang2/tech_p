@@ -138,6 +138,10 @@ PIPE-006 aggregation은 source observation row를 삭제하거나 덮어쓰지 �
 
 시간·topic filter와 approximate vector index를 함께 쓸 때 recall 감소를 측정한다. 필요하면 filter column B-tree, partial index, partition, iterative scan을 비교한다. index 도입은 [EXP-002](./experiments/EXP-002-retrieval.md)의 결과를 ADR로 승격한 뒤 시행한다.
 
+### PIPE-007 replay persistence
+
+Replay uses immutable source/document artifacts and deterministic natural keys; operational events retain UTC occurrence time and redacted error summaries.
+
 ## 5. 전문 검색
 
 - title과 body에 서로 다른 weight를 줄 수 있는 `tsvector`를 사용한다.

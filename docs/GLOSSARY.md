@@ -106,6 +106,8 @@ Metric observation은 위 표의 metric type과 허용 unit 조합만 사용한�
 
 DB 이름을 API에 그대로 노출하지 않고 contract package에서 명시적으로 매핑한다.
 
+`replay scope`: ID-based recovery target (`run`, `raw`, or `stage`). `quarantined`: permanent/policy failure isolated from retry. `dead_letter`: transient failure retained after bounded attempts. `audit event`: append-only operational record with UTC time and redacted summary.
+
 ## 6. 상태 값
 
 | 대상 | 허용 값 |

@@ -59,6 +59,20 @@ export type SourceKey = Static<typeof SourceKeySchema>;
 export const MetricTypeSchema = Type.Union(metricTypes.map((metric) => Type.Literal(metric)));
 export type MetricType = Static<typeof MetricTypeSchema>;
 
+export const ReplayJobPayloadSchema = Type.Object(
+  {
+    schemaVersion: Type.Literal(1),
+    replayId: identifier,
+    naturalKey: identifier,
+    scope: Type.Union([Type.Literal('run'), Type.Literal('raw'), Type.Literal('stage')]),
+    targetId: identifier,
+    stage: Type.Union([Type.Literal('normalization'), Type.Literal('deduplication')]),
+    requestedAt: dateTime,
+  },
+  { additionalProperties: false },
+);
+export type ReplayJobPayload = Static<typeof ReplayJobPayloadSchema>;
+
 export const TimeRangeSchema = Type.Object(
   {
     from: dateTime,

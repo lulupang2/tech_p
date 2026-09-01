@@ -6,10 +6,12 @@ import {
   AnswerRequestSchema,
   AnswerResponseSchema,
   CollectionJobPayloadSchema,
+  ReplayJobPayloadSchema,
   ErrorEnvelopeSchema,
   type AnswerRequest,
   type AnswerResponse,
   type CollectionJobPayload,
+  type ReplayJobPayload,
   type ErrorEnvelope,
   type ValidationIssue,
 } from './schemas.js';
@@ -46,6 +48,7 @@ type CompiledSchema = TypeCheck<TSchema>;
 const answerRequestValidator = TypeCompiler.Compile(AnswerRequestSchema);
 const answerResponseValidator = TypeCompiler.Compile(AnswerResponseSchema);
 const collectionJobPayloadValidator = TypeCompiler.Compile(CollectionJobPayloadSchema);
+const replayJobPayloadValidator = TypeCompiler.Compile(ReplayJobPayloadSchema);
 const errorEnvelopeValidator = TypeCompiler.Compile(ErrorEnvelopeSchema);
 
 function pathFromPointer(pointer: string | undefined): string {
@@ -139,6 +142,14 @@ export function safeParseCollectionJobPayload(
   value: unknown,
 ): SafeParseResult<CollectionJobPayload> {
   return safeParseSchema<CollectionJobPayload>(collectionJobPayloadValidator, value);
+}
+
+export function parseReplayJobPayload(value: unknown): ReplayJobPayload {
+  return parseSchema<ReplayJobPayload>(replayJobPayloadValidator, value);
+}
+
+export function safeParseReplayJobPayload(value: unknown): SafeParseResult<ReplayJobPayload> {
+  return safeParseSchema<ReplayJobPayload>(replayJobPayloadValidator, value);
 }
 
 export type BadRequestValidationResponse = {

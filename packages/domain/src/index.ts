@@ -178,6 +178,9 @@ export {
 } from './chunking.js';
 export type { ChunkingInput, ChunkDraft, ChunkingResult } from './chunking.js';
 
+export { classifyFailure, createReplayService, redactErrorSummary, InvalidReplayRequestError, ReplayTargetNotFoundError } from './replay.js';
+export type { ReplayScope, ReplayStage, ReplayStatus, FailureDisposition, ReplayRequest, ReplayJob, ReplayResult, ReplayPublisherPort, ReplayAuditEvent, ReplayAuditPort, ReplayTargetPort } from './replay.js';
+
 export { createEnrichmentService } from './enrichment.js';
 export type {
   EnrichmentInput,

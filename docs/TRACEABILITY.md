@@ -67,6 +67,8 @@
 | API-004 | ops interface를 HTTP/CLI 중 어디에 둘지 | SECURITY §12 미결정 |
 | OPS-003 | 보존 기간 확정 | DATA_PIPELINE §9 승인 |
 
+PIPE-007 is implemented by the versioned replay contract/service, bounded failure classification, disabled-source guard, and redacted audit boundary in `packages/domain/src/replay.ts` and `apps/worker/src/replay.ts`.
+
 ## 5. 열거하지 않는 task
 
 아래 task는 특정 요구사항에 1:1로 대응하지 않는 기반 작업이며 다른 모든 항목의 전제다. 범위 표기 대신 개별 ID를 적어 누락을 기계적으로 확인할 수 있게 한다.

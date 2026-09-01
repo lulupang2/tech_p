@@ -70,6 +70,10 @@ flowchart LR
 - excerpt는 plain text로 출력하고 UI도 escape한다.
 - archive, binary, download는 MVP에서 처리하지 않는다.
 
+### PIPE-007 replay audit
+
+Replay events contain IDs, disposition, UTC time, and bounded redacted summaries only; raw payloads, credentials, cookies, and provider error bodies are excluded. Disabled source state prevents new replay delivery.
+
 ## 5. RAG와 LLM 보안
 
 - prompt template은 code review 대상이며 버전 관리한다.

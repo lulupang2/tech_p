@@ -159,6 +159,10 @@ document revision의 유효한 chunk가 하나 이상 준비된 트랜잭션에�
 - `repo_attention`은 collection start 이후에 수집된 snapshot observation만 사용한다. 수집 시작 이전 window를 backfill하거나 합성하지 않는다.
 - 검색 파생 observation은 `query_signature`와 `is_incomplete`를 집계 결과에 전파한다. 입력 observation이 없는 window는 결과를 만들지 않고 0으로 채우지 않는다. 모든 window는 UTC instant로 검증한다.
 
+### PIPE-007 replay and recovery
+
+Replay requests address immutable IDs at `run`, `raw`, or `stage` scope and produce schema-versioned deterministic natural keys. Duplicate deliveries do not rewrite raw documents, revisions, chunks, or citations; disabled sources are skipped without enqueueing. Transient failures retry within bounded attempts and then become `dead_letter`; permanent or policy failures become `quarantined`; audit timestamps are UTC with redacted summaries.
+
 ## 6. Playwright collector 규칙
 
 - 격리된 worker/container에서 최소 권한으로 실행한다.
