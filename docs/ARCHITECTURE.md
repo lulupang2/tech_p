@@ -114,11 +114,13 @@ Elysia 추천 이유는 하나의 스키마 정의에서 runtime validation, Typ
 
 **runtime은 Node를 사용한다.** 당초 추천은 Bun이었으나 `EXP-005` run 1에서 **Bun runtime의 Playwright가 local launch와 ws connect 두 transport 모두 실패**했다. 동일 Chromium 바이너리로 Node는 206ms에 launch하고 전 항목을 통과했다. browser server 원격 접속 우회도 Bun에서 막혔으므로, Bun을 유지하려면 browser collector를 완전한 별도 Node 애플리케이션으로 두어야 한다. 그 비용을 감수할 근거가 없어 runtime을 Node로 되돌렸다.
 
-이 결정으로 browser collector는 다른 worker와 같은 runtime에 둔다. Vitest와 Testcontainers도 Node에서 동작이 확인됐다. Fastify는 대체안으로 남기며, NestJS는 강한 구조와 DI가 필요할 때, FastAPI는 Python AI 생태계가 TypeScript 일관성보다 중요하다는 증거가 있을 때 유리하다. 이는 아직 결정이 아니며 `DEC-002` 승인 대상이다.
+이 결정으로 browser collector는 다른 worker와 같은 runtime에 둔다. Vitest와 Testcontainers도 Node에서 동작이 확인됐다. Fastify는 대체안으로 남기며, NestJS는 강한 구조와 DI가 필요할 때, FastAPI는 Python AI 생태계가 TypeScript 일관성보다 중요하다는 증거가 있을 때 유리하다. **DEC-002에서 Node runtime 위의 Elysia가 이미 Accepted됐으므로 backend framework 결정은 완료됐다.**
 
 ## 7. 승인된 저장소 구조
 
-[ADR-0010](./adr/0010-turborepo-monorepo.md)이 package 경계와 monorepo orchestration을 승인했다. [ADR-0007](./adr/0007-repository-layout.md)는 당시의 초기 orchestration 판단으로 Superseded다. 아래 구조와 경계는 승인됐으며, 실제 Turborepo task wiring은 이 문서 변경만으로 구현됐다고 주장하지 않는다. 디렉터리 생성은 `FND-001`에서 한다.
+[ADR-0010](./adr/0010-turborepo-monorepo.md)이 package 경계와 monorepo orchestration을 승인했다. [ADR-0007](./adr/0007-repository-layout.md)는 당시의 초기 orchestration 판단으로 Superseded다. 아래는 승인된 repository tree이며, 현재 존재하는 foundation 경로와 아직 생성하지 않은 계획 경로를 구분한다. 실제 Turborepo task wiring은 이 문서 변경만으로 구현됐다고 주장하지 않는다.
+
+현재 존재 — `FND-001`에서 생성된 foundation 경로:
 
 ```text
 apps/
@@ -132,9 +134,14 @@ packages/
   collectors/   # source adapters (11개 source, ADR-0004)
   rag/          # LangGraph.js retrieval and answer workflow (ADR-0002)
   observability/
+```
+
+계획됨 — 현재 생성하지 않은 테스트 경로:
+
+```text
 tests/
-  fixtures/
-  e2e/          # Playwright UI E2E
+  fixtures/     # planned; TST-001 fixture harness
+  e2e/          # planned; TST-002 Playwright UI E2E
 ```
 
 의존 방향은 `apps → packages`, adapter → domain port다. `domain`은 HTTP, queue, LLM 공급자 SDK에 직접 의존하지 않는다.
