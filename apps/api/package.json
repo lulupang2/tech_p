@@ -7,7 +7,7 @@
     "build": "tsc --noEmit",
     "format": "pnpm --dir ../.. exec prettier --check apps/api",
     "lint": "eslint .",
-    "start": "tsx src/index.ts",
+    "start": "node --env-file=.env --import=tsx/esm src/index.ts",
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
