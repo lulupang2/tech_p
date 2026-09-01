@@ -143,7 +143,14 @@ importers:
 
   packages/observability: {}
 
-  packages/rag: {}
+  packages/rag:
+    dependencies:
+      '@sinclair/typebox':
+        specifier: ^0.34.52
+        version: 0.34.52
+      '@techpulse/contracts':
+        specifier: workspace:*
+        version: link:../contracts
 
   tooling/test-harness: {}
 
