@@ -50,9 +50,22 @@ export function redactErrorSummary(error: unknown, maxLength = 256): string {
     .slice(0, maxLength);
 }
 
-export function classifyFailure(error: unknown, attemptsMade: number, maxAttempts: number): FailureDisposition {
-  const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : '';
-  const transient = Boolean(typeof error === 'object' && error !== null && 'isTransient' in error && (error as { isTransient?: unknown }).isTransient) || code === 'TRANSIENT_ERROR';
+export function classifyFailure(
+  error: unknown,
+  attemptsMade: number,
+  maxAttempts: number,
+): FailureDisposition {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code)
+      : '';
+  const transient =
+    Boolean(
+      typeof error === 'object' &&
+      error !== null &&
+      'isTransient' in error &&
+      (error as { isTransient?: unknown }).isTransient,
+    ) || code === 'TRANSIENT_ERROR';
   if (transient && attemptsMade < maxAttempts) return 'retryable';
   if (transient) return 'dead_letter';
   return 'quarantined';
@@ -78,21 +91,44 @@ export function createReplayService(options: {
 }): { readonly replay: (request: ReplayRequest) => Promise<ReplayResult> } {
   return {
     async replay(request) {
-      if (!request.targetId || !Number.isFinite(request.requestedAt.getTime())) throw new InvalidReplayRequestError('Invalid replay request');
+      if (!request.targetId || !Number.isFinite(request.requestedAt.getTime()))
+        throw new InvalidReplayRequestError('Invalid replay request');
       const stage = request.stage ?? 'normalization';
-      if (request.scope === 'stage' && !request.stage) throw new InvalidReplayRequestError('Stage replay requires stage');
-      if (!(await options.targets.exists(request.scope, request.targetId))) throw new ReplayTargetNotFoundError(request.targetId);
+      if (request.scope === 'stage' && !request.stage)
+        throw new InvalidReplayRequestError('Stage replay requires stage');
+      if (!(await options.targets.exists(request.scope, request.targetId)))
+        throw new ReplayTargetNotFoundError(request.targetId);
       if (!(await options.targets.isEnabled(request.scope, request.targetId))) {
         const result = { status: 'skipped_disabled' as const, jobs: [] };
-        await options.audit?.record({ action: 'replay', scope: request.scope, targetId: request.targetId, status: result.status, occurredAt: new Date(request.requestedAt) });
+        await options.audit?.record({
+          action: 'replay',
+          scope: request.scope,
+          targetId: request.targetId,
+          status: result.status,
+          occurredAt: new Date(request.requestedAt),
+        });
         return result;
       }
       const requestedAt = request.requestedAt.toISOString();
       const naturalKey = `replay:v1:${request.scope}:${request.targetId}:${stage}`;
-      const job: ReplayJob = { schemaVersion: 1, replayId: naturalKey, naturalKey, scope: request.scope, targetId: request.targetId, stage, requestedAt };
+      const job: ReplayJob = {
+        schemaVersion: 1,
+        replayId: naturalKey,
+        naturalKey,
+        scope: request.scope,
+        targetId: request.targetId,
+        stage,
+        requestedAt,
+      };
       const published = await options.publisher.publish(job);
       const status = published.duplicate ? 'duplicate' : 'queued';
-      await options.audit?.record({ action: 'replay', scope: request.scope, targetId: request.targetId, status, occurredAt: new Date(request.requestedAt) });
+      await options.audit?.record({
+        action: 'replay',
+        scope: request.scope,
+        targetId: request.targetId,
+        status,
+        occurredAt: new Date(request.requestedAt),
+      });
       return { status, jobs: [job] };
     },
   };

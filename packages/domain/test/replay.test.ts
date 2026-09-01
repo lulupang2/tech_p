@@ -7,7 +7,12 @@ describe('replay', () => {
     const jobs: unknown[] = [];
     const service = createReplayService({
       targets: { exists: async () => true, isEnabled: async () => true },
-      publisher: { publish: async (job) => { jobs.push(job); return { duplicate: jobs.length > 1 }; } },
+      publisher: {
+        publish: async (job) => {
+          jobs.push(job);
+          return { duplicate: jobs.length > 1 };
+        },
+      },
     });
     const first = await service.replay({ scope: 'run', targetId: 'run-1', requestedAt: at });
     const second = await service.replay({ scope: 'run', targetId: 'run-1', requestedAt: at });
@@ -18,13 +23,30 @@ describe('replay', () => {
   });
   it('does not enqueue disabled or unknown targets', async () => {
     let published = 0;
-    const service = createReplayService({ targets: { exists: async (scope, id) => id !== 'missing', isEnabled: async () => false }, publisher: { publish: async () => { published++; return { duplicate: false }; } } });
-    await expect(service.replay({ scope: 'raw', targetId: 'missing', requestedAt: at })).rejects.toThrow('missing');
-    expect((await service.replay({ scope: 'raw', targetId: 'disabled', requestedAt: at })).status).toBe('skipped_disabled');
+    const service = createReplayService({
+      targets: { exists: async (scope, id) => id !== 'missing', isEnabled: async () => false },
+      publisher: {
+        publish: async () => {
+          published++;
+          return { duplicate: false };
+        },
+      },
+    });
+    await expect(
+      service.replay({ scope: 'raw', targetId: 'missing', requestedAt: at }),
+    ).rejects.toThrow('missing');
+    expect(
+      (await service.replay({ scope: 'raw', targetId: 'disabled', requestedAt: at })).status,
+    ).toBe('skipped_disabled');
     expect(published).toBe(0);
   });
   it('requires stage and classifies bounded failures', async () => {
-    await expect(createReplayService({ targets: { exists: async () => true, isEnabled: async () => true }, publisher: { publish: async () => ({ duplicate: false }) } }).replay({ scope: 'stage', targetId: 'raw-1', requestedAt: at })).rejects.toThrow('Stage replay requires stage');
+    await expect(
+      createReplayService({
+        targets: { exists: async () => true, isEnabled: async () => true },
+        publisher: { publish: async () => ({ duplicate: false }) },
+      }).replay({ scope: 'stage', targetId: 'raw-1', requestedAt: at }),
+    ).rejects.toThrow('Stage replay requires stage');
     expect(classifyFailure({ isTransient: true }, 1, 3)).toBe('retryable');
     expect(classifyFailure({ isTransient: true }, 3, 3)).toBe('dead_letter');
     expect(classifyFailure({ code: 'POLICY_VIOLATION' }, 1, 3)).toBe('quarantined');
