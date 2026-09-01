@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005` 완료. production workspace skeleton·공통 tooling·CI 기본 pipeline·runtime config가 존재한다
+- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001` 완료. `DB-001`, `QUE-001`, `TST-001`은 선행 dependency가 충족되어 착수 가능하며, 나머지는 표의 상태와 gate를 따른다
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -43,9 +43,9 @@
 | FND-004 | 로컬 dependency Compose 구성 | FND-001, DEC-004 | DONE | PostgreSQL+pgvector와 승인 queue dependency가 healthcheck를 통과; persistent/ephemeral profile 구분; secret 기본값이 production에 안전하지 않음을 명시; merge `6967384`에 반영된 Compose 변경(`ebd1b5f`)에서 검증 완료 |
 | FND-005 | runtime config와 secret validation | FND-001 | DONE | API/worker별 필요한 env schema가 startup에 검증됨; secret 값은 log/error에 없음; `.env.example`에는 placeholder만 있음; merge `2d82c74` 및 API/worker static·config test 검증 완료 |
 | FND-006 | CI에 integration·contract·E2E·security 단계 확장 | FND-003, FND-004, DB-003 | BLOCKED | [TESTING §11](./docs/TESTING.md)의 단계 순서가 CI에 존재하고 실패가 merge를 차단; live canary와 유료 LLM 평가는 blocking pipeline 밖에서 실행됨; 아직 구현되지 않은 suite는 빈 통과가 아니라 미등록으로 남고 해당 task 완료 시 추가하는 규칙이 문서화됨 |
-| OBS-001 | 구조화 logging과 correlation contract | FND-001 | READY | request/run/job/source/query ID가 공통 schema로 전달됨; redaction unit test가 token·cookie·payload를 가림 |
-| CON-001 | API/job/domain contract package | FND-001 | READY | answer request/response, error, collection job schema가 versioned runtime validation과 TS type을 한 source에서 제공; invalid fixture 거부 테스트 통과; **알 수 없는 요청 필드 거부가 명시적으로 설정됨**(framework 기본값이 아님, EXP-005 run 2); 검증 실패가 400으로 매핑됨; 미선언 응답 필드 제거가 회귀 테스트로 고정됨 |
-| TST-001 | 공통 fixture·fake clock/ID/provider harness | FND-002, CON-001 | BLOCKED | unit test가 network 없이 deterministic하게 실행; 승인된 runtime의 test runner에서 fake 주입이 성립; fixture provenance/redaction metadata schema가 검증됨 |
+| OBS-001 | 구조화 logging과 correlation contract | FND-001 | DONE | request/run/job/source/query ID가 공통 schema로 전달됨; redaction unit test가 token·cookie·payload를 가림 |
+| CON-001 | API/job/domain contract package | FND-001 | DONE | answer request/response, error, collection job schema가 versioned runtime validation과 TS type을 한 source에서 제공; invalid fixture 거부 테스트 통과; **알 수 없는 요청 필드 거부가 명시적으로 설정됨**(framework 기본값이 아님, EXP-005 run 2); 검증 실패가 400으로 매핑됨; 미선언 응답 필드 제거가 회귀 테스트로 고정됨 |
+| TST-001 | 공통 fixture·fake clock/ID/provider harness | FND-002, CON-001 | READY | unit test가 network 없이 deterministic하게 실행; 승인된 runtime의 test runner에서 fake 주입이 성립; fixture provenance/redaction metadata schema가 검증됨 |
 
 ### FND-001 완료 증빙 (2026-09-01)
 
@@ -76,11 +76,25 @@
 - `pnpm --filter @techpulse/api static`과 `pnpm --filter @techpulse/worker static`이 typecheck·lint·format을 모두 통과했다.
 - `pnpm --filter @techpulse/api test`와 `pnpm --filter @techpulse/worker test`가 각각 2개 test file·4개 test를 통과했다. missing/invalid env, secret redaction, valid defaults를 검증하며 오류에 공급값을 노출하지 않는다.
 
+### CON-001 완료 증빙 (2026-09-01; merge `5c2045d`)
+
+- 현재 main의 `pnpm run static` gate가 typecheck(9개 실행 project), ESLint, Prettier check를 모두 통과했다.
+- `pnpm --filter @techpulse/contracts test`가 2개 test file·11개 test를 통과했다. versioned request/response/error/job validation, unknown field 거부, response sanitization, deterministic HTTP 400 매핑을 검증한다.
+
+### OBS-001 완료 증빙 (2026-09-01; merge `1d59cb3`)
+
+- 현재 main의 `pnpm run static` gate가 typecheck(9개 실행 project), ESLint, Prettier check를 모두 통과했다.
+- `pnpm --filter @techpulse/observability test`가 2개 test file·10개 test를 통과했고, `pnpm --filter @techpulse/worker test`의 correlation test 3개가 통과했다. correlation ID precedence/fallback, UTC structured event, recursive token·cookie·authorization·secret·payload redaction을 검증한다.
+
+### CON-001·OBS-001 통합 확인 (2026-09-01; current main `1d59cb3`)
+
+- `@techpulse/api` test 2개 file·4개 test와 `@techpulse/worker` test 3개 file·7개 test가 통과했다. main gate와 병합된 API/worker runtime 경계에서 두 contract package의 연결을 확인했다.
+
 ## 4. Database and persistence
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
-| DB-001 | migration tool 선택과 extension bootstrap | DEC-002, FND-004 | BLOCKED | 도구 선택이 Accepted ADR 또는 기존 ADR 부록에 기록됨; 빈 DB에 pgvector extension과 migration metadata가 적용·검증됨 |
+| DB-001 | migration tool 선택과 extension bootstrap | DEC-002, FND-004 | READY | 도구 선택이 Accepted ADR 또는 기존 ADR 부록에 기록됨; 빈 DB에 pgvector extension과 migration metadata가 적용·검증됨 |
 | DB-002 | source, run, raw item schema | DB-001 | BLOCKED | source/run/raw/pipeline event table과 FK/unique/check가 migration으로 생성됨; 동일 raw revision 2회 insert가 한 logical row를 유지 |
 | DB-003 | document, revision, topic, chunk, embedding schema | DB-002 | BLOCKED | revision 불변성, publish status, topic link, chunk ordinal, versioned embedding uniqueness가 실제 PostgreSQL integration test로 검증됨 |
 | DB-004 | metric observation, query run, citation schema | DB-003 | BLOCKED | metric 자연 키, query/citation FK와 query-run 내 citation key uniqueness가 검증됨; citation이 immutable revision/chunk를 가리킴 |
@@ -101,7 +115,7 @@
 | COL-008 | 공통 article collector (RSS/HTTP) | COL-001 | BLOCKED | Chrome release notes와 react.dev/blog를 동일 adapter로 처리; feed 발견과 본문 추출 분리; 이미지·상표 미저장; 라이선스·귀속 metadata 저장 |
 | COL-009 | GitHub search 신호 collector | COL-001 | BLOCKED | 질의 문자열과 수집 시각을 스냅샷 메타로 기록해 재현 가능; 1,000건 상한과 분당 30건 준수; `incomplete_results` 처리; 별 히스토리 소급 재구성을 시도하지 않음 |
 | COL-010 | Hugging Face 지표 collector | COL-001 | BLOCKED | 지표만 저장하고 model card 본문을 수집하지 않음; rate limit 계층과 429 처리; namespace 개인정보 미보관 |
-| QUE-001 | scheduler와 versioned job delivery | DEC-004, FND-004, CON-001 | BLOCKED | source/schedule window 중복 job 없음; UTC schedule, retry/backoff, concurrency cap과 job schema validation integration test 통과; **EXP-005 미측정 항목 검증**: SIGKILL 후 재시작 복구, 다중 worker 경합과 backpressure, DB commit 후 job 유실에 대한 outbox 필요성 판단 |
+| QUE-001 | scheduler와 versioned job delivery | DEC-004, FND-004, CON-001 | READY | source/schedule window 중복 job 없음; UTC schedule, retry/backoff, concurrency cap과 job schema validation integration test 통과; **EXP-005 미측정 항목 검증**: SIGKILL 후 재시작 복구, 다중 worker 경합과 backpressure, DB commit 후 job 유실에 대한 outbox 필요성 판단 |
 | PIPE-001 | collection run과 raw ingestion orchestration | COL-001, QUE-001, DB-002, OBS-001 | BLOCKED | raw 저장 후에만 후속 단계가 생성됨; worker kill/동일 job 재전달에서 raw logical duplicate 0; run counts와 오류 상태 조회 가능 |
 | PIPE-002 | deterministic normalization | PIPE-001, DB-003 | BLOCKED | JSON/HTML fixture가 공통 document/metric으로 변환; 게시일 unknown은 null; sanitizer가 script/hidden instruction을 제거; normalizer version 기록 |
 | PIPE-003 | exact dedup과 duplicate cluster | PIPE-002 | BLOCKED | external ID/canonical URL/hash 우선 규칙 통과; cross-source 원본을 삭제하지 않고 cluster link 생성; 동일 재처리 결과 불변 |
@@ -184,7 +198,7 @@ flowchart TD
 
 ## 10. 현재 상태와 다음 행동
 
-**구현 단계다.** `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`가 2026-09-01에 완료됐고, `OBS-001`과 `CON-001`이 현재 착수 가능하다. 후속 task 상태는 §3 표를 따른다.
+**구현 단계다.** `FND-001`~`FND-005`, `CON-001`, `OBS-001`이 2026-09-01에 완료됐다. 현재 착수 가능한 task는 `DB-001`, `QUE-001`, `TST-001`이며, 후속 task 상태는 §3 표를 따른다.
 
 ### 확정된 기술 스택
 
@@ -201,7 +215,7 @@ flowchart TD
 
 ### 구현 순서
 
-`OBS-001`과 `CON-001`은 `FND-001` 완료로 현재 병렬 착수 가능하다. `TST-001`은 `FND-002`와 `CON-001` 완료 뒤 착수한다. `FND-003`과 `FND-005`는 완료됐으며, 그 뒤 `DB-001`~`DB-006`으로 진행한다.
+`CON-001`과 `OBS-001`은 각각 `5c2045d`와 `1d59cb3`에서 완료됐고, 현재 main gate 및 영향 범위 테스트로 확인됐다. `DB-001`은 `DEC-002`·`FND-004`, `QUE-001`은 `DEC-004`·`FND-004`·`CON-001`, `TST-001`은 `FND-002`·`CON-001`이 모두 `DONE`이므로 병렬 착수 가능하다. 이후에는 `DB-001` 완료 뒤 `DB-002`~`DB-006`으로 진행한다.
 
 ### 아직 사람이 처리해야 할 것
 
