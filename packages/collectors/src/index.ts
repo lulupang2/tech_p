@@ -132,3 +132,21 @@ export {
   type GitHubSearchCollectorOptions,
   type GitHubSearchApiResponse,
 } from './github-search.js';
+export {
+  HuggingFaceCollector,
+  HuggingFaceCollectorError,
+  HuggingFaceRateLimitError,
+  HuggingFaceHttpError,
+  HuggingFaceItemNotFoundError,
+  DEFAULT_HUGGINGFACE_LIMIT,
+  DEFAULT_HUGGINGFACE_BASE_URL,
+  buildHuggingFaceExternalId,
+  extractHuggingFaceMetricPayload,
+  parseRetryAfter,
+  readHuggingFaceRateLimit,
+  type HuggingFaceCollectorOptions,
+  type HuggingFaceCursor,
+  type HuggingFaceEntityType,
+  type HuggingFaceSort,
+  type HuggingFaceRateLimitInfo,
+} from './huggingface.js';

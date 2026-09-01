@@ -151,12 +151,21 @@ export const SOURCE_POLICIES: Readonly<Record<SourceKey, SourcePolicy>> = {
   },
   huggingface_hub: {
     sourceKey: 'huggingface_hub',
-    allowedHosts: ['huggingface.co'],
+    allowedHosts: ['huggingface.co', 'api.huggingface.co'],
     allowedSchemes: ['https'],
     maxSizeBytes: 5 * 1024 * 1024,
     maxRedirects: 3,
     verbatimOnly: false,
     defaultLicenseId: null,
-    piiFieldsToStrip: ['author', 'maintainer'],
+    piiFieldsToStrip: [
+      'author',
+      'maintainer',
+      'user',
+      'cardData',
+      'readme',
+      'description',
+      'widgetData',
+      'siblings',
+    ],
   },
 };
