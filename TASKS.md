@@ -160,7 +160,7 @@
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
-| AI-001 | provider-neutral chat/embedding ports와 fakes | FND-001, CON-001, TST-001 | READY | domain/RAG가 provider SDK를 import하지 않음; timeout/usage/model metadata contract와 deterministic fake가 테스트됨; 구현·review 완료 |
+| AI-001 | provider-neutral chat/embedding ports와 fakes | FND-001, CON-001, TST-001 | DONE | domain/RAG가 provider SDK를 import하지 않음; timeout/usage/model metadata contract와 deterministic fake가 테스트됨; 구현·review 완료 |
 | EVAL-001 | 골든 corpus와 질의 라벨 작성 | DEC-001, COL-002, COL-003 | BLOCKED | [EVAL_GOLDEN_SET](./docs/EVAL_GOLDEN_SET.md)의 38개 질문과 5개 주입 항목에 relevance·allowed·forbidden claim 라벨이 채워짐; 검토자와 검토일 기록; `insufficient_evidence`·`unsupported_intent` 기대값이 6개 이상 |
 | EXP-003 | model provider 평가 실행 | AI-001, EVAL-001, PIPE-005 | BLOCKED | [EXP-003](./docs/experiments/EXP-003-model-providers.md)의 최소 2개 후보 품질·latency·비용·policy scorecard와 raw measurement가 기록됨 |
 | DEC-007 | chat/embedding provider와 model 승인 | EXP-003 | GATE | ADR-0006이 Accepted/Rejected로 변경; model IDs, dimensions, budget, data policy가 SSOT/RAG/DATABASE에 반영됨 |
