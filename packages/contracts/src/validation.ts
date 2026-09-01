@@ -10,6 +10,13 @@ import {
   ErrorEnvelopeSchema,
   HealthLiveResponseSchema,
   HealthReadyResponseSchema,
+  SourceSummarySchema,
+  SourceListResponseSchema,
+  SourceDetailResponseSchema,
+  TopicSummarySchema,
+  TopicListResponseSchema,
+  TopicSearchQuerySchema,
+  SourceListQuerySchema,
   type AnswerRequest,
   type AnswerResponse,
   type CollectionJobPayload,
@@ -17,6 +24,13 @@ import {
   type ErrorEnvelope,
   type HealthLiveResponse,
   type HealthReadyResponse,
+  type SourceSummary,
+  type SourceListResponse,
+  type SourceDetailResponse,
+  type TopicSummary,
+  type TopicListResponse,
+  type TopicSearchQuery,
+  type SourceListQuery,
   type ValidationIssue,
 } from './schemas.js';
 
@@ -56,6 +70,13 @@ const replayJobPayloadValidator = TypeCompiler.Compile(ReplayJobPayloadSchema);
 const errorEnvelopeValidator = TypeCompiler.Compile(ErrorEnvelopeSchema);
 const healthLiveResponseValidator = TypeCompiler.Compile(HealthLiveResponseSchema);
 const healthReadyResponseValidator = TypeCompiler.Compile(HealthReadyResponseSchema);
+const sourceSummaryValidator = TypeCompiler.Compile(SourceSummarySchema);
+const sourceListResponseValidator = TypeCompiler.Compile(SourceListResponseSchema);
+const sourceDetailResponseValidator = TypeCompiler.Compile(SourceDetailResponseSchema);
+const topicSummaryValidator = TypeCompiler.Compile(TopicSummarySchema);
+const topicListResponseValidator = TypeCompiler.Compile(TopicListResponseSchema);
+const topicSearchQueryValidator = TypeCompiler.Compile(TopicSearchQuerySchema);
+const sourceListQueryValidator = TypeCompiler.Compile(SourceListQuerySchema);
 
 function pathFromPointer(pointer: string | undefined): string {
   if (!pointer) return '';
@@ -172,6 +193,114 @@ export function parseHealthReadyResponse(value: unknown): HealthReadyResponse {
 
 export function safeParseHealthReadyResponse(value: unknown): SafeParseResult<HealthReadyResponse> {
   return safeParseSchema<HealthReadyResponse>(healthReadyResponseValidator, value);
+}
+
+export function sanitizeSourceSummary(value: unknown): SourceSummary {
+  let cleaned: unknown;
+  try {
+    cleaned = Value.Clean(SourceSummarySchema, value);
+  } catch {
+    throw new ContractValidationError([{ path: '', reason: 'invalid_value' }]);
+  }
+  return parseSchema<SourceSummary>(sourceSummaryValidator, cleaned);
+}
+
+export function parseSourceSummary(value: unknown): SourceSummary {
+  return parseSchema<SourceSummary>(sourceSummaryValidator, value);
+}
+
+export function safeParseSourceSummary(value: unknown): SafeParseResult<SourceSummary> {
+  return safeParseSchema<SourceSummary>(sourceSummaryValidator, value);
+}
+
+export function sanitizeSourceListResponse(value: unknown): SourceListResponse {
+  let cleaned: unknown;
+  try {
+    cleaned = Value.Clean(SourceListResponseSchema, value);
+  } catch {
+    throw new ContractValidationError([{ path: '', reason: 'invalid_value' }]);
+  }
+  return parseSchema<SourceListResponse>(sourceListResponseValidator, cleaned);
+}
+
+export function parseSourceListResponse(value: unknown): SourceListResponse {
+  return parseSchema<SourceListResponse>(sourceListResponseValidator, value);
+}
+
+export function safeParseSourceListResponse(value: unknown): SafeParseResult<SourceListResponse> {
+  return safeParseSchema<SourceListResponse>(sourceListResponseValidator, value);
+}
+
+export function sanitizeSourceDetailResponse(value: unknown): SourceDetailResponse {
+  let cleaned: unknown;
+  try {
+    cleaned = Value.Clean(SourceDetailResponseSchema, value);
+  } catch {
+    throw new ContractValidationError([{ path: '', reason: 'invalid_value' }]);
+  }
+  return parseSchema<SourceDetailResponse>(sourceDetailResponseValidator, cleaned);
+}
+
+export function parseSourceDetailResponse(value: unknown): SourceDetailResponse {
+  return parseSchema<SourceDetailResponse>(sourceDetailResponseValidator, value);
+}
+
+export function safeParseSourceDetailResponse(
+  value: unknown,
+): SafeParseResult<SourceDetailResponse> {
+  return safeParseSchema<SourceDetailResponse>(sourceDetailResponseValidator, value);
+}
+
+export function sanitizeTopicSummary(value: unknown): TopicSummary {
+  let cleaned: unknown;
+  try {
+    cleaned = Value.Clean(TopicSummarySchema, value);
+  } catch {
+    throw new ContractValidationError([{ path: '', reason: 'invalid_value' }]);
+  }
+  return parseSchema<TopicSummary>(topicSummaryValidator, cleaned);
+}
+
+export function parseTopicSummary(value: unknown): TopicSummary {
+  return parseSchema<TopicSummary>(topicSummaryValidator, value);
+}
+
+export function safeParseTopicSummary(value: unknown): SafeParseResult<TopicSummary> {
+  return safeParseSchema<TopicSummary>(topicSummaryValidator, value);
+}
+
+export function sanitizeTopicListResponse(value: unknown): TopicListResponse {
+  let cleaned: unknown;
+  try {
+    cleaned = Value.Clean(TopicListResponseSchema, value);
+  } catch {
+    throw new ContractValidationError([{ path: '', reason: 'invalid_value' }]);
+  }
+  return parseSchema<TopicListResponse>(topicListResponseValidator, cleaned);
+}
+
+export function parseTopicListResponse(value: unknown): TopicListResponse {
+  return parseSchema<TopicListResponse>(topicListResponseValidator, value);
+}
+
+export function safeParseTopicListResponse(value: unknown): SafeParseResult<TopicListResponse> {
+  return safeParseSchema<TopicListResponse>(topicListResponseValidator, value);
+}
+
+export function parseTopicSearchQuery(value: unknown): TopicSearchQuery {
+  return parseSchema<TopicSearchQuery>(topicSearchQueryValidator, value);
+}
+
+export function safeParseTopicSearchQuery(value: unknown): SafeParseResult<TopicSearchQuery> {
+  return safeParseSchema<TopicSearchQuery>(topicSearchQueryValidator, value);
+}
+
+export function parseSourceListQuery(value: unknown): SourceListQuery {
+  return parseSchema<SourceListQuery>(sourceListQueryValidator, value);
+}
+
+export function safeParseSourceListQuery(value: unknown): SafeParseResult<SourceListQuery> {
+  return safeParseSchema<SourceListQuery>(sourceListQueryValidator, value);
 }
 
 export type BadRequestValidationResponse = {

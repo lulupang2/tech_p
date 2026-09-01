@@ -59,6 +59,9 @@ importers:
       '@techpulse/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@techpulse/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@techpulse/observability':
         specifier: workspace:*
         version: link:../../packages/observability

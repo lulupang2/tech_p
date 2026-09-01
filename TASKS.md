@@ -195,7 +195,7 @@
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
 | API-001 | API shell, error model, health/readiness | DEC-002, CON-001, DB-005, FND-005, OBS-001 | DONE | versioned JSON/error contract와 request ID; liveness는 dependency와 무관, readiness는 DB 상태 반영; stack/provider error 비노출 |
-| API-002 | source/topic endpoints | API-001, COL-001, DB-005 | BLOCKED | source freshness를 secret 없이 반환; topic search cursor/limit validation; OpenAPI contract test 통과 |
+| API-002 | source/topic endpoints | API-001, COL-001, DB-005 | DONE | source freshness를 secret 없이 반환; topic search cursor/limit validation; OpenAPI contract test 통과 |
 | API-003 | synchronous answer endpoint | API-001, RAG-005, RAG-006 | BLOCKED | resolved range, answer/insufficient status, observations, citations, coverage 반환; deadline/body cap/idempotency contract test 통과 |
 | SEC-001 | public API abuse controls | API-003, FND-005 | BLOCKED | CORS allowlist, security headers, rate/concurrency/provider budget limit; oversized/injection/fuzz 입력에서 정보 유출·무제한 호출 없음 |
 | API-004 | protected operations endpoints 또는 CLI | PIPE-007, API-001, SEC-001 | BLOCKED | 선택 interface가 strong auth로 보호; bounded collect/replay와 idempotency; public route에서 접근 불가; audit event 생성 |
@@ -311,3 +311,12 @@ flowchart TD
 - `GET /health/ready`는 데이터베이스 연결 상태를 검사하여 정상 시 200, 비정상 또는 장애 시 503을 반환하며 연결 문자열, 인증 정보, SQL 에러 등의 내부 정보는 일체 노출하지 않는다.
 - validation 오류(400), 경로 부재(404), unhandled 500 내부 에러는 일관되게 sanitized `ErrorEnvelope` 규격으로 응답하며 `X-Request-Id` 응답 헤더가 항상 포함된다.
 - 검증: `apps/api` 4개 test file·11개 test 통과, `packages/contracts` 2개 test file·13개 test 통과, `apps/api` 및 `packages/contracts` static/typecheck/lint/format 통과.
+
+### API-002 완료 증빙 (2026-09-02)
+
+- Node runtime 위 Elysia API shell(`apps/api`)에 versioned source 목록/상세(`GET /api/v1/sources`, `GET /api/v1/sources/:key`) 및 topic 검색(`GET /api/v1/topics`) 엔드포인트를 구현했다.
+- `@techpulse/contracts`에 `SourceSummary`, `SourceListResponse`, `SourceDetailResponse`, `TopicSummary`, `TopicListResponse`, `PageInfo`, `SourceListQuery`, `TopicSearchQuery` 스키마 및 runtime validation/sanitization을 추가하고 unknown field를 거부하도록 구성했다.
+- source/topic 엔드포인트는 domain port(`SourceRepositoryPort`, `TopicRepositoryPort`)를 `AppOptions` 의존성 주입으로 연결하여 라우트 계약이 내부 DB 연결에 직접 결합되지 않도록 격리했다.
+- opaque base64url cursor 기반 pagination 및 `limit` validation/clamping을 적용하고, 비정상 cursor 또는 알 수 없는 쿼리 파라미터는 400 `INVALID_REQUEST` `ErrorEnvelope`로 매핑했다. 존재하지 않는 source 키는 404 `NOT_FOUND`로 안전하게 반환된다.
+- 공개 source 상태(`healthy`, `stale`, `degraded`, `disabled`)와 freshness 메타데이터는 데이터베이스 연결 문자열, 내부 자격증명, raw payload 노출 없이 안전하게 반환된다.
+- 검증: `apps/api` 6개 test file·25개 test 통과, `packages/contracts` 2개 test file·22개 test 통과, `apps/api` 및 `packages/contracts` static checks(typecheck, ESLint, Prettier) 전체 통과.

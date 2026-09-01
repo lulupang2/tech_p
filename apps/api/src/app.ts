@@ -1,16 +1,25 @@
 import { createStructuredLogger, type StructuredLogger } from '@techpulse/observability';
-import { type DatabaseClient } from '@techpulse/database';
+import {
+  type DatabaseClient,
+  createSourceRepository,
+  createTopicRepository,
+} from '@techpulse/database';
+import { type SourceRepositoryPort, type TopicRepositoryPort } from '@techpulse/domain';
 import { node } from '@elysiajs/node';
 import { Elysia } from 'elysia';
 
 import { resolveRequestCorrelation } from './correlation.js';
 import { formatErrorToEnvelope } from './errors.js';
 import { createHealthRoutes, type DatabaseHealthCheck } from './routes/health.js';
+import { createSourceRoutes } from './routes/sources.js';
+import { createTopicRoutes } from './routes/topics.js';
 
 export interface AppOptions {
   readonly databaseClient?: DatabaseClient | undefined;
   readonly checkDatabaseHealth?: DatabaseHealthCheck | undefined;
   readonly logger?: StructuredLogger | undefined;
+  readonly sourceRepository?: SourceRepositoryPort | undefined;
+  readonly topicRepository?: TopicRepositoryPort | undefined;
 }
 
 export function createApp(options: AppOptions = {}) {
@@ -18,7 +27,12 @@ export function createApp(options: AppOptions = {}) {
   const checkDatabaseHealth =
     options.checkDatabaseHealth ??
     (options.databaseClient ? () => options.databaseClient!.checkHealth() : undefined);
-
+  const sourceRepository =
+    options.sourceRepository ??
+    (options.databaseClient ? createSourceRepository(options.databaseClient.db) : undefined);
+  const topicRepository =
+    options.topicRepository ??
+    (options.databaseClient ? createTopicRepository(options.databaseClient.db) : undefined);
   return new Elysia({ adapter: node(), normalize: false })
     .state('requestId', '')
     .onRequest(({ request, store }) => {
@@ -47,5 +61,8 @@ export function createApp(options: AppOptions = {}) {
 
       return result.envelope;
     })
-    .use(createHealthRoutes({ checkDatabaseHealth }));
+    .use(createHealthRoutes({ checkDatabaseHealth }))
+    .group('/api/v1', (v1) =>
+      v1.use(createSourceRoutes({ sourceRepository })).use(createTopicRoutes({ topicRepository })),
+    );
 }

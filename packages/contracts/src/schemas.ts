@@ -263,3 +263,94 @@ export const HealthReadyResponseSchema = Type.Object(
   { additionalProperties: false },
 );
 export type HealthReadyResponse = Static<typeof HealthReadyResponseSchema>;
+
+export const SourceStatusSchema = Type.Union([
+  Type.Literal('healthy'),
+  Type.Literal('stale'),
+  Type.Literal('degraded'),
+  Type.Literal('disabled'),
+]);
+export type SourceStatus = Static<typeof SourceStatusSchema>;
+
+export const SourceSummarySchema = Type.Object(
+  {
+    key: SourceKeySchema,
+    displayName: nonEmptyString,
+    kind: nonEmptyString,
+    lastSuccessfulCollectionAt: Type.Union([dateTime, Type.Null()]),
+    freshThrough: Type.Union([dateTime, Type.Null()]),
+    status: SourceStatusSchema,
+    coverageNotes: Type.Array(Type.String()),
+  },
+  { additionalProperties: false },
+);
+export type SourceSummary = Static<typeof SourceSummarySchema>;
+
+export const PageInfoSchema = Type.Object(
+  {
+    nextCursor: Type.Union([Type.String(), Type.Null()]),
+    limit: Type.Integer({ minimum: 1 }),
+  },
+  { additionalProperties: false },
+);
+export type PageInfo = Static<typeof PageInfoSchema>;
+
+export const SourceListResponseSchema = Type.Object(
+  {
+    requestId: identifier,
+    items: Type.Array(SourceSummarySchema),
+    page: PageInfoSchema,
+  },
+  { additionalProperties: false },
+);
+export type SourceListResponse = Static<typeof SourceListResponseSchema>;
+
+export const SourceDetailResponseSchema = Type.Object(
+  {
+    requestId: identifier,
+    source: SourceSummarySchema,
+  },
+  { additionalProperties: false },
+);
+export type SourceDetailResponse = Static<typeof SourceDetailResponseSchema>;
+
+export const TopicSummarySchema = Type.Object(
+  {
+    slug: nonEmptyString,
+    displayName: nonEmptyString,
+    parent: Type.Union([Type.String(), Type.Null()]),
+    aliases: Type.Array(Type.String()),
+    taxonomyVersion: nonEmptyString,
+  },
+  { additionalProperties: false },
+);
+export type TopicSummary = Static<typeof TopicSummarySchema>;
+
+export const TopicListResponseSchema = Type.Object(
+  {
+    requestId: identifier,
+    items: Type.Array(TopicSummarySchema),
+    page: PageInfoSchema,
+  },
+  { additionalProperties: false },
+);
+export type TopicListResponse = Static<typeof TopicListResponseSchema>;
+
+export const TopicSearchQuerySchema = Type.Object(
+  {
+    q: Type.Optional(Type.String({ maxLength: 256 })),
+    cursor: Type.Optional(Type.String({ maxLength: 512 })),
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+  },
+  { additionalProperties: false },
+);
+export type TopicSearchQuery = Static<typeof TopicSearchQuerySchema>;
+
+export const SourceListQuerySchema = Type.Object(
+  {
+    cursor: Type.Optional(Type.String({ maxLength: 512 })),
+    limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 100 })),
+  },
+  { additionalProperties: false },
+);
+export type SourceListQuery = Static<typeof SourceListQuerySchema>;

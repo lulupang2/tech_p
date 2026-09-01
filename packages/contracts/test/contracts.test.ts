@@ -8,12 +8,28 @@ import {
   parseCollectionJobPayload,
   parseHealthLiveResponse,
   parseHealthReadyResponse,
-  sanitizeAnswerResponse,
+  parseSourceDetailResponse,
+  parseSourceListResponse,
+  parseSourceSummary,
+  parseTopicListResponse,
+  parseTopicSearchQuery,
+  parseTopicSummary,
   safeParseAnswerRequest,
   safeParseCollectionJobPayload,
   safeParseErrorEnvelope,
   safeParseHealthLiveResponse,
   safeParseHealthReadyResponse,
+  safeParseSourceDetailResponse,
+  safeParseSourceListQuery,
+  safeParseSourceListResponse,
+  safeParseSourceSummary,
+  safeParseTopicListResponse,
+  safeParseTopicSearchQuery,
+  safeParseTopicSummary,
+  sanitizeAnswerResponse,
+  sanitizeSourceDetailResponse,
+  sanitizeSourceListResponse,
+  sanitizeTopicListResponse,
 } from '../src/index.js';
 import {
   jobWithUnknownField,
@@ -156,5 +172,116 @@ describe('health contracts', () => {
       timestamp: '2026-09-02T12:00:00.000Z',
       dependencies: { database: 'unavailable' },
     });
+  });
+});
+
+describe('source contracts', () => {
+  const validSource = {
+    key: 'github_releases' as const,
+    displayName: 'GitHub Releases',
+    kind: 'releases',
+    lastSuccessfulCollectionAt: '2026-09-02T00:00:00.000Z',
+    freshThrough: '2026-09-02T00:00:00.000Z',
+    status: 'healthy' as const,
+    coverageNotes: ['Tracks approved repository releases'],
+  };
+
+  test('validates source summary contract', () => {
+    expect(parseSourceSummary(validSource)).toEqual(validSource);
+  });
+
+  test('rejects undeclared fields in source summary', () => {
+    const withSecret = { ...validSource, secretToken: 'leak' };
+    expect(safeParseSourceSummary(withSecret).success).toBe(false);
+  });
+
+  test('validates source list response contract with pagination', () => {
+    const listResponse = {
+      requestId: 'req_sources_1',
+      items: [validSource],
+      page: {
+        nextCursor: null,
+        limit: 20,
+      },
+    };
+    expect(parseSourceListResponse(listResponse)).toEqual(listResponse);
+    expect(safeParseSourceListResponse(listResponse).success).toBe(true);
+  });
+
+  test('sanitizes source list response undeclared fields', () => {
+    const sanitized = sanitizeSourceListResponse({
+      requestId: 'req_sources_2',
+      items: [{ ...validSource, internalDbId: '123' }],
+      page: { nextCursor: 'cur_abc', limit: 10, extra: 'forbidden' },
+      extraField: true,
+    });
+    expect('extraField' in sanitized).toBe(false);
+    expect('internalDbId' in sanitized.items[0]!).toBe(false);
+    expect(sanitized.page.nextCursor).toBe('cur_abc');
+  });
+
+  test('validates and sanitizes source detail response', () => {
+    const detail = {
+      requestId: 'req_detail_1',
+      source: validSource,
+    };
+    expect(parseSourceDetailResponse(detail)).toEqual(detail);
+    expect(safeParseSourceDetailResponse(detail).success).toBe(true);
+
+    const sanitized = sanitizeSourceDetailResponse({
+      ...detail,
+      source: { ...validSource, internalSecret: 'hide' },
+      leak: 'strip',
+    });
+    expect('leak' in sanitized).toBe(false);
+    expect('internalSecret' in sanitized.source).toBe(false);
+  });
+
+  test('validates source list query parameters', () => {
+    expect(safeParseSourceListQuery({ limit: 10, cursor: 'cur_1' }).success).toBe(true);
+    expect(safeParseSourceListQuery({ limit: -1 }).success).toBe(false);
+    expect(safeParseSourceListQuery({ unknownParam: 'invalid' }).success).toBe(false);
+  });
+});
+
+describe('topic contracts', () => {
+  const validTopic = {
+    slug: 'typescript',
+    displayName: 'TypeScript',
+    parent: 'language-runtime',
+    aliases: ['typescript', 'ts', '타입스크립트'],
+    taxonomyVersion: '2026-09-01.1',
+  };
+
+  test('validates topic summary contract', () => {
+    expect(parseTopicSummary(validTopic)).toEqual(validTopic);
+    expect(safeParseTopicSummary(validTopic).success).toBe(true);
+  });
+
+  test('validates and sanitizes topic list response contract with pagination', () => {
+    const listResponse = {
+      requestId: 'req_topics_1',
+      items: [validTopic],
+      page: {
+        nextCursor: 'cur_topic_2',
+        limit: 20,
+      },
+    };
+    expect(parseTopicListResponse(listResponse)).toEqual(listResponse);
+    expect(safeParseTopicListResponse(listResponse).success).toBe(true);
+
+    const sanitized = sanitizeTopicListResponse({
+      ...listResponse,
+      items: [{ ...validTopic, internalScore: 99 }],
+      extraField: 'remove',
+    });
+    expect('extraField' in sanitized).toBe(false);
+    expect('internalScore' in sanitized.items[0]!).toBe(false);
+  });
+
+  test('validates topic search query', () => {
+    expect(parseTopicSearchQuery({ q: 'ts', limit: 5 })).toEqual({ q: 'ts', limit: 5 });
+    expect(safeParseTopicSearchQuery({ limit: 101 }).success).toBe(false);
+    expect(safeParseTopicSearchQuery({ invalidProp: 'bad' }).success).toBe(false);
   });
 });
