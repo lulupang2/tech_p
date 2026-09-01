@@ -1,2 +1,26 @@
-/** Database adapters and migrations are introduced by DB-001 onward. */
-export {};
+/**
+ * TechPulse database package entrypoint.
+ *
+ * Implements ADR-0009: Drizzle ORM + Drizzle Kit with Node PostgreSQL driver.
+ * Exposes lazy client factory, schema entrypoint, and migration utilities.
+ */
+
+export { schema, type DatabaseSchema } from './schema/index.js';
+export {
+  type DatabaseConfig,
+  type Environment,
+  DatabaseConfigError,
+  isValidDatabaseUrl,
+  maskDatabaseUrl,
+  validateDatabaseConfig,
+  loadDatabaseConfig,
+} from './config.js';
+export { type DatabaseClient, createDatabaseClient } from './client.js';
+export {
+  type MigrateOptions,
+  type MigrationResult,
+  type VectorExtensionInfo,
+  DEFAULT_MIGRATIONS_FOLDER,
+  migrateDatabase,
+  checkVectorExtension,
+} from './migrate.js';
