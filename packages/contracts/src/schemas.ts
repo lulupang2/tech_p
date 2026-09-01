@@ -1,4 +1,5 @@
-import { t, type Static } from 'elysia';
+import { Type, type Static } from '@sinclair/typebox';
+import { FormatRegistry } from '@sinclair/typebox/type';
 
 export const CONTRACT_VERSION = 'v1' as const;
 export const CONTRACT_SCHEMA_VERSION = 1 as const;
@@ -28,17 +29,37 @@ const metricTypes = [
   'package_downloads',
 ] as const;
 
-const dateTime = t.String({ format: 'date-time' });
-const nonEmptyString = t.String({ minLength: 1 });
-const identifier = t.String({ minLength: 1, maxLength: 256 });
+if (!FormatRegistry.Has('date-time')) {
+  FormatRegistry.Set(
+    'date-time',
+    (value) =>
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(value) &&
+      !Number.isNaN(Date.parse(value)),
+  );
+}
 
-export const SourceKeySchema = t.Union(sourceKeys.map((key) => t.Literal(key)));
+if (!FormatRegistry.Has('uri')) {
+  FormatRegistry.Set('uri', (value) => {
+    try {
+      new URL(value);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
+const dateTime = Type.String({ format: 'date-time' });
+const nonEmptyString = Type.String({ minLength: 1 });
+const identifier = Type.String({ minLength: 1, maxLength: 256 });
+
+export const SourceKeySchema = Type.Union(sourceKeys.map((key) => Type.Literal(key)));
 export type SourceKey = Static<typeof SourceKeySchema>;
 
-export const MetricTypeSchema = t.Union(metricTypes.map((metric) => t.Literal(metric)));
+export const MetricTypeSchema = Type.Union(metricTypes.map((metric) => Type.Literal(metric)));
 export type MetricType = Static<typeof MetricTypeSchema>;
 
-export const TimeRangeSchema = t.Object(
+export const TimeRangeSchema = Type.Object(
   {
     from: dateTime,
     to: dateTime,
@@ -47,57 +68,57 @@ export const TimeRangeSchema = t.Object(
 );
 export type TimeRange = Static<typeof TimeRangeSchema>;
 
-export const AnswerRequestSchema = t.Object(
+export const AnswerRequestSchema = Type.Object(
   {
-    question: t.String({ minLength: 1, maxLength: 2_000 }),
-    timeRange: t.Optional(TimeRangeSchema),
-    timezone: t.Optional(t.String({ minLength: 1, maxLength: 128 })),
-    language: t.Optional(t.Union([t.Literal('ko'), t.Literal('en')])),
+    question: Type.String({ minLength: 1, maxLength: 2_000 }),
+    timeRange: Type.Optional(TimeRangeSchema),
+    timezone: Type.Optional(Type.String({ minLength: 1, maxLength: 128 })),
+    language: Type.Optional(Type.Union([Type.Literal('ko'), Type.Literal('en')])),
   },
   { additionalProperties: false },
 );
 export type AnswerRequest = Static<typeof AnswerRequestSchema>;
 
-export const LicenseSchema = t.Object(
+export const LicenseSchema = Type.Object(
   {
     id: nonEmptyString,
     name: nonEmptyString,
-    url: t.String({ format: 'uri' }),
+    url: Type.String({ format: 'uri' }),
     attribution: nonEmptyString,
   },
   { additionalProperties: false },
 );
 export type License = Static<typeof LicenseSchema>;
 
-export const CitationSchema = t.Object(
+export const CitationSchema = Type.Object(
   {
     id: identifier,
     documentRevisionId: identifier,
     title: nonEmptyString,
     source: SourceKeySchema,
-    url: t.String({ format: 'uri' }),
-    publishedAt: t.Union([dateTime, t.Null()]),
-    excerpt: t.Optional(t.String()),
-    excerptIsVerbatim: t.Boolean(),
-    license: t.Optional(LicenseSchema),
+    url: Type.String({ format: 'uri' }),
+    publishedAt: Type.Union([dateTime, Type.Null()]),
+    excerpt: Type.Optional(Type.String()),
+    excerptIsVerbatim: Type.Boolean(),
+    license: Type.Optional(LicenseSchema),
   },
   { additionalProperties: false },
 );
 export type Citation = Static<typeof CitationSchema>;
 
-export const ObservationSchema = t.Object(
+export const ObservationSchema = Type.Object(
   {
     subject: nonEmptyString,
     metric: MetricTypeSchema,
-    value: t.Number(),
+    value: Type.Number(),
     unit: nonEmptyString,
-    change: t.Union([t.Number(), t.Null()]),
+    change: Type.Union([Type.Number(), Type.Null()]),
   },
   { additionalProperties: false },
 );
 export type Observation = Static<typeof ObservationSchema>;
 
-export const ResolvedTimeRangeSchema = t.Object(
+export const ResolvedTimeRangeSchema = Type.Object(
   {
     from: dateTime,
     to: dateTime,
@@ -107,74 +128,74 @@ export const ResolvedTimeRangeSchema = t.Object(
 );
 export type ResolvedTimeRange = Static<typeof ResolvedTimeRangeSchema>;
 
-export const CoverageSchema = t.Object(
+export const CoverageSchema = Type.Object(
   {
     dataFreshThrough: dateTime,
-    sourcesUsed: t.Integer({ minimum: 0 }),
-    documentsConsidered: t.Integer({ minimum: 0 }),
-    limitations: t.Array(t.String()),
+    sourcesUsed: Type.Integer({ minimum: 0 }),
+    documentsConsidered: Type.Integer({ minimum: 0 }),
+    limitations: Type.Array(Type.String()),
   },
   { additionalProperties: false },
 );
 export type Coverage = Static<typeof CoverageSchema>;
 
-export const AnswerResponseSchema = t.Object(
+export const AnswerResponseSchema = Type.Object(
   {
     requestId: identifier,
     answerId: identifier,
-    status: t.Union([
-      t.Literal('answered'),
-      t.Literal('insufficient_evidence'),
-      t.Literal('unsupported_intent'),
+    status: Type.Union([
+      Type.Literal('answered'),
+      Type.Literal('insufficient_evidence'),
+      Type.Literal('unsupported_intent'),
     ]),
     intent: nonEmptyString,
     resolvedTimeRange: ResolvedTimeRangeSchema,
-    answer: t.Union([t.String(), t.Null()]),
-    observations: t.Array(ObservationSchema),
-    citations: t.Array(CitationSchema),
+    answer: Type.Union([Type.String(), Type.Null()]),
+    observations: Type.Array(ObservationSchema),
+    citations: Type.Array(CitationSchema),
     coverage: CoverageSchema,
   },
   { additionalProperties: false },
 );
 export type AnswerResponse = Static<typeof AnswerResponseSchema>;
 
-export const ErrorCodeSchema = t.Union([
-  t.Literal('INVALID_REQUEST'),
-  t.Literal('INVALID_TIME_RANGE'),
-  t.Literal('UNAUTHENTICATED'),
-  t.Literal('FORBIDDEN'),
-  t.Literal('NOT_FOUND'),
-  t.Literal('RUN_ALREADY_ACTIVE'),
-  t.Literal('IDEMPOTENCY_CONFLICT'),
-  t.Literal('REQUEST_TOO_LARGE'),
-  t.Literal('RATE_LIMITED'),
-  t.Literal('MODEL_PROVIDER_ERROR'),
-  t.Literal('DEPENDENCY_UNAVAILABLE'),
-  t.Literal('ANSWER_TIMEOUT'),
+export const ErrorCodeSchema = Type.Union([
+  Type.Literal('INVALID_REQUEST'),
+  Type.Literal('INVALID_TIME_RANGE'),
+  Type.Literal('UNAUTHENTICATED'),
+  Type.Literal('FORBIDDEN'),
+  Type.Literal('NOT_FOUND'),
+  Type.Literal('RUN_ALREADY_ACTIVE'),
+  Type.Literal('IDEMPOTENCY_CONFLICT'),
+  Type.Literal('REQUEST_TOO_LARGE'),
+  Type.Literal('RATE_LIMITED'),
+  Type.Literal('MODEL_PROVIDER_ERROR'),
+  Type.Literal('DEPENDENCY_UNAVAILABLE'),
+  Type.Literal('ANSWER_TIMEOUT'),
 ]);
 export type ErrorCode = Static<typeof ErrorCodeSchema>;
 
-export const ValidationIssueSchema = t.Object(
+export const ValidationIssueSchema = Type.Object(
   {
-    path: t.String(),
+    path: Type.String(),
     reason: nonEmptyString,
   },
   { additionalProperties: false },
 );
 export type ValidationIssue = Static<typeof ValidationIssueSchema>;
 
-export const ErrorSchema = t.Object(
+export const ErrorSchema = Type.Object(
   {
     code: ErrorCodeSchema,
     message: nonEmptyString,
-    details: t.Array(ValidationIssueSchema),
-    retryable: t.Boolean(),
+    details: Type.Array(ValidationIssueSchema),
+    retryable: Type.Boolean(),
   },
   { additionalProperties: false },
 );
 export type ContractError = Static<typeof ErrorSchema>;
 
-export const ErrorEnvelopeSchema = t.Object(
+export const ErrorEnvelopeSchema = Type.Object(
   {
     requestId: identifier,
     error: ErrorSchema,
@@ -183,18 +204,13 @@ export const ErrorEnvelopeSchema = t.Object(
 );
 export type ErrorEnvelope = Static<typeof ErrorEnvelopeSchema>;
 
-export const CollectionJobPayloadSchema = t.Object(
+export const CollectionJobPayloadSchema = Type.Object(
   {
-    schemaVersion: t.Literal(CONTRACT_SCHEMA_VERSION),
+    schemaVersion: Type.Literal(CONTRACT_SCHEMA_VERSION),
     collectionRunId: identifier,
     sourceKey: SourceKeySchema,
-    cursor: t.Union([t.String({ maxLength: 4_096 }), t.Null()]),
+    cursor: Type.Union([Type.String({ maxLength: 4_096 }), Type.Null()]),
   },
   { additionalProperties: false },
 );
 export type CollectionJobPayload = Static<typeof CollectionJobPayloadSchema>;
-
-/** Elysia must disable normalization to preserve strict request rejection. */
-export const ElysiaContractOptions = {
-  normalize: false,
-} as const;

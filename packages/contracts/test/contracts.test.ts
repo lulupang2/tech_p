@@ -4,18 +4,22 @@ import {
   ContractValidationError,
   mapValidationFailureTo400,
   parseAnswerRequest,
+  parseAnswerResponse,
   parseCollectionJobPayload,
   sanitizeAnswerResponse,
   safeParseAnswerRequest,
   safeParseCollectionJobPayload,
+  safeParseErrorEnvelope,
 } from '../src/index.js';
 import {
   jobWithUnknownField,
+  malformedAnswerResponse,
   requestWithUnknownField,
   responseWithUndeclaredFields,
   validAnswerRequest,
   validAnswerResponse,
   validCollectionJobPayload,
+  validErrorEnvelope,
 } from './fixtures/contracts.js';
 
 describe('answer request contract', () => {
@@ -68,6 +72,10 @@ describe('answer response contract', () => {
     expect(result.answer).toBeNull();
     expect(result.citations[0]?.license?.id).toBe('cc-by-4.0');
   });
+
+  test('rejects malformed response values', () => {
+    expect(() => parseAnswerResponse(malformedAnswerResponse)).toThrow(ContractValidationError);
+  });
 });
 
 describe('collection job contract', () => {
@@ -77,6 +85,21 @@ describe('collection job contract', () => {
 
   test('rejects large/raw undeclared payload fields', () => {
     const result = safeParseCollectionJobPayload(jobWithUnknownField);
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('error envelope contract', () => {
+  test('accepts the documented validation error envelope', () => {
+    expect(safeParseErrorEnvelope(validErrorEnvelope)).toMatchObject({ success: true });
+  });
+
+  test('rejects undeclared error fields', () => {
+    const result = safeParseErrorEnvelope({
+      ...validErrorEnvelope,
+      error: { ...validErrorEnvelope.error, internal: 'must be rejected' },
+    });
 
     expect(result.success).toBe(false);
   });

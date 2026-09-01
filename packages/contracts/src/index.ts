@@ -6,7 +6,6 @@ export {
   CONTRACT_SCHEMA_VERSION,
   CONTRACT_VERSION,
   CoverageSchema,
-  ElysiaContractOptions,
   ErrorCodeSchema,
   ErrorEnvelopeSchema,
   ErrorSchema,

@@ -54,6 +54,21 @@ export const validCollectionJobPayload = {
   cursor: null,
 };
 
+export const validErrorEnvelope = {
+  requestId: 'req_fixture',
+  error: {
+    code: 'INVALID_REQUEST',
+    message: 'Request validation failed',
+    details: [{ path: 'question', reason: 'min_length' }],
+    retryable: false,
+  },
+};
+
+export const malformedAnswerResponse = {
+  ...validAnswerResponse,
+  answer: 42,
+};
+
 export const requestWithUnknownField = {
   ...validAnswerRequest,
   internalPrompt: 'must be rejected',

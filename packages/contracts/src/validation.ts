@@ -1,4 +1,6 @@
-import { getSchemaValidator, type TSchema } from 'elysia';
+import { type TSchema } from '@sinclair/typebox';
+import { TypeCompiler, type TypeCheck } from '@sinclair/typebox/compiler';
+import { Value } from '@sinclair/typebox/value';
 
 import {
   AnswerRequestSchema,
@@ -39,6 +41,13 @@ type SchemaValidationError = {
   readonly type?: unknown;
 };
 
+type CompiledSchema = TypeCheck<TSchema>;
+
+const answerRequestValidator = TypeCompiler.Compile(AnswerRequestSchema);
+const answerResponseValidator = TypeCompiler.Compile(AnswerResponseSchema);
+const collectionJobPayloadValidator = TypeCompiler.Compile(CollectionJobPayloadSchema);
+const errorEnvelopeValidator = TypeCompiler.Compile(ErrorEnvelopeSchema);
+
 function pathFromPointer(pointer: string | undefined): string {
   if (!pointer) return '';
 
@@ -68,23 +77,17 @@ function issuesFromErrors(
     }));
 }
 
-function parseSchema<T>(schema: TSchema, value: unknown): T {
-  const validator = getSchemaValidator(schema, { normalize: false });
-  if (!validator) {
-    throw new Error('Unable to create contract validator');
+function parseSchema<T>(validator: CompiledSchema, value: unknown): T {
+  if (!validator.Check(value)) {
+    throw new ContractValidationError(issuesFromErrors([...validator.Errors(value)]));
   }
 
-  const result = validator.safeParse(value);
-  if (!result.success) {
-    throw new ContractValidationError(issuesFromErrors(result.errors));
-  }
-
-  return result.data as T;
+  return value as T;
 }
 
-function safeParseSchema<T>(schema: TSchema, value: unknown): SafeParseResult<T> {
+function safeParseSchema<T>(validator: CompiledSchema, value: unknown): SafeParseResult<T> {
   try {
-    return { success: true, data: parseSchema<T>(schema, value) };
+    return { success: true, data: parseSchema<T>(validator, value) };
   } catch (error) {
     if (error instanceof ContractValidationError) {
       return { success: false, error };
@@ -94,53 +97,48 @@ function safeParseSchema<T>(schema: TSchema, value: unknown): SafeParseResult<T>
 }
 
 export function parseAnswerRequest(value: unknown): AnswerRequest {
-  return parseSchema<AnswerRequest>(AnswerRequestSchema, value);
+  return parseSchema<AnswerRequest>(answerRequestValidator, value);
 }
 
 export function safeParseAnswerRequest(value: unknown): SafeParseResult<AnswerRequest> {
-  return safeParseSchema<AnswerRequest>(AnswerRequestSchema, value);
+  return safeParseSchema<AnswerRequest>(answerRequestValidator, value);
 }
 
 export function sanitizeAnswerResponse(value: unknown): AnswerResponse {
-  const validator = getSchemaValidator(AnswerResponseSchema, { normalize: 'typebox' });
-  if (!validator?.Clean) {
-    throw new Error('Unable to create response sanitizer');
-  }
-
   let cleaned: unknown;
   try {
-    cleaned = validator.Clean(value);
+    cleaned = Value.Clean(AnswerResponseSchema, value);
   } catch {
     throw new ContractValidationError([{ path: '', reason: 'invalid_value' }]);
   }
 
-  return parseSchema<AnswerResponse>(AnswerResponseSchema, cleaned);
+  return parseSchema<AnswerResponse>(answerResponseValidator, cleaned);
 }
 
 export function parseAnswerResponse(value: unknown): AnswerResponse {
-  return parseSchema<AnswerResponse>(AnswerResponseSchema, value);
+  return parseSchema<AnswerResponse>(answerResponseValidator, value);
 }
 
 export function safeParseAnswerResponse(value: unknown): SafeParseResult<AnswerResponse> {
-  return safeParseSchema<AnswerResponse>(AnswerResponseSchema, value);
+  return safeParseSchema<AnswerResponse>(answerResponseValidator, value);
 }
 
 export function parseErrorEnvelope(value: unknown): ErrorEnvelope {
-  return parseSchema<ErrorEnvelope>(ErrorEnvelopeSchema, value);
+  return parseSchema<ErrorEnvelope>(errorEnvelopeValidator, value);
 }
 
 export function safeParseErrorEnvelope(value: unknown): SafeParseResult<ErrorEnvelope> {
-  return safeParseSchema<ErrorEnvelope>(ErrorEnvelopeSchema, value);
+  return safeParseSchema<ErrorEnvelope>(errorEnvelopeValidator, value);
 }
 
 export function parseCollectionJobPayload(value: unknown): CollectionJobPayload {
-  return parseSchema<CollectionJobPayload>(CollectionJobPayloadSchema, value);
+  return parseSchema<CollectionJobPayload>(collectionJobPayloadValidator, value);
 }
 
 export function safeParseCollectionJobPayload(
   value: unknown,
 ): SafeParseResult<CollectionJobPayload> {
-  return safeParseSchema<CollectionJobPayload>(CollectionJobPayloadSchema, value);
+  return safeParseSchema<CollectionJobPayload>(collectionJobPayloadValidator, value);
 }
 
 export type BadRequestValidationResponse = {
