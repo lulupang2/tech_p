@@ -55,7 +55,7 @@
 | 항목 | 값 |
 |---|---|
 | endpoint | `https://api.stackexchange.com/2.3/questions` 등. `site` 파라미터 필수 |
-| 인증 | key + access_token 권장. 기본 일 10,000 quota, IP당 초당 30 초과 시 차단 |
+| 인증 | API key. OAuth access token은 사용자별 read/write 작업에만 필요하며 수집에는 쓰지 않는다 |
 | rate 전략 | 응답 본문 `backoff` 준수. 동일 질의를 분당 1회 이상 호출하지 않음 |
 | cursor | `last_activity_date` 기준 incremental + overlap window |
 | external_id | `question_id` (site 별로 namespace 분리) |

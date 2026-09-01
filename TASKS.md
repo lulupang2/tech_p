@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`, `DB-002`, `DB-003`, `DB-004`, `DB-005`, `DB-006`, `QUE-001`, `AI-001`, `DEC-008` 완료. `COL-001` 및 `FND-006` 착수 준비 상태이며, 나머지는 표의 상태와 dependency gate를 따른다
+- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`~`DB-006`, `QUE-001`, `AI-001`, `DEC-008`, `COL-001`~`COL-004`, `COL-006`, `COL-008` 완료. 이후 task는 표의 dependency gate를 따른다.
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -24,7 +24,7 @@
 |---|---|---|---|---|
 | DISC-001 | 초기 source rights matrix 작성 | - | DONE | [SOURCE_RIGHTS.md](./docs/SOURCE_RIGHTS.md)에 후보별 근거·인용·확인일이 기록됨; 채택 source key 11개(텍스트 7, 지표 4)와 제외·보류 10개가 결론과 함께 정리됨; Playwright 대상 확정; 사용자 확인 완료 2026-09-01 |
 | DEC-001 | 초기 source set 승인 (권리 근거) | DISC-001 | DONE | ADR-0004가 Accepted(2026-09-01); 제외·포함 근거 기록; `verbatim_only`와 게시물별 license 규칙이 설계에 반영됨; SSOT §3.1·§3.2 동기화 완료 |
-| DISC-002 | source 자격증명 확보와 인증 rate 재측정 | EXP-001 | GATE (framework) | `.env.example`에 `GITHUB_PAT`, `STACK_EXCHANGE_KEY`, `STACK_EXCHANGE_ACCESS_TOKEN`, `HUGGINGFACE_TOKEN` placeholder 등록; `docs/experiments/DISC-002-source-credential-verification.md` 측정 프로토콜 기록; 실제 값 커밋 금지 확인 (`git diff`에서 `ghp_...`/`<key>`/`hf_...`만 확인). 인증 상태 10회 재측정은 실제 credential 주입 후 실행 (2026-09-02) |
+| DISC-002 | source 자격증명 확보와 인증 rate 재측정 | EXP-001 | GATE (framework) | `.env.example`에 `GITHUB_PAT`, `STACK_EXCHANGE_KEY`, `HUGGINGFACE_TOKEN` placeholder 등록; `docs/experiments/DISC-002-source-credential-verification.md` 측정 프로토콜 기록; 실제 값 커밋 금지 확인 (`git diff`에서 `ghp_...`/`<key>`/`hf_...`만 확인). 인증 상태 10회 재측정은 실제 credential 주입 후 실행 (2026-09-02) |
 | EXP-001 | source feasibility 실험 실행 | DISC-001 | DONE | run 1·2 측정 완료(2026-09-01). raw measurement: `experiments/exp-001/result.json`, `experiments/exp-001/repeat-result.json`. 11개 source 도달, 10개 source 10회 반복 100% 성공, `github_search` 미인증 5/10로 **인증 필수** 판정. 결과가 [SOURCE_CATALOG §14](./docs/SOURCE_CATALOG.md)와 [SOURCE_RIGHTS](./docs/SOURCE_RIGHTS.md)에 반영됨. 인증 상태 rate 재측정은 `DISC-002` acceptance로 이관 |
 | DEC-002 | backend framework와 server runtime 승인 | EXP-005 | DONE | ADR-0001이 Accepted(2026-09-01); **Node runtime 위의 Elysia** 확정, Bun 미도입; 별도 schema library 없이 `t.*`가 단일 출처; 알 수 없는 필드 거부는 명시적 설정, 검증 실패는 400 매핑; SSOT §3.3·ARCHITECTURE §6 동기화 완료 |
 | DEC-003 | AI orchestration 승인 | - | DONE | ADR-0002가 Accepted(2026-09-01); LangGraph.js deterministic workflow 확정, agent loop·장기 memory 미사용 명시; SSOT §3.3·RAG §3·§12 동기화 완료 |
@@ -111,14 +111,14 @@
 | DB-005 | repository ports/adapters 구현 | DB-004, CON-001 | DONE | domain port가 framework type에 의존하지 않음; transaction rollback, pagination, publish/read filter integration test 통과 (2026-09-02) |
 | DB-006 | baseline FTS와 exact vector query | DB-003 | DONE | time/status filter를 강제한 FTS·cosine exact query가 seeded corpus에서 결정적 결과 반환; query plan/latency baseline 기록 (2026-09-02) |
 
-| COL-001 | collector port와 source policy guard | DEC-001, EXP-001, DISC-002, CON-001, DB-002, TST-001 | BLOCKED | collector 결과가 공통 raw contract를 만족; host/scheme/size/redirect guard가 SSRF corpus를 거부; cursor가 opaque하게 보존됨; source별 `verbatim_only`·license·개인정보 제거 규칙이 설정에서 강제됨 |
-| COL-002 | GitHub Releases collector | COL-001 | BLOCKED | 승인 repo의 pagination, conditional request, rate headers, release update fixture 통과; stable external ID/URL/date 저장; `published_at`과 `created_at` 구분; author 객체 제거; live canary 분리 |
-| COL-003 | Stack Exchange collector | COL-001 | BLOCKED | 게시물별 `content_license` 저장; `verbatim_only` 표시 전파; 응답 본문 `backoff` 준수; 부재 기반 삭제 감지가 rate limit·오류를 삭제로 오인하지 않음; owner 개인정보 제거 fixture 통과 |
-| COL-004 | npm collector/metric adapter | COL-001 | BLOCKED | 승인 endpoint의 package/version/metric 단위와 기간이 보존됨; 누락·rate/error 처리 fixture 통과; 불명확 지표를 0으로 저장하지 않음; maintainer email 제거 |
+| COL-001 | collector port와 source policy guard | DEC-001, EXP-001, DISC-002, CON-001, DB-002, TST-001 | DONE | collector 결과가 공통 raw contract를 만족; host/scheme/size/redirect guard가 SSRF corpus를 거부; cursor가 opaque하게 보존됨; source별 `verbatim_only`·license·개인정보 제거 규칙이 설정에서 강제됨 |
+| COL-002 | GitHub Releases collector | COL-001 | DONE | 승인 repo의 pagination, conditional request, rate headers, release update fixture 통과; stable external ID/URL/date 저장; `published_at`과 `created_at` 구분; author 객체 제거; live canary 분리 |
+| COL-003 | Stack Exchange collector | COL-001 | DONE | 게시물별 `content_license` 저장; `verbatim_only` 표시 전파; 응답 본문 `backoff` 준수; 부재 기반 삭제 감지가 rate limit·오류를 삭제로 오인하지 않음; owner 개인정보 제거 fixture 통과 |
+| COL-004 | npm collector/metric adapter | COL-001 | DONE | 승인 endpoint의 package/version/metric 단위와 기간이 보존됨; 누락·rate/error 처리 fixture 통과; 불명확 지표를 0으로 저장하지 않음; maintainer email 제거 |
 | COL-005 | 승인 source Playwright collector | COL-001 | BLOCKED | semantic locator fixture test와 10회 canary gate 통과; 로그인/CAPTCHA 우회 없음; download/popup/host가 제한됨; trace artifact redacted; collector 실행 runtime이 EXP-005 측정 결과와 일치하고 runtime 전용 API 의존이 adapter 경계 안에 있음 |
-| COL-006 | arXiv collector | COL-001 | BLOCKED | 요청 간격 3초·단일 연결 준수; 동일 질의 1일 1회 캐싱; PDF·전문 미저장 검증; 버전 접미사(v1/v2)와 `published`·`updated` 구분 저장 |
+| COL-006 | arXiv collector | COL-001 | DONE | 요청 간격 3초·단일 연결 준수; 동일 질의 1일 1회 캐싱; PDF·전문 미저장 검증; 버전 접미사(v1/v2)와 `published`·`updated` 구분 저장 |
 | COL-007 | Discourse forum collector | COL-001 | BLOCKED | 게시일 기준 라이선스 분리로 2020-07-17 이전 게시물 미저장; `deleted_at`·`user_deleted` 기반 tombstone; 429·`Retry-After` 준수; robots disallow 경로 미접근; username 제거 |
-| COL-008 | 공통 article collector (RSS/HTTP) | COL-001 | BLOCKED | Chrome release notes와 react.dev/blog를 동일 adapter로 처리; feed 발견과 본문 추출 분리; 이미지·상표 미저장; 라이선스·귀속 metadata 저장 |
+| COL-008 | 공통 article collector (RSS/HTTP) | COL-001 | DONE | Chrome release notes와 react.dev/blog를 동일 adapter로 처리; feed 발견과 본문 추출 분리; 이미지·상표 미저장; 라이선스·귀속 metadata 저장 |
 | COL-009 | GitHub search 신호 collector | COL-001 | BLOCKED | 질의 문자열과 수집 시각을 스냅샷 메타로 기록해 재현 가능; 1,000건 상한과 분당 30건 준수; `incomplete_results` 처리; 별 히스토리 소급 재구성을 시도하지 않음 |
 | COL-010 | Hugging Face 지표 collector | COL-001 | BLOCKED | 지표만 저장하고 model card 본문을 수집하지 않음; rate limit 계층과 429 처리; namespace 개인정보 미보관 |
 | QUE-001 | scheduler와 versioned job delivery | DEC-004, FND-004, CON-001 | DONE | source/schedule window 중복 job 없음; UTC schedule, retry/backoff, concurrency cap과 job schema validation integration test 통과; **EXP-005 미측정 항목 검증**: SIGKILL 후 재시작 복구, 다중 worker 경합과 backpressure, DB commit 후 job 유실에 대한 outbox 필요성 판단 |

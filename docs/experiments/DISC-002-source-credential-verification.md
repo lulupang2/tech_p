@@ -12,14 +12,14 @@ Registered in `apps/api/.env.example` and `apps/worker/.env.example`:
 | Source | Env variable(s) | Auth state requirement per EXP-001 |
 |---|---|---|
 | `github_releases`, `github_search` | `GITHUB_PAT` | Auth required for releases (5,000/h); auth **mandatory** for search (unauthed 50% failure) |
-| `stack_exchange` | `STACK_EXCHANGE_KEY`, `STACK_EXCHANGE_ACCESS_TOKEN` | Auth required (unauthed quota 299/day; doc quota 10,000/day with key) |
+| `stack_exchange` | `STACK_EXCHANGE_KEY` | Read-only collection uses an API key (doc quota 10,000/day); OAuth access token is unnecessary |
 | `huggingface_hub` | `HUGGINGFACE_TOKEN` | Recommended (anon 500/5min; auth 1,000/5min) |
 
 ## Authenticated rate re-measurement protocol (post-credential)
 
 When real credentials are injected (not committed), run this sequence:
 
-1. Confirm `GITHUB_PAT`, `STACK_EXCHANGE_KEY` + `STACK_EXCHANGE_ACCESS_TOKEN`, `HUGGINGFACE_TOKEN` are present in environment.
+1. Confirm `GITHUB_PAT`, `STACK_EXCHANGE_KEY`, `HUGGINGFACE_TOKEN` are present in environment.
 2. Repeat EXP-001 run 2 conditions for 3 sources requiring auth:
    - `github_releases`: 10x repeat fetch with ETag conditional request; expect 5,000/h rate; measure p50/p99 latency.
    - `github_search`: 10x repeat with auth; document `incomplete_results`; measure success rate (expected 100% with auth vs 50% without) and rate header `X-RateLimit-Remaining`.
