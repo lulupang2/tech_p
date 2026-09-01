@@ -13,7 +13,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@techpulse/observability": "workspace:*"
+    "@techpulse/contracts": "workspace:*",
+    "@techpulse/observability": "workspace:*",
+    "bullmq": "^6.3.3",
+    "ioredis": "^6.0.0"
   },
   "devDependencies": {
     "tsx": "^4.20.5"

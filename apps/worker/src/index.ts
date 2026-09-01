@@ -1,3 +1,47 @@
+export {
+  COLLECTION_JOB_NAME,
+  MAX_JOB_ATTEMPTS,
+  RETRY_BACKOFF_BASE_MS,
+  RETRY_BACKOFF_MAX_MS,
+  WORKER_JOB_SCHEMA_VERSION,
+  collectionJobNaturalKey,
+  createCollectionJobData,
+  normalizeScheduleWindow,
+  parseCollectionJobData,
+  retryBackoffMs,
+  WorkerJobValidationError,
+  type CollectionJobData,
+  type ScheduleWindow,
+} from './jobs.js';
+export {
+  InMemorySourceConcurrencyLimiter,
+  LeaseOwnershipLostError,
+  LeaseReleaseError,
+  LeaseRenewalError,
+  RedisSourceConcurrencyLimiter,
+  leaseRenewalIntervalMs,
+  type RedisSourceConcurrencyLimiterOptions,
+  type SourceConcurrency,
+  type SourceConcurrencyLimiter,
+} from './concurrency.js';
+export {
+  createCollectionScheduler,
+  createCollectionWorker,
+  directDeliveryBoundary,
+  enqueueCollectionJob,
+  InMemoryIdempotentDeliveryBoundary,
+  InMemoryJobClaimStore,
+  type JobClaimStore,
+  RedisJobClaimStore,
+  processCollectionJob,
+  type CollectionOperation,
+  type CollectionScheduler,
+  type CreateSchedulerOptions,
+  type DeliveryBoundary,
+  type DeliveryResult,
+  type EnqueueOptions,
+  type EnqueueResult,
+} from './scheduler.js';
 import { loadWorkerConfig, type Environment, type WorkerConfig } from './config.js';
 import {
   createStructuredLogger,
