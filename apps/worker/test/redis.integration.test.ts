@@ -6,6 +6,7 @@ import type { CollectionJobPayload } from '@techpulse/contracts';
 import {
   COLLECTION_JOB_NAME,
   InMemoryIdempotentDeliveryBoundary,
+  RedisSourceConcurrencyLimiter,
   createCollectionWorker,
   enqueueCollectionJob,
 } from '../src/index.js';
@@ -69,6 +70,41 @@ describe.skipIf(!redisUrl)('real Redis BullMQ integration', () => {
       await queue.close();
       await workerRedis.quit();
       await queueRedis.quit();
+    }
+  });
+  test('acquires on an empty hash, blocks duplicate leases, and releases capacity', async () => {
+    const keyPrefix = `techpulse-integration-cap-${process.pid}-${Date.now()}`;
+    const firstRedis = new Redis(redisUrl as string, { maxRetriesPerRequest: null });
+    const secondRedis = new Redis(redisUrl as string, { maxRetriesPerRequest: null });
+    const limiterOptions = {
+      leaseMs: 1_000,
+      pollMs: 10,
+      acquireTimeoutMs: 5_000,
+      keyPrefix,
+    };
+    const firstLimiter = new RedisSourceConcurrencyLimiter(firstRedis, 1, 1, limiterOptions);
+    const secondLimiter = new RedisSourceConcurrencyLimiter(secondRedis, 1, 1, limiterOptions);
+    let releaseFirst!: () => void;
+    const firstHeld = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    let secondStarted = false;
+    try {
+      const first = firstLimiter.run('github_releases', async () => firstHeld);
+      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      const second = secondLimiter.run('github_releases', async () => {
+        secondStarted = true;
+      });
+      await new Promise<void>((resolve) => setTimeout(resolve, 20));
+      assert.equal(secondStarted, false);
+      releaseFirst();
+      await first;
+      await second;
+      assert.equal(secondStarted, true);
+    } finally {
+      releaseFirst();
+      await firstLimiter.close();
+      await secondLimiter.close();
     }
   });
 });

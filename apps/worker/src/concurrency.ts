@@ -71,8 +71,11 @@ export class InMemorySourceConcurrencyLimiter implements SourceConcurrencyLimite
 
 const ACQUIRE_SCRIPT = `
 local now = tonumber(ARGV[3])
-for token, expires in pairs(redis.call('HGETALL', KEYS[1])) do
-  if tonumber(expires) <= now then redis.call('HDEL', KEYS[1], token) end
+local fields = redis.call('HGETALL', KEYS[1])
+for index = 1, #fields, 2 do
+  local token = fields[index]
+  local expires = tonumber(fields[index + 1])
+  if expires and expires <= now then redis.call('HDEL', KEYS[1], token) end
 end
 if redis.call('HLEN', KEYS[1]) >= tonumber(ARGV[2]) then return 0 end
 redis.call('HSET', KEYS[1], ARGV[1], now + tonumber(ARGV[4]))
