@@ -201,7 +201,7 @@
 | API-004 | protected operations endpoints 또는 CLI | PIPE-007, API-001, SEC-001 | BLOCKED | 선택 interface가 strong auth로 보호; bounded collect/replay와 idempotency; public route에서 접근 불가; audit event 생성 |
 | SEC-002 | collector/browser hardening | COL-005, PIPE-002 | BLOCKED | non-root/최소 capability, egress allowlist, private IP/redirect 차단, HTML output escaping, malicious fixture 회귀 통과 |
 | SEC-003 | RAG prompt-injection/egress hardening | RAG-005, SEC-001 | BLOCKED | retrieved instruction이 tool/secret/URL을 바꾸지 못함; RAG에 arbitrary fetch/shell 없음; injection corpus success 0 |
-| WEB-001 | web shell과 typed API client | DEC-005, FND-001, CON-001, API-001 | BLOCKED | web이 DB/provider package를 import하지 않음; server 전용 코드가 `+page.server.ts`·`+server.ts`·`$lib/server/` 경계 안에만 있고 client bundle 산출물 검사에서 secret이 발견되지 않음; loading/error/empty layout 접근성 smoke; API contract type drift test 통과 |
+| WEB-001 | web shell과 typed API client | DEC-005, FND-001, CON-001, API-001 | DONE | web이 DB/provider package를 import하지 않음; server 전용 코드가 `+page.server.ts`·`+server.ts`·`$lib/server/` 경계 안에만 있고 client bundle 산출물 검사에서 secret이 발견되지 않음; loading/error/empty layout 접근성 smoke; API contract type drift test 통과 |
 | WEB-002 | 질문·답변·citation UI | WEB-001, API-003 | BLOCKED | 질문/기간 입력, resolved range, answer, clickable citation/date/source, limitations/insufficient state 표시; keyboard/screen-reader labels 검증 |
 | WEB-003 | 비교 metric과 source freshness UI | WEB-002, API-002, RAG-006 | BLOCKED | metric별 unit/기간 분리 표시; composite score 없음; stale/partial source warning이 API coverage와 일치 |
 | TST-002 | Playwright UI E2E suite | WEB-002, WEB-003, TST-001 | BLOCKED | seeded DB+fake model에서 summary/comparison/no-data/citation 흐름 통과; collector suite와 분리; flaky retry 없이 Chromium PR smoke 성공 |
@@ -320,3 +320,12 @@ flowchart TD
 - opaque base64url cursor 기반 pagination 및 `limit` validation/clamping을 적용하고, 비정상 cursor 또는 알 수 없는 쿼리 파라미터는 400 `INVALID_REQUEST` `ErrorEnvelope`로 매핑했다. 존재하지 않는 source 키는 404 `NOT_FOUND`로 안전하게 반환된다.
 - 공개 source 상태(`healthy`, `stale`, `degraded`, `disabled`)와 freshness 메타데이터는 데이터베이스 연결 문자열, 내부 자격증명, raw payload 노출 없이 안전하게 반환된다.
 - 검증: `apps/api` 6개 test file·25개 test 통과, `packages/contracts` 2개 test file·22개 test 통과, `apps/api` 및 `packages/contracts` static checks(typecheck, ESLint, Prettier) 전체 통과.
+
+### WEB-001 완료 증빙 (2026-09-02)
+
+- SvelteKit 기반의 접근 가능한 웹 셸(`apps/web`)과 `@techpulse/contracts` 전용 typed API client(`ApiClient`)를 구현했다.
+- `ApiClient`는 `/health/live`, `/health/ready`, `/api/v1/sources`, `/api/v1/sources/:key`, `/api/v1/topics` 엔드포인트를 계약 기반으로 호출하며, 구조화된 `ErrorEnvelope` 파싱, `ApiClientError` 및 네트워크/타임아웃 처리를 제공한다.
+- 자연어 질의응답 기능(`POST /api/v1/answers`, `API-003`, `WEB-002`)은 LLM 공급자 승인 대기(`DEC-007`) 및 RAG 파이프라인 연동 전까지 클라이언트 및 UI에서 명시적으로 unavailable 상태로 안내하며, 허위 답변이나 미검증 데이터를 생성하지 않는다.
+- 웹 셸 UI(`Header`, `StatusBanner`, `SourceList`, `TopicSearch`, `AnswerNotice`, `Footer`)는 ARIA 랜드마크(`role="tablist"`, `role="tabpanel"`, `role="search"`), `aria-busy`/`aria-live` 기반의 로딩 상태, `role="alert"` 기반의 에러 상태, 명확한 empty 상태, 키보드 네비게이션 및 스킵 링크를 갖추어 WCAG 접근성 기준을 충족한다.
+- `apps/web`은 `@techpulse/contracts` 이외의 백엔드 패키지(`database`, `collectors`, `rag`, `domain`, `observability` 등)를 일체 참조하지 않으며, 프로덕션 빌드 산출물(`.svelte-kit/output/client`) 검사에서 DB/LLM 자격증명 및 시크릿 유출이 없음을 확인했다.
+- 검증: `apps/web` 3개 test file·20개 test 통과, `apps/web` static 검사(svelte-check, ESLint, Prettier) 및 Vite 프로덕션 빌드 전체 통과.
