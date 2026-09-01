@@ -7,6 +7,10 @@ import type {
   RawItemRepositoryPort,
   PipelineEventRepositoryPort,
   MetricObservationRepositoryPort,
+  DuplicateClusterRepositoryPort,
+  DuplicateClusterRecord,
+  CreateDuplicateClusterInput,
+  UpdateDuplicateClusterInput,
   DocumentRecord,
   DocumentRevisionRecord,
   ChunkRecord,
@@ -34,6 +38,7 @@ import {
   documents,
   documentRevisions,
   chunks,
+  duplicateClusters,
   sources,
   collectionRuns,
   rawItems,
@@ -108,6 +113,117 @@ export function createDocumentRepository(db: NeonDatabase<typeof schema>): Docum
         searchableAt: row.searchableAt,
         createdAt: row.createdAt,
       };
+    },
+
+    async findByCanonicalUrl(canonicalUrl: string): Promise<DocumentRecord | null> {
+      const row = await db.query.documents.findFirst({
+        where: eq(documents.canonicalUrl, canonicalUrl),
+      });
+      if (!row) return null;
+      return {
+        id: row.id,
+        artifactType: row.artifactType,
+        canonicalUrl: row.canonicalUrl,
+        duplicateClusterId: row.duplicateClusterId,
+        currentRevisionId: row.currentRevisionId,
+        createdAt: row.createdAt,
+      };
+    },
+
+    async findRevisionByNormalizedHash(
+      normalizedHash: string,
+    ): Promise<DocumentRevisionRecord | null> {
+      const row = await db.query.documentRevisions.findFirst({
+        where: eq(documentRevisions.normalizedHash, normalizedHash),
+      });
+      if (!row) return null;
+      return {
+        id: row.id,
+        documentId: row.documentId,
+        rawItemId: row.rawItemId,
+        title: row.title,
+        bodyText: row.bodyText,
+        author: row.author,
+        language: row.language,
+        publishedAt: row.publishedAt,
+        licenseId: row.licenseId,
+        normalizedHash: row.normalizedHash,
+        normalizerVersion: row.normalizerVersion,
+        status: row.status,
+        searchableAt: row.searchableAt,
+        createdAt: row.createdAt,
+      };
+    },
+
+    async assignDuplicateCluster(
+      documentId: string,
+      duplicateClusterId: string | null,
+    ): Promise<DocumentRecord> {
+      const [updated] = await db
+        .update(documents)
+        .set({ duplicateClusterId })
+        .where(eq(documents.id, documentId))
+        .returning();
+
+      if (!updated) {
+        throw new Error(`Document ${documentId} not found`);
+      }
+
+      return {
+        id: updated.id,
+        artifactType: updated.artifactType,
+        canonicalUrl: updated.canonicalUrl,
+        duplicateClusterId: updated.duplicateClusterId,
+        currentRevisionId: updated.currentRevisionId,
+        createdAt: updated.createdAt,
+      };
+    },
+
+    async listDocumentsByClusterId(clusterId: string): Promise<readonly DocumentRecord[]> {
+      const rows = await db.query.documents.findMany({
+        where: eq(documents.duplicateClusterId, clusterId),
+      });
+
+      return rows.map((r) => ({
+        id: r.id,
+        artifactType: r.artifactType,
+        canonicalUrl: r.canonicalUrl,
+        duplicateClusterId: r.duplicateClusterId,
+        currentRevisionId: r.currentRevisionId,
+        createdAt: r.createdAt,
+      }));
+    },
+
+    async listAllDocuments(): Promise<readonly DocumentRecord[]> {
+      const rows = await db.select().from(documents);
+      return rows.map((r) => ({
+        id: r.id,
+        artifactType: r.artifactType,
+        canonicalUrl: r.canonicalUrl,
+        duplicateClusterId: r.duplicateClusterId,
+        currentRevisionId: r.currentRevisionId,
+        createdAt: r.createdAt,
+      }));
+    },
+
+    async listAllRevisions(): Promise<readonly DocumentRevisionRecord[]> {
+      const rows = await db.select().from(documentRevisions);
+      return rows.map((r) => ({
+        id: r.id,
+        documentId: r.documentId,
+        rawItemId: r.rawItemId,
+        title: r.title,
+        bodyText: r.bodyText,
+        author: r.author,
+        language: r.language,
+        publishedAt: r.publishedAt,
+        licenseId: r.licenseId,
+        normalizedHash: r.normalizedHash,
+        normalizerVersion: r.normalizerVersion,
+        status: r.status,
+        searchableAt: r.searchableAt,
+        createdAt: r.createdAt,
+      }));
     },
 
     async saveNormalizedDocument(
@@ -819,6 +935,92 @@ export function createMetricObservationRepository(
         limit,
         offset,
       };
+    },
+  };
+}
+
+export function createDuplicateClusterRepository(
+  db: NeonDatabase<typeof schema>,
+): DuplicateClusterRepositoryPort {
+  return {
+    async findById(id: string): Promise<DuplicateClusterRecord | null> {
+      const row = await db.query.duplicateClusters.findFirst({
+        where: eq(duplicateClusters.id, id),
+      });
+      if (!row) return null;
+      return {
+        id: row.id,
+        representativeDocumentId: row.representativeDocumentId,
+        algorithmVersion: row.algorithmVersion,
+        confidence: row.confidence,
+        createdAt: row.createdAt,
+      };
+    },
+
+    async create(input: CreateDuplicateClusterInput): Promise<DuplicateClusterRecord> {
+      const values: typeof duplicateClusters.$inferInsert = {
+        id: input.id,
+        representativeDocumentId: input.representativeDocumentId ?? null,
+        algorithmVersion: input.algorithmVersion ?? 'v1.0.0',
+        confidence: input.confidence ?? 100,
+      };
+
+      const [row] = await db.insert(duplicateClusters).values(values).returning();
+      if (!row) {
+        throw new Error('Failed to create duplicate cluster');
+      }
+
+      return {
+        id: row.id,
+        representativeDocumentId: row.representativeDocumentId,
+        algorithmVersion: row.algorithmVersion,
+        confidence: row.confidence,
+        createdAt: row.createdAt,
+      };
+    },
+
+    async update(id: string, input: UpdateDuplicateClusterInput): Promise<DuplicateClusterRecord> {
+      const updateSet: Partial<typeof duplicateClusters.$inferInsert> = {};
+      if (input.representativeDocumentId !== undefined) {
+        updateSet.representativeDocumentId = input.representativeDocumentId;
+      }
+      if (input.confidence !== undefined) {
+        updateSet.confidence = input.confidence;
+      }
+
+      const [row] = await db
+        .update(duplicateClusters)
+        .set(updateSet)
+        .where(eq(duplicateClusters.id, id))
+        .returning();
+
+      if (!row) {
+        throw new Error(`Duplicate cluster ${id} not found for update`);
+      }
+
+      return {
+        id: row.id,
+        representativeDocumentId: row.representativeDocumentId,
+        algorithmVersion: row.algorithmVersion,
+        confidence: row.confidence,
+        createdAt: row.createdAt,
+      };
+    },
+
+    async listByRepresentativeDocumentId(
+      docId: string,
+    ): Promise<readonly DuplicateClusterRecord[]> {
+      const rows = await db.query.duplicateClusters.findMany({
+        where: eq(duplicateClusters.representativeDocumentId, docId),
+      });
+
+      return rows.map((r) => ({
+        id: r.id,
+        representativeDocumentId: r.representativeDocumentId,
+        algorithmVersion: r.algorithmVersion,
+        confidence: r.confidence,
+        createdAt: r.createdAt,
+      }));
     },
   };
 }

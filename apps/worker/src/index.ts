@@ -1,6 +1,7 @@
 export {
   COLLECTION_JOB_NAME,
   NORMALIZATION_JOB_NAME,
+  DEDUPLICATION_JOB_NAME,
   MAX_JOB_ATTEMPTS,
   RETRY_BACKOFF_BASE_MS,
   RETRY_BACKOFF_MAX_MS,
@@ -8,13 +9,16 @@ export {
   collectionJobNaturalKey,
   createCollectionJobData,
   createNormalizationJobData,
+  createDeduplicationJobData,
   normalizeScheduleWindow,
   parseCollectionJobData,
   parseNormalizationJobData,
+  parseDeduplicationJobData,
   retryBackoffMs,
   WorkerJobValidationError,
   type CollectionJobData,
   type NormalizationJobData,
+  type DeduplicationJobData,
   type ScheduleWindow,
 } from './jobs.js';
 export {
@@ -53,6 +57,12 @@ export {
   type NormalizationExecutionResult,
   type NormalizationOperation,
 } from './normalization.js';
+export {
+  createDeduplicationJobHandler,
+  type DeduplicationJobHandlerOptions,
+  type DeduplicationExecutionResult,
+  type DeduplicationOperation,
+} from './deduplication.js';
 import { loadWorkerConfig, type Environment, type WorkerConfig } from './config.js';
 import {
   createStructuredLogger,
