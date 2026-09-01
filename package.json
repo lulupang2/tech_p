@@ -6,13 +6,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "pnpm -r --if-present run build",
+    "build": "turbo run build",
     "format": "prettier --check .",
     "format:write": "prettier --write .",
     "lint": "eslint .",
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
-    "test": "pnpm -r --if-present run test",
-    "typecheck": "pnpm -r --if-present run typecheck",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
     "verify:static-failure": "node tooling/verify-static-failure.mjs"
   },
   "devDependencies": {
@@ -25,6 +25,7 @@
     "prettier": "^3.6.2",
     "prettier-plugin-svelte": "^3.4.0",
     "svelte-check": "^4.3.1",
+    "turbo": "^2.10.12",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.42.0",
     "vitest": "^3.2.4"
