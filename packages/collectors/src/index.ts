@@ -16,3 +16,18 @@ export {
   type StackExchangeRawQuestion,
   type StackExchangeApiResponse,
 } from './stack-exchange.js';
+export {
+  NpmRegistryCollector,
+  NpmDownloadsCollector,
+  NpmCollector,
+  NpmCollectorError,
+  NpmRateLimitError,
+  NpmPackageNotFoundError,
+  NpmHttpError,
+  DEFAULT_NPM_PACKAGES,
+  type NpmRegistryCollectorOptions,
+  type NpmDownloadsCollectorOptions,
+  type NpmCollectorOptions,
+  type NpmRegistryCursor,
+  type NpmDownloadsCursor,
+} from './npm.js';
