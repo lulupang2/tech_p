@@ -7,10 +7,26 @@
   },
   "scripts": {
     "build": "pnpm -r --if-present run build",
-    "test": "pnpm -r --if-present run test"
+    "format": "prettier --check .",
+    "format:write": "prettier --write .",
+    "lint": "eslint .",
+    "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
+    "test": "pnpm -r --if-present run test",
+    "typecheck": "pnpm -r --if-present run typecheck",
+    "verify:static-failure": "node tooling/verify-static-failure.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^9.35.0",
     "@types/node": "^24.5.2",
-    "typescript": "^5.9.2"
+    "eslint": "^9.35.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-svelte": "^3.11.0",
+    "globals": "^16.3.0",
+    "prettier": "^3.6.2",
+    "prettier-plugin-svelte": "^3.4.0",
+    "svelte-check": "^4.3.1",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.42.0",
+    "vitest": "^3.2.4"
   }
 }

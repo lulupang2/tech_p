@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import { readFile } from 'node:fs/promises';
 
 test('worker has a Node TypeScript entrypoint', async () => {

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import { existsSync } from 'node:fs';
 
 test('contracts package exposes its TypeScript entrypoint', () => {
