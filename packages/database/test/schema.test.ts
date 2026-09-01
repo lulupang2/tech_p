@@ -17,6 +17,10 @@ describe('DB-002 schema migration', () => {
     assert.match(followUp, /raw_items_source_run_consistency_fk/u);
     assert.match(followUp, /CREATE TRIGGER raw_items_immutable_mutation/u);
     assert.match(followUp, /CREATE TRIGGER pipeline_events_append_only/u);
+    assert.ok(
+      followUp.indexOf('collection_runs_source_id_unique') <
+        followUp.indexOf('raw_items_source_run_consistency_fk'),
+    );
   });
 
   test('migration creates parent tables before foreign-key constraints', () => {
