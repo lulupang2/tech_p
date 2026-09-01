@@ -5,8 +5,12 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
+    "format": "pnpm --dir ../.. exec prettier --check apps/api",
+    "lint": "eslint .",
     "start": "tsx src/index.ts",
-    "test": "node --test test/entrypoint.test.mjs"
+    "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@elysiajs/node": "^1.4.0",

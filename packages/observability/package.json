@@ -8,6 +8,10 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "node --test test/smoke.test.mjs"
+    "format": "pnpm --dir ../.. exec prettier --check packages/observability",
+    "lint": "eslint .",
+    "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   }
 }

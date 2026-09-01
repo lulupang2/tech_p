@@ -1,0 +1,9 @@
+.svelte-kit/
+coverage/
+dist/
+docs/
+experiments/
+node_modules/
+AGENTS.md
+README.md
+TASKS.md

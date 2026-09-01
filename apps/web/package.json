@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite dev",
     "build": "svelte-kit sync && vite build",
-    "test": "node --test test/import-boundary.test.mjs"
+    "format": "pnpm --dir ../.. exec prettier --check apps/web",
+    "lint": "eslint .",
+    "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
+    "test": "vitest run",
+    "typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
   "dependencies": {
     "@techpulse/contracts": "workspace:*"

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { test } from 'vitest';
 import { existsSync } from 'node:fs';
 
 test('collectors package has a source entrypoint', () => {
