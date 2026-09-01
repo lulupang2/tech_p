@@ -5,6 +5,8 @@ export {
   UnsupportedAiInputError,
   createDeterministicChatPort,
   createDeterministicEmbeddingPort,
+  createOpenAiCompatibleChatPort,
+  createOpenAiCompatibleEmbeddingPort,
 } from './ai.js';
 
 export type {
@@ -30,6 +32,8 @@ export type {
   EmbeddingRequest,
   EmbeddingResult,
   TokenUsage,
+  OpenAiCompatibleChatOptions,
+  OpenAiCompatibleEmbeddingOptions,
 } from './ai.js';
 export type {
   SourceRecord,

@@ -5,6 +5,8 @@ import {
   UnsupportedAiInputError,
   createDeterministicChatPort,
   createDeterministicEmbeddingPort,
+  createOpenAiCompatibleChatPort,
+  createOpenAiCompatibleEmbeddingPort,
 } from '../src/index.js';
 
 describe('provider-neutral deterministic AI ports', () => {
@@ -98,5 +100,118 @@ describe('provider-neutral deterministic AI ports', () => {
       metadata: { model: 'test-embed', dimensions: 3, latencyMs: 0 },
     });
     expect(AiProviderError).toBeDefined();
+  });
+});
+
+describe('OpenAI-compatible HTTP AI ports', () => {
+  test('chat completes request with correct headers, payload and parses response', async () => {
+    const calls: { url: string; headers: HeadersInit; body: string }[] = [];
+    const fakeFetch: typeof fetch = async (url, init) => {
+      calls.push({
+        url: String(url),
+        headers: init?.headers as HeadersInit,
+        body: String(init?.body),
+      });
+      return new Response(
+        JSON.stringify({
+          model: 'custom-model',
+          choices: [{ message: { content: 'Answer from OpenAI provider [C1]' } }],
+          usage: { prompt_tokens: 15, completion_tokens: 25, total_tokens: 40 },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    };
+
+    const chat = createOpenAiCompatibleChatPort({
+      apiKey: 'secret-key-12345',
+      baseUrl: 'https://api.runinfra.com/v1',
+      model: 'custom-model',
+      fetchFn: fakeFetch,
+    });
+
+    const result = await chat.complete({
+      messages: [{ role: 'user', content: 'What is Bun?' }],
+    });
+
+    expect(result.content).toBe('Answer from OpenAI provider [C1]');
+    expect(result.metadata.model).toBe('custom-model');
+    expect(result.metadata.usage).toEqual({
+      inputTokens: 15,
+      outputTokens: 25,
+      totalTokens: 40,
+    });
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.url).toBe('https://api.runinfra.com/v1/chat/completions');
+    const headers = calls[0]!.headers as Record<string, string>;
+    expect(headers['Authorization']).toBe('Bearer secret-key-12345');
+    expect(JSON.parse(calls[0]!.body)).toEqual({
+      model: 'custom-model',
+      messages: [{ role: 'user', content: 'What is Bun?' }],
+      temperature: 0.2,
+    });
+  });
+
+  test('chat port redacts secret API key on network/provider error', async () => {
+    const fakeFetch: typeof fetch = async () => {
+      throw new Error('Connection failed to https://api.runinfra.com with key secret-key-12345');
+    };
+
+    const chat = createOpenAiCompatibleChatPort({
+      apiKey: 'secret-key-12345',
+      fetchFn: fakeFetch,
+    });
+
+    await expect(
+      chat.complete({ messages: [{ role: 'user', content: 'hi' }] }),
+    ).rejects.toThrowError();
+
+    try {
+      await chat.complete({ messages: [{ role: 'user', content: 'hi' }] });
+    } catch (err: unknown) {
+      const error = err as Error;
+      expect(error.name).toBe('AiProviderError');
+      expect(error.message).not.toContain('secret-key-12345');
+      expect(error.message).toContain('[REDACTED]');
+    }
+  });
+
+  test('chat port throws AiTimeoutError on timeout or 504', async () => {
+    const fakeFetch: typeof fetch = async () => {
+      return new Response('Gateway Timeout', { status: 504 });
+    };
+
+    const chat = createOpenAiCompatibleChatPort({
+      apiKey: 'test-key',
+      fetchFn: fakeFetch,
+    });
+
+    await expect(
+      chat.complete({ messages: [{ role: 'user', content: 'hi' }] }),
+    ).rejects.toBeInstanceOf(AiTimeoutError);
+  });
+
+  test('embedding port embeds input and returns vector with dimensions', async () => {
+    const fakeFetch: typeof fetch = async () => {
+      return new Response(
+        JSON.stringify({
+          model: 'perplexity/pplx-embed-v1-0.6b',
+          data: [{ embedding: [0.1, 0.2, 0.3, 0.4] }],
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      );
+    };
+
+    const embedding = createOpenAiCompatibleEmbeddingPort({
+      apiKey: 'openrouter-key',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      model: 'perplexity/pplx-embed-v1-0.6b',
+      dimensions: 4,
+      fetchFn: fakeFetch,
+    });
+
+    const result = await embedding.embed({ input: 'test text' });
+    expect(result.vector).toEqual([0.1, 0.2, 0.3, 0.4]);
+    expect(result.metadata.dimensions).toBe(4);
+    expect(result.metadata.model).toBe('perplexity/pplx-embed-v1-0.6b');
   });
 });

@@ -1,4 +1,9 @@
-import { createDatabaseClient } from '@techpulse/database';
+import { createDatabaseClient, createSearchService } from '@techpulse/database';
+import {
+  createOpenAiCompatibleChatPort,
+  createOpenAiCompatibleEmbeddingPort,
+} from '@techpulse/domain';
+import { createAnswerService, type AnswerServicePort } from '@techpulse/rag';
 import {
   correlationContextFromHeaders,
   createStructuredLogger,
@@ -31,7 +36,35 @@ export function logApiStartup(port: number): StructuredEvent {
 export function start(env: Environment = process.env) {
   const config = loadApiConfig(env);
   const databaseClient = createDatabaseClient(config.databaseUrl);
-  const serverApp = createApp({ databaseClient, logger: apiLogger });
+
+  let answerService: AnswerServicePort | undefined;
+  if (config.aiChatApiKey) {
+    const chatPort = createOpenAiCompatibleChatPort({
+      apiKey: config.aiChatApiKey,
+      ...(config.aiChatBaseUrl ? { baseUrl: config.aiChatBaseUrl } : {}),
+      ...(config.aiChatModel ? { model: config.aiChatModel } : {}),
+      ...(config.aiChatTimeoutMs !== undefined ? { defaultTimeoutMs: config.aiChatTimeoutMs } : {}),
+    });
+    const embeddingPort = config.aiEmbeddingApiKey
+      ? createOpenAiCompatibleEmbeddingPort({
+          apiKey: config.aiEmbeddingApiKey,
+          ...(config.aiEmbeddingBaseUrl ? { baseUrl: config.aiEmbeddingBaseUrl } : {}),
+          ...(config.aiEmbeddingModel ? { model: config.aiEmbeddingModel } : {}),
+          ...(config.aiEmbeddingDimensions !== undefined
+            ? { dimensions: config.aiEmbeddingDimensions }
+            : {}),
+        })
+      : undefined;
+    const searchService = createSearchService(databaseClient.db);
+    answerService = createAnswerService({
+      chatPort,
+      searchService,
+      embeddingPort,
+      logger: apiLogger,
+    });
+  }
+
+  const serverApp = createApp({ databaseClient, answerService, logger: apiLogger });
   logApiStartup(config.port);
   return serverApp.listen(config.port);
 }

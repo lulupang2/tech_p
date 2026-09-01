@@ -196,7 +196,7 @@
 |---|---|---|---|---|
 | API-001 | API shell, error model, health/readiness | DEC-002, CON-001, DB-005, FND-005, OBS-001 | DONE | versioned JSON/error contract와 request ID; liveness는 dependency와 무관, readiness는 DB 상태 반영; stack/provider error 비노출 |
 | API-002 | source/topic endpoints | API-001, COL-001, DB-005 | DONE | source freshness를 secret 없이 반환; topic search cursor/limit validation; OpenAPI contract test 통과 |
-| API-003 | synchronous answer endpoint | API-001, RAG-005, RAG-006 | BLOCKED | resolved range, answer/insufficient status, observations, citations, coverage 반환; deadline/body cap/idempotency contract test 통과 |
+| API-003 | synchronous answer endpoint | API-001, RAG-005, RAG-006 | DONE | resolved range, answer/insufficient status, observations, citations, coverage 반환; deadline/body cap/idempotency contract test 통과 |
 | SEC-001 | public API abuse controls | API-003, FND-005 | BLOCKED | CORS allowlist, security headers, rate/concurrency/provider budget limit; oversized/injection/fuzz 입력에서 정보 유출·무제한 호출 없음 |
 | API-004 | protected operations endpoints 또는 CLI | PIPE-007, API-001, SEC-001 | BLOCKED | 선택 interface가 strong auth로 보호; bounded collect/replay와 idempotency; public route에서 접근 불가; audit event 생성 |
 | SEC-002 | collector/browser hardening | COL-005, PIPE-002 | BLOCKED | non-root/최소 capability, egress allowlist, private IP/redirect 차단, HTML output escaping, malicious fixture 회귀 통과 |
@@ -329,3 +329,12 @@ flowchart TD
 - 웹 셸 UI(`Header`, `StatusBanner`, `SourceList`, `TopicSearch`, `AnswerNotice`, `Footer`)는 ARIA 랜드마크(`role="tablist"`, `role="tabpanel"`, `role="search"`), `aria-busy`/`aria-live` 기반의 로딩 상태, `role="alert"` 기반의 에러 상태, 명확한 empty 상태, 키보드 네비게이션 및 스킵 링크를 갖추어 WCAG 접근성 기준을 충족한다.
 - `apps/web`은 `@techpulse/contracts` 이외의 백엔드 패키지(`database`, `collectors`, `rag`, `domain`, `observability` 등)를 일체 참조하지 않으며, 프로덕션 빌드 산출물(`.svelte-kit/output/client`) 검사에서 DB/LLM 자격증명 및 시크릿 유출이 없음을 확인했다.
 - 검증: `apps/web` 3개 test file·20개 test 통과, `apps/web` static 검사(svelte-check, ESLint, Prettier) 및 Vite 프로덕션 빌드 전체 통과.
+
+### API-003 완료 증빙 (2026-09-02)
+
+- Node runtime 위 Elysia API shell(`apps/api`)에 자연어 질의응답 엔드포인트 `POST /api/v1/answers`와 `@techpulse/rag`의 `AnswerService` 및 `@techpulse/domain`의 OpenAI 호환 HTTP 어댑터(`createOpenAiCompatibleChatPort`, `createOpenAiCompatibleEmbeddingPort`)를 구현했다.
+- 요청 검증: 질문 길이(1~2000자, 공백 불가), 선택적 RFC 3339 timeRange, timezone, language(`ko` | `en`) 및 unknown field 엄격 거부를 Elysia/TypeBox 스키마로 강제하고 400 `INVALID_REQUEST` 또는 `INVALID_TIME_RANGE`(`to <= from`)로 매핑했다.
+- 결정적 기간/의도 해석: `timeRange` 부재 시 요청 시각 기준 30일 rolling 윈도우를 결정적으로 계산(`resolvedTimeRange`)하고 질문 의도를 `trend_summary`, `recent_updates`, `compare_interest`, `emerging_topics`로 분류했다.
+- 검색 및 근거 검증: 기존 `SearchServicePort`(FTS 및 ExactVector hybrid)를 통해 검색된 불변 청크 레코드만을 컨텍스트로 구성하고, 모델 출력이 인용한 식별자(`[C1]`, `[C2]`)를 검색 결과와 대조 검증했다. 허위/누락 인용 시 답변을 보류하고 `insufficient_evidence`로 안전하게 폴백한다.
+- 에러 및 타임아웃 매핑: AI 공급자 타임아웃은 504 `ANSWER_TIMEOUT`, 공급자 장애는 502 `MODEL_PROVIDER_ERROR`, 서비스 미설정은 503 `DEPENDENCY_UNAVAILABLE`로 매핑하고, API 키 및 자격증명은 에러 응답 및 구조화 로그에서 완전히 마스킹(`[REDACTED]`)했다.
+- 검증: `packages/domain` 11개 test file·94개 test 통과, `packages/rag` 3개 test file·20개 test 통과, `apps/api` 7개 test file·34개 test 통과, `packages/contracts` 2개 test file·22개 test 통과.

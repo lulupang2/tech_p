@@ -16,6 +16,8 @@
   },
   "dependencies": {
     "@sinclair/typebox": "^0.34.52",
-    "@techpulse/contracts": "workspace:*"
+    "@techpulse/contracts": "workspace:*",
+    "@techpulse/domain": "workspace:*",
+    "@techpulse/observability": "workspace:*"
   }
 }

@@ -45,4 +45,25 @@ describe('API runtime configuration', () => {
       port: 4310,
     });
   });
+
+  test('loads optional AI configuration when provided in environment', () => {
+    const config = loadApiConfig({
+      DATABASE_URL: 'postgresql://db.test:5432/techpulse',
+      AI_CHAT_API_KEY: 'test-chat-key',
+      AI_CHAT_BASE_URL: 'https://api.runinfra.com/v1',
+      AI_CHAT_MODEL: 'custom-chat-model',
+      AI_CHAT_TIMEOUT_MS: '20000',
+      AI_EMBEDDING_API_KEY: 'test-embed-key',
+      AI_EMBEDDING_MODEL: 'perplexity/pplx-embed-v1-0.6b',
+      AI_EMBEDDING_DIMENSIONS: '1024',
+    });
+
+    assert.equal(config.aiChatApiKey, 'test-chat-key');
+    assert.equal(config.aiChatBaseUrl, 'https://api.runinfra.com/v1');
+    assert.equal(config.aiChatModel, 'custom-chat-model');
+    assert.equal(config.aiChatTimeoutMs, 20000);
+    assert.equal(config.aiEmbeddingApiKey, 'test-embed-key');
+    assert.equal(config.aiEmbeddingModel, 'perplexity/pplx-embed-v1-0.6b');
+    assert.equal(config.aiEmbeddingDimensions, 1024);
+  });
 });

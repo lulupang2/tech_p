@@ -95,6 +95,48 @@ export function formatErrorToEnvelope(error: unknown, requestId: string): Saniti
     };
   }
 
+  if (typeof error === 'object' && error !== null) {
+    const errObj = error as Record<string, unknown>;
+    if (errObj['name'] === 'InvalidTimeRangeError' || errObj['code'] === 'INVALID_TIME_RANGE') {
+      return {
+        status: 400,
+        envelope: createErrorEnvelope(
+          requestId,
+          'INVALID_TIME_RANGE',
+          typeof errObj['message'] === 'string'
+            ? errObj['message']
+            : 'timeRange.to must be after timeRange.from',
+          [{ path: 'timeRange.to', reason: 'must_be_after_from' }],
+          false,
+        ),
+      };
+    }
+    if (errObj['name'] === 'ModelProviderError' || errObj['code'] === 'MODEL_PROVIDER_ERROR') {
+      return {
+        status: 502,
+        envelope: createErrorEnvelope(
+          requestId,
+          'MODEL_PROVIDER_ERROR',
+          'Upstream AI model provider error',
+          [],
+          true,
+        ),
+      };
+    }
+    if (errObj['name'] === 'AnswerTimeoutError' || errObj['code'] === 'ANSWER_TIMEOUT') {
+      return {
+        status: 504,
+        envelope: createErrorEnvelope(
+          requestId,
+          'ANSWER_TIMEOUT',
+          'Answer generation deadline exceeded',
+          [],
+          true,
+        ),
+      };
+    }
+  }
+
   const candidate = (typeof error === 'object' && error !== null ? error : {}) as UnknownError;
   const code = typeof candidate.code === 'string' ? candidate.code : '';
 
