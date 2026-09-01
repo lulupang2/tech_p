@@ -43,7 +43,7 @@
 | FND-003 | CI 기본 pipeline | FND-002 | DONE | clean checkout에서 install with lockfile → static → unit 순서가 성공; cache 없이도 재현 가능; branch protection용 필수 check 이름 `CI / install → static → unit` 문서화; merge `31ac743` 및 foundation gate 검증 완료 |
 | FND-004 | 로컬 dependency Compose 구성 | FND-001, DEC-004 | DONE | PostgreSQL+pgvector와 승인 queue dependency가 healthcheck를 통과; persistent/ephemeral profile 구분; secret 기본값이 production에 안전하지 않음을 명시; merge `6967384`에 반영된 Compose 변경(`ebd1b5f`)에서 검증 완료 |
 | FND-005 | runtime config와 secret validation | FND-001 | DONE | API/worker별 필요한 env schema가 startup에 검증됨; secret 값은 log/error에 없음; `.env.example`에는 placeholder만 있음; merge `2d82c74` 및 API/worker static·config test 검증 완료 |
-| FND-006 | CI에 integration·contract·E2E·security 단계 확장 | FND-003, FND-004, DB-003 | BLOCKED | [TESTING §11](./docs/TESTING.md)의 단계 순서가 CI에 존재하고 실패가 merge를 차단; live canary와 유료 LLM 평가는 blocking pipeline 밖에서 실행됨; 아직 구현되지 않은 suite는 빈 통과가 아니라 미등록으로 남고 해당 task 완료 시 추가하는 규칙이 문서화됨 |
+| FND-006 | CI에 integration·contract·E2E·security 단계 확장 | FND-003, FND-004, DB-003 | DONE | [TESTING §11](./docs/TESTING.md)의 단계 순서(basic-ci → integration → contract → e2e → security)가 CI workflow에 구성되고 실패 시 merge 차단; live canary와 유료 LLM 평가는 non-blocking 및 별도 실행 조건으로 분리됨; 미구현 suite는 빈 통과가 아닌 미등록/조건부 실행으로 유지되며 해당 task 완료 시 추가하는 규칙 문서화 완료 |
 | OBS-001 | 구조화 logging과 correlation contract | FND-001 | DONE | request/run/job/source/query ID가 공통 schema로 전달됨; redaction unit test가 token·cookie·payload를 가림 |
 | CON-001 | API/job/domain contract package | FND-001 | DONE | answer request/response, error, collection job schema가 versioned runtime validation과 TS type을 한 source에서 제공; invalid fixture 거부 테스트 통과; **알 수 없는 요청 필드 거부가 명시적으로 설정됨**(framework 기본값이 아님, EXP-005 run 2); 검증 실패가 400으로 매핑됨; 미선언 응답 필드 제거가 회귀 테스트로 고정됨 |
 | TST-001 | 공통 fixture·fake clock/ID/provider harness | FND-002, CON-001 | DONE | unit test가 network 없이 deterministic하게 실행; 승인된 runtime의 test runner에서 fake 주입이 성립; fixture provenance/redaction metadata schema가 검증됨 |
@@ -77,6 +77,14 @@
 - `pnpm --filter @techpulse/api static`과 `pnpm --filter @techpulse/worker static`이 typecheck·lint·format을 모두 통과했다.
 - `pnpm --filter @techpulse/api test`와 `pnpm --filter @techpulse/worker test`가 각각 2개 test file·4개 test를 통과했다. missing/invalid env, secret redaction, valid defaults를 검증하며 오류에 공급값을 노출하지 않는다.
 
+
+### FND-006 완료 증빙 (2026-09-02)
+
+- `.github/workflows/ci.yml`에 [TESTING §11](./docs/TESTING.md)에 정의된 blocking pipeline 순서(`basic-ci` [name: `install → static → unit`] → `integration` [name: `integration: Postgres/pgvector`] → `contract` [name: `API contract`] → `e2e` [name: `Playwright E2E`] → `security` [name: `security scans`])를 `needs` 체인으로 명시했다.
+- Branch protection 필수 check 이름 `CI / install → static → unit` 및 clean checkout, Node.js 22, pnpm 10.32.1, frozen lockfile, static, unit 실행 순서를 그대로 유지했다.
+- `live-canary` 및 `rag-evaluation`은 blocking pipeline 밖에서 `workflow_dispatch` 또는 전용 플래그(`TECHPULSE_CI_ENABLE_LIVE_CANARY`, `TECHPULSE_CI_ENABLE_RAG_EVAL`)로 실행되며 `continue-on-error: true`로 설정되어 PR merge를 차단하지 않는다.
+- 아직 구현되지 않은 suite(`contract`, `e2e`, `security`) 및 자격증명이 필요한 `integration`은 항상 통과하는 빈 dummy step이 아니라 조건부 미등록(`if` guard)으로 정의되어 실패를 성공으로 위장하지 않으며, 각 task(`DB-003`, `API-004`, `TST-002`, `SEC-003`) 구현 완료 시 실제 테스트 스크립트로 활성화하는 규칙을 문서화했다.
+- YAML 구조 검증 스크립트(`python -c "import yaml; ..."`)로 7개 job의 의존성, 순서, 조건부 가드, non-blocking 속성을 검증했다.
 ### CON-001 완료 증빙 (2026-09-01; merge `5c2045d`)
 
 - 현재 main의 `pnpm run static` gate가 typecheck(9개 실행 project), ESLint, Prettier check를 모두 통과했다.

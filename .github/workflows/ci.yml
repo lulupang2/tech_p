@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -35,3 +36,169 @@ jobs:
 
       - name: Run unit tests
         run: pnpm run test
+
+  integration:
+    name: 'integration: Postgres/pgvector'
+    needs: [basic-ci]
+    runs-on: ubuntu-latest
+    # Unregistered/conditional until DATABASE_URL secret or Neon isolated branch environment is injected.
+    # When DATABASE_URL is absent, skipped rather than creating a fake pass.
+    if: ${{ secrets.DATABASE_URL != '' || vars.TECHPULSE_CI_ENABLE_INTEGRATION == 'true' }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm --filter @techpulse/database run test
+
+  contract:
+    name: API contract
+    needs: [integration]
+    runs-on: ubuntu-latest
+    # Unregistered/conditional until API contract suite (API-001 ~ API-004) is implemented.
+    # Avoids dummy/empty passing tests.
+    if: ${{ vars.TECHPULSE_CI_ENABLE_CONTRACT == 'true' }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run API contract tests
+        run: pnpm --filter @techpulse/contracts run test
+
+  e2e:
+    name: Playwright E2E
+    needs: [contract]
+    runs-on: ubuntu-latest
+    # Unregistered/conditional until UI Playwright E2E suite (TST-002) is implemented.
+    # Avoids dummy/empty passing tests.
+    if: ${{ vars.TECHPULSE_CI_ENABLE_E2E == 'true' }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Playwright E2E tests
+        run: pnpm --filter @techpulse/web run test:e2e
+
+  security:
+    name: security scans
+    needs: [e2e]
+    runs-on: ubuntu-latest
+    # Unregistered/conditional until security scan suite (SEC-001 ~ SEC-003) is implemented.
+    # Avoids dummy/empty passing tests.
+    if: ${{ vars.TECHPULSE_CI_ENABLE_SECURITY == 'true' }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run security scans
+        run: pnpm audit --audit-level=high
+
+  live-canary:
+    name: live canary
+    runs-on: ubuntu-latest
+    # Non-blocking: executed outside blocking pipeline (manual trigger or explicit flag), never blocks PR merge.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.TECHPULSE_CI_ENABLE_LIVE_CANARY == 'true' }}
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run live canary suite
+        env:
+          TECHPULSE_LIVE_CANARY: "true"
+        run: pnpm --filter @techpulse/collectors run test
+
+  rag-evaluation:
+    name: RAG evaluation
+    runs-on: ubuntu-latest
+    # Non-blocking: executed outside blocking pipeline (manual trigger or release decision), never blocks PR merge.
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.TECHPULSE_CI_ENABLE_RAG_EVAL == 'true' }}
+    continue-on-error: true
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run RAG evaluation suite
+        env:
+          TECHPULSE_EVAL_PAID_LLM: "true"
+        run: pnpm --filter @techpulse/rag run test

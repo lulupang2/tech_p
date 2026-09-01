@@ -221,12 +221,26 @@ flowchart LR
 
 live canary와 유료 LLM 평가는 이 blocking pipeline 밖에서 실행하고 결과를 release decision에 첨부한다.
 
-이 pipeline의 구현 task는 `FND-003`(install → static → unit)과 `FND-006`(integration, contract, E2E, security 확장)이다. 아직 구현되지 않은 suite는 항상 통과하는 빈 단계로 만들지 않는다.
+이 pipeline의 구현 task는 `FND-003`(install → static → unit)과 `FND-006`(integration, contract, E2E, security 확장)이다.
 
-현재 기본 blocking workflow는 `.github/workflows/ci.yml`이며 `main` push와 모든 pull request에서 실행된다. Branch protection에 등록할 필수 check 이름은 정확히 `CI / install → static → unit`이다. 이 check는 clean checkout과 Node.js 22, pnpm 10.32.1을 사용하고 `pnpm install --frozen-lockfile` → `pnpm run static` → `pnpm run test` 순으로 실행한다.
+### 11.1 Blocking pipeline 단계와 의존 순서
 
-기본 CI에는 Neon `DATABASE_URL` secret이 없으므로 현재 blocking check는 Neon migration·pgvector·TLS·pooling을 검증하지 않는다. integration job을 활성화할 때는 격리된 Neon branch/database와 secret injection, migration/runtime credential 분리, 실패 시 명확한 unavailable 결과를 먼저 구성한다. secret이 없는 실행에서 integration suite가 skip되면 성공으로 집계하지 않는다.
+기본 blocking workflow는 `.github/workflows/ci.yml`이며 `main` push, pull request, manual workflow dispatch에서 실행된다. 단계별 순서와 의존성은 다음과 같다.
 
+1. **`basic-ci` (`install → static → unit`)**: Branch protection에 등록할 필수 check 이름은 정확히 `CI / install → static → unit`이다. Clean checkout, Node.js 22, pnpm 10.32.1을 사용하고 `pnpm install --frozen-lockfile` → `pnpm run static` → `pnpm run test` 순으로 실행된다.
+2. **`integration` (`integration: Postgres/pgvector`)**: `needs: [basic-ci]`. 실제 PostgreSQL+pgvector(`@techpulse/database`) integration suite를 실행한다. 격리된 Neon branch/database의 `DATABASE_URL` secret 또는 `TECHPULSE_CI_ENABLE_INTEGRATION` 설정 시 활성화된다. 자격증명이 없는 기본 CI 환경에서는 실패를 성공으로 위장하지 않고 건너뜀(skip) 처리된다.
+3. **`contract` (`API contract`)**: `needs: [integration]`. `@techpulse/contracts` 및 API OpenAPI/runtime contract suite를 검증한다. `API-001`~`API-004` 완료 전까지는 미등록/조건부(`TECHPULSE_CI_ENABLE_CONTRACT`) 상태로 유지되며, 더미 빈 통과 스텝을 두지 않는다.
+4. **`e2e` (`Playwright E2E`)**: `needs: [contract]`. `@techpulse/web` Playwright SvelteKit E2E suite를 검증한다. `TST-002` 완료 전까지는 미등록/조건부(`TECHPULSE_CI_ENABLE_E2E`) 상태로 유지된다.
+5. **`security` (`security scans`)**: `needs: [e2e]`. 의존성 보안 취약점 및 정적 보안 검사를 수행한다. `SEC-001`~`SEC-003` 완료 전까지는 미등록/조건부(`TECHPULSE_CI_ENABLE_SECURITY`) 상태로 유지된다.
+
+### 11.2 Non-blocking 파이프라인
+
+1. **`live-canary` (`live canary`)**: 승인된 외부 source(예: `COL-005` Chrome Origin Trials)에 대한 live canary suite는 blocking pipeline 밖에서 `workflow_dispatch` 또는 `TECHPULSE_CI_ENABLE_LIVE_CANARY`로 실행되며, `continue-on-error: true`로 설정되어 외부 네트워크/rate-limit으로 인한 PR merge 차단을 방지한다.
+2. **`rag-evaluation` (`RAG evaluation`)**: 유료 LLM 기반 골든셋 평가(`EVAL-002`)는 blocking pipeline 밖에서 `workflow_dispatch` 또는 `TECHPULSE_CI_ENABLE_RAG_EVAL`로 실행되며, `continue-on-error: true`로 릴리스 검토용 증빙으로만 활용된다.
+
+### 11.3 미구현 suite 처리 원칙
+
+아직 구현되지 않은 suite는 항상 통과하는 빈 더미 단계(`echo "pass"` 등)로 만들지 않고, 조건부 미등록(`if` guard)으로 남겨 둔 뒤 해당 task(`API-004`, `TST-002`, `SEC-003`, `EVAL-002`) 구현 완료 시 실제 실행 명령으로 등록한다.
 ## 12. 완료 정의
 
 각 TASK는 다음을 만족해야 완료다.
