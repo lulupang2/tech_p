@@ -274,4 +274,4 @@ flowchart TD
 - `@techpulse/domain`은 PIPE-003 exact identity → canonical URL → exact body hash 우선순위를 유지하면서 EXP-004 lexical Jaccard(`0.72 * body + 0.28 * title`)와 threshold `0.80`을 적용한다. `exp004-dedup-v1.0.0` 및 `exp004-boilerplate-v1`은 domain/worker 결과 metadata에 기록되며 provider/embedding 코드는 사용하지 않는다.
 - near-duplicate 결과는 자동 merge하지 않는 candidate/link suggestion이며 confidence, algorithm version, threshold, manual-review 이유와 후보 revision/raw/canonical/license provenance를 포함한다. threshold 근처·`verbatim_only` 후보는 review 대상으로 유지되고 기존 source/raw/revision/citation row는 수정·삭제하지 않는다.
 - `duplicate_cluster_memberships` append-only table과 migration `0005_gray_domino.sql`이 cluster/document/immutable revision/raw IDs, algorithm version, confidence, review status를 version namespace별로 보존한다. exact cluster linking은 기존 pointer 호환성을 유지하면서 membership evidence를 멱등 저장한다.
-- 검증: domain deduplication 17개, worker deduplication 6개, database schema/migration 8개 테스트 통과(통합 DB 1개 skip); domain/worker/database typecheck 통과.
+- 검증: domain deduplication 17개, worker deduplication 6개, database schema/migration 9개 테스트 통과(통합 DB 1개 skip); domain/worker/database typecheck 통과.
