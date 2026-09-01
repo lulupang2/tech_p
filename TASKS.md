@@ -289,3 +289,9 @@ flowchart TD
 - `community_mentions`는 accepted/exact duplicate-cluster identity별로만 dedup하고 raw/source provenance를 결과에 보존한다. `repo_attention`은 collection start 이전 window를 거부하는 snapshot metric이며, query-derived observation의 `query_signature`·`is_incomplete`를 전파하고 누락 window를 생성하지 않는다.
 - worker normalization과 Drizzle metric repository에서 공통 unit/type validation을 적용하고 기존 natural-key upsert를 유지했다. provider SDK·LLM 구현은 추가하지 않았다.
 - 검증: `packages/domain` PIPE-006 focused 6개 test 통과, worker normalization focused 4개 test 통과, domain/worker/database static checks 통과; DB integration은 `DATABASE_URL` 미설정 환경에서 skip됐다.
+
+### PIPE-007 완료 증빙 (2026-09-02)
+
+- `@techpulse/domain`과 `@techpulse/contracts`에 versioned run/raw/stage replay job contract를 추가했다. target ID와 stage를 검증하고 자연 키로 중복 replay를 멱등 억제한다.
+- worker 경계는 disabled source enqueue 억제, retryable/quarantine/dead-letter disposition 분류, UTC audit event redaction callback을 제공한다. 원본·document revision·citation을 수정하지 않는다.
+- 검증: `packages/domain` replay focused 3개 테스트와 contracts 11개 테스트 통과, worker/domain typecheck·lint·format 통과; concrete queue/database audit adapter 연결은 배포 adapter 바인딩 전 provider-neutral port로 유지한다.
