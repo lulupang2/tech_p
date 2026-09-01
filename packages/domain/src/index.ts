@@ -1,5 +1,6 @@
 export {
   AiPortError,
+  AiProviderError,
   AiTimeoutError,
   UnsupportedAiInputError,
   createDeterministicChatPort,
@@ -11,6 +12,7 @@ export type {
   AiRequestOptions,
   ChatCompletionMetadata,
   ChatCompletionRequest,
+  AiErrorMetadata,
   ChatCompletionResult,
   ChatMessage,
   ChatPort,

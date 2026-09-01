@@ -63,6 +63,12 @@ export interface EmbeddingPort {
 }
 
 export type AiErrorKind = 'timeout' | 'unsupported_input' | 'provider_error';
+export interface AiErrorMetadata {
+  readonly model: string;
+  readonly latencyMs: number;
+  readonly dimensions?: number;
+  readonly usage?: TokenUsage;
+}
 /** Compatibility names for adapters that refer to provider ports directly. */
 export type ChatRequest = ChatCompletionRequest;
 export type ChatResponse = ChatCompletionResult;
@@ -72,27 +78,45 @@ export type EmbeddingProvider = EmbeddingPort;
 export class AiPortError extends Error {
   readonly kind: AiErrorKind;
   readonly retryable: boolean;
+  readonly metadata: AiErrorMetadata | undefined;
 
-  constructor(kind: AiErrorKind, message: string, options: { readonly retryable: boolean }) {
+  constructor(
+    kind: AiErrorKind,
+    message: string,
+    options: { readonly retryable: boolean; readonly metadata: AiErrorMetadata | undefined },
+  ) {
     super(message);
     this.name = 'AiPortError';
     this.kind = kind;
     this.retryable = options.retryable;
+    this.metadata = options.metadata;
   }
 }
 
 export class AiTimeoutError extends AiPortError {
-  constructor(message = 'AI request timed out') {
-    super('timeout', message, { retryable: true });
+  constructor(message = 'AI request timed out', metadata?: AiErrorMetadata) {
+    super('timeout', message, { retryable: true, metadata });
     this.name = 'AiTimeoutError';
   }
 }
 
 export class UnsupportedAiInputError extends AiPortError {
   constructor(message: string) {
-    super('unsupported_input', message, { retryable: false });
+    super('unsupported_input', message, { retryable: false, metadata: undefined });
     this.name = 'UnsupportedAiInputError';
   }
+}
+
+export class AiProviderError extends AiPortError {
+  constructor(message = 'AI provider request failed', metadata?: AiErrorMetadata, cause?: unknown) {
+    super('provider_error', message, { retryable: true, metadata });
+    this.name = 'AiProviderError';
+    if (cause !== undefined) this.cause = cause;
+  }
+}
+
+function providerError(failure: Error, metadata: AiErrorMetadata): AiProviderError {
+  return new AiProviderError('AI provider request failed', metadata, failure);
 }
 
 export interface DeterministicChatOptions {
@@ -112,6 +136,33 @@ function assertTimeout(timeoutMs: number | undefined): void {
   if (timeoutMs !== undefined && (!Number.isInteger(timeoutMs) || timeoutMs < 1)) {
     throw new RangeError('timeoutMs must be a positive integer');
   }
+}
+function waitForLatency(
+  latencyMs: number,
+  signal: AbortSignal | undefined,
+  timeoutMs: number | undefined,
+  metadata: AiErrorMetadata,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (error?: Error): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(delayTimer);
+      clearTimeout(timeoutTimer);
+      signal?.removeEventListener('abort', onAbort);
+      if (error === undefined) resolve();
+      else reject(error);
+    };
+    const onAbort = (): void => finish(new AiTimeoutError('AI request was aborted', metadata));
+    const delayTimer = setTimeout(() => finish(), latencyMs);
+    const timeoutTimer = setTimeout(
+      () => finish(new AiTimeoutError('AI request timed out', metadata)),
+      timeoutMs ?? latencyMs,
+    );
+    signal?.addEventListener('abort', onAbort, { once: true });
+    if (signal?.aborted) onAbort();
+  });
 }
 
 function inputText(messages: readonly ChatMessage[]): string {
@@ -143,20 +194,21 @@ export function createDeterministicChatPort(
       validateMessages(request.messages);
       assertTimeout(request.timeoutMs);
       calls.push({ ...request, messages: request.messages.map((message) => ({ ...message })) });
-      if (request.signal?.aborted) throw new AiTimeoutError('AI request was aborted');
-      if (request.timeoutMs !== undefined && latencyMs > request.timeoutMs) throw new AiTimeoutError();
-      if (options.failWith !== undefined) throw options.failWith;
+      const metadata = { model, latencyMs };
+      await waitForLatency(latencyMs, request.signal, request.timeoutMs, metadata);
+      if (options.failWith !== undefined) throw providerError(options.failWith, metadata);
       const input = inputText(request.messages);
       const usage = options.usage ?? {
         inputTokens: tokenCount(input),
         outputTokens: tokenCount(response),
         totalTokens: tokenCount(input) + tokenCount(response),
       };
-      return { content: response, metadata: { model, usage, latencyMs } };
+      return { content: response, metadata: { ...metadata, usage } };
     },
     reset: () => calls.splice(0),
   };
 }
+ 
 
 export interface DeterministicEmbeddingOptions {
   readonly dimensions?: number;
@@ -189,11 +241,11 @@ export function createDeterministicEmbeddingPort(
     if (request.input.trim().length === 0) throw new UnsupportedAiInputError('embedding input must be non-empty');
     assertTimeout(request.timeoutMs);
     calls.push({ ...request });
-    if (request.signal?.aborted) throw new AiTimeoutError('AI request was aborted');
-    if (request.timeoutMs !== undefined && latencyMs > request.timeoutMs) throw new AiTimeoutError();
-    if (options.failWith !== undefined) throw options.failWith;
+    const metadata = { model, dimensions, latencyMs };
+    await waitForLatency(latencyMs, request.signal, request.timeoutMs, metadata);
+    if (options.failWith !== undefined) throw providerError(options.failWith, metadata);
     const vector = Array.from({ length: dimensions }, (_, i) => (hash(request.input, i) / 0xffffffff) * 2 - 1);
-    return { vector, metadata: { model, dimensions, latencyMs } };
+    return { vector, metadata };
   };
   return {
     calls,
