@@ -11,6 +11,124 @@ export interface SourceRecord {
   readonly updatedAt: Date;
 }
 
+export type CollectionRunStatus = 'pending' | 'running' | 'succeeded' | 'failed' | 'cancelled';
+
+export interface CollectionRunRecord {
+  readonly id: string;
+  readonly sourceId: string;
+  readonly scheduledAt: Date;
+  readonly startedAt: Date | null;
+  readonly endedAt: Date | null;
+  readonly status: CollectionRunStatus;
+  readonly cursorBefore: string | null;
+  readonly cursorAfter: string | null;
+  readonly counts: Record<string, number>;
+  readonly errorSummary: string | null;
+  readonly createdAt: Date;
+}
+
+export interface CreateCollectionRunInput {
+  readonly id?: string;
+  readonly sourceId: string;
+  readonly scheduledAt: Date;
+  readonly startedAt?: Date | null;
+  readonly status?: CollectionRunStatus;
+  readonly cursorBefore?: string | null;
+  readonly counts?: Record<string, number>;
+}
+
+export interface UpdateCollectionRunInput {
+  readonly status?: CollectionRunStatus;
+  readonly startedAt?: Date | null;
+  readonly endedAt?: Date | null;
+  readonly cursorBefore?: string | null;
+  readonly cursorAfter?: string | null;
+  readonly counts?: Record<string, number>;
+  readonly errorSummary?: string | null;
+}
+
+export interface CollectionRunRepositoryPort {
+  readonly findById: (id: string) => Promise<CollectionRunRecord | null>;
+  readonly create: (input: CreateCollectionRunInput) => Promise<CollectionRunRecord>;
+  readonly update: (id: string, input: UpdateCollectionRunInput) => Promise<CollectionRunRecord>;
+  readonly findBySourceAndScheduledAt?: (
+    sourceId: string,
+    scheduledAt: Date,
+  ) => Promise<CollectionRunRecord | null>;
+}
+
+export interface RawItemRecord {
+  readonly id: string;
+  readonly sourceId: string;
+  readonly runId: string;
+  readonly externalId: string;
+  readonly canonicalUrl: string;
+  readonly payload: Record<string, unknown>;
+  readonly payloadHash: string;
+  readonly publishedAt: Date | null;
+  readonly collectedAt: Date;
+  readonly httpMetadata: Record<string, unknown>;
+  readonly rightsMetadata: Record<string, unknown>;
+}
+
+export interface UpsertRawItemInput {
+  readonly id?: string;
+  readonly sourceId: string;
+  readonly runId: string;
+  readonly externalId: string;
+  readonly canonicalUrl: string;
+  readonly payload: Record<string, unknown>;
+  readonly payloadHash: string;
+  readonly publishedAt?: Date | null;
+  readonly collectedAt?: Date;
+  readonly httpMetadata?: Record<string, unknown>;
+  readonly rightsMetadata?: Record<string, unknown>;
+}
+
+export interface UpsertRawItemResult {
+  readonly item: RawItemRecord;
+  readonly isNew: boolean;
+}
+
+export interface RawItemRepositoryPort {
+  readonly findById: (id: string) => Promise<RawItemRecord | null>;
+  readonly upsert: (input: UpsertRawItemInput) => Promise<UpsertRawItemResult>;
+  readonly findByRevision: (
+    sourceId: string,
+    externalId: string,
+    payloadHash: string,
+  ) => Promise<RawItemRecord | null>;
+  readonly listByRunId: (runId: string) => Promise<readonly RawItemRecord[]>;
+}
+
+export type PipelineEventStatus = 'started' | 'succeeded' | 'failed' | 'skipped' | 'quarantined';
+
+export interface PipelineEventRecord {
+  readonly id: string;
+  readonly rawItemId: string;
+  readonly stage: string;
+  readonly processorVersion: string;
+  readonly status: PipelineEventStatus;
+  readonly attempt: number;
+  readonly errorCode: string | null;
+  readonly occurredAt: Date;
+}
+
+export interface CreatePipelineEventInput {
+  readonly rawItemId: string;
+  readonly stage: string;
+  readonly processorVersion: string;
+  readonly status: PipelineEventStatus;
+  readonly attempt?: number;
+  readonly errorCode?: string | null;
+  readonly occurredAt?: Date;
+}
+
+export interface PipelineEventRepositoryPort {
+  readonly create: (input: CreatePipelineEventInput) => Promise<PipelineEventRecord>;
+  readonly listByRawItemId: (rawItemId: string) => Promise<readonly PipelineEventRecord[]>;
+}
+
 export interface DocumentRecord {
   readonly id: string;
   readonly artifactType: string;

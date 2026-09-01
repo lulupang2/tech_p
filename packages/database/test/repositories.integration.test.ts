@@ -4,6 +4,9 @@ import {
   createDatabaseClient,
   createDocumentRepository,
   createSourceRepository,
+  createCollectionRunRepository,
+  createRawItemRepository,
+  createPipelineEventRepository,
 } from '../src/index.js';
 import { sources, documents, documentRevisions, chunks } from '../src/schema/index.js';
 
@@ -123,6 +126,96 @@ describeIntegration('DB-005 Repository Ports & Adapters Integration', () => {
 
       const enabledList = await sourceRepo.listEnabled();
       assert(enabledList.some((s) => s.key === key));
+    } finally {
+      await client.close();
+    }
+  });
+
+  test('collection run, raw item, and pipeline event repositories operate correctly with constraints', async () => {
+    const client = createDatabaseClient({ databaseUrl: databaseUrl as string });
+    const db = client.db;
+    const runRepo = createCollectionRunRepository(db);
+    const rawRepo = createRawItemRepository(db);
+    const eventRepo = createPipelineEventRepository(db);
+
+    try {
+      await client.migrate();
+
+      // 1. Create source
+      const sourceKey = `test-run-src-${Date.now()}`;
+      const [source] = await db
+        .insert(sources)
+        .values({
+          key: sourceKey,
+          name: 'Run Test Source',
+          kind: 'api',
+          baseUrl: 'https://api.example.com',
+          enabled: true,
+          scheduleConfig: {},
+        })
+        .returning();
+      assert(source);
+
+      // 2. Test CollectionRunRepository
+      const scheduledAt = new Date();
+      const createdRun = await runRepo.create({
+        sourceId: source.id,
+        scheduledAt,
+        cursorBefore: 'cursor-init',
+      });
+      assert(createdRun);
+      assert.equal(createdRun.sourceId, source.id);
+      assert.equal(createdRun.status, 'pending');
+
+      const updatedRun = await runRepo.update(createdRun.id, {
+        status: 'running',
+        startedAt: new Date(),
+      });
+      assert.equal(updatedRun.status, 'running');
+
+      const foundRun = await runRepo.findById(createdRun.id);
+      assert(foundRun);
+      assert.equal(foundRun.id, createdRun.id);
+
+      // 3. Test RawItemRepository upsert and deduplication
+      const externalId = 'ext-item-1';
+      const payloadHash = 'a'.repeat(64);
+      const firstUpsert = await rawRepo.upsert({
+        sourceId: source.id,
+        runId: createdRun.id,
+        externalId,
+        canonicalUrl: 'https://api.example.com/items/1',
+        payload: { title: 'First Item' },
+        payloadHash,
+      });
+      assert.equal(firstUpsert.isNew, true);
+      assert.equal(firstUpsert.item.externalId, externalId);
+
+      // Replay same item -> isNew should be false
+      const replayUpsert = await rawRepo.upsert({
+        sourceId: source.id,
+        runId: createdRun.id,
+        externalId,
+        canonicalUrl: 'https://api.example.com/items/1',
+        payload: { title: 'First Item' },
+        payloadHash,
+      });
+      assert.equal(replayUpsert.isNew, false);
+      assert.equal(replayUpsert.item.id, firstUpsert.item.id);
+
+      // 4. Test PipelineEventRepository
+      const createdEvent = await eventRepo.create({
+        rawItemId: firstUpsert.item.id,
+        stage: 'raw_saved',
+        processorVersion: '1.0.0',
+        status: 'succeeded',
+      });
+      assert(createdEvent);
+      assert.equal(createdEvent.rawItemId, firstUpsert.item.id);
+
+      const events = await eventRepo.listByRawItemId(firstUpsert.item.id);
+      assert.equal(events.length, 1);
+      assert.equal(events[0]?.stage, 'raw_saved');
     } finally {
       await client.close();
     }

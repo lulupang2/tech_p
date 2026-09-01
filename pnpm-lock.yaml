@@ -91,6 +91,9 @@ importers:
       '@techpulse/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@techpulse/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
       '@techpulse/observability':
         specifier: workspace:*
         version: link:../../packages/observability

@@ -33,5 +33,11 @@ export {
   migrateDatabase,
   checkVectorExtension,
 } from './migrate.js';
-export { createDocumentRepository, createSourceRepository } from './repositories.js';
+export {
+  createDocumentRepository,
+  createSourceRepository,
+  createCollectionRunRepository,
+  createRawItemRepository,
+  createPipelineEventRepository,
+} from './repositories.js';
 export { createSearchService } from './search.js';

@@ -33,6 +33,19 @@ export type {
 } from './ai.js';
 export type {
   SourceRecord,
+  CollectionRunStatus,
+  CollectionRunRecord,
+  CreateCollectionRunInput,
+  UpdateCollectionRunInput,
+  CollectionRunRepositoryPort,
+  RawItemRecord,
+  UpsertRawItemInput,
+  UpsertRawItemResult,
+  RawItemRepositoryPort,
+  PipelineEventStatus,
+  PipelineEventRecord,
+  CreatePipelineEventInput,
+  PipelineEventRepositoryPort,
   DocumentRecord,
   DocumentRevisionRecord,
   ChunkRecord,
@@ -58,3 +71,24 @@ export type {
   CollectorPort,
   PolicyGuardPort,
 } from './collector.js';
+export {
+  IngestionError,
+  PolicyViolationError,
+  TransientIngestionError,
+  PermanentIngestionError,
+  SourceNotFoundError,
+  SourceDisabledError,
+  createRawIngestionService,
+} from './ingestion.js';
+
+export type {
+  StageJobPayload,
+  StageJobPublisherPort,
+  RawIngestionRequest,
+  RawIngestionCounts,
+  RawIngestionResult,
+  CollectorResolver,
+  StructuredEventLoggerLike,
+  RawIngestionServiceOptions,
+  RawIngestionServicePort,
+} from './ingestion.js';

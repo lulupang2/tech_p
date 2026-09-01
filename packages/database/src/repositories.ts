@@ -3,15 +3,37 @@ import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import type {
   DocumentRepositoryPort,
   SourceRepositoryPort,
+  CollectionRunRepositoryPort,
+  RawItemRepositoryPort,
+  PipelineEventRepositoryPort,
   DocumentRecord,
   DocumentRevisionRecord,
   ChunkRecord,
   SourceRecord,
+  CollectionRunRecord,
+  CollectionRunStatus,
+  CreateCollectionRunInput,
+  UpdateCollectionRunInput,
+  RawItemRecord,
+  UpsertRawItemInput,
+  UpsertRawItemResult,
+  PipelineEventRecord,
+  PipelineEventStatus,
+  CreatePipelineEventInput,
   DocumentFilter,
   PaginationParams,
   PaginatedResult,
 } from '@techpulse/domain';
-import { documents, documentRevisions, chunks, sources, type schema } from './schema/index.js';
+import {
+  documents,
+  documentRevisions,
+  chunks,
+  sources,
+  collectionRuns,
+  rawItems,
+  pipelineEvents,
+  type schema,
+} from './schema/index.js';
 
 export function createDocumentRepository(db: NeonDatabase<typeof schema>): DocumentRepositoryPort {
   return {
@@ -200,6 +222,305 @@ export function createSourceRepository(db: NeonDatabase<typeof schema>): SourceR
         policyReviewedAt: r.policyReviewedAt,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
+      }));
+    },
+  };
+}
+
+export function createCollectionRunRepository(
+  db: NeonDatabase<typeof schema>,
+): CollectionRunRepositoryPort {
+  return {
+    async findById(id: string): Promise<CollectionRunRecord | null> {
+      const row = await db.query.collectionRuns.findFirst({
+        where: eq(collectionRuns.id, id),
+      });
+      if (!row) return null;
+      return {
+        id: row.id,
+        sourceId: row.sourceId,
+        scheduledAt: row.scheduledAt,
+        startedAt: row.startedAt,
+        endedAt: row.endedAt,
+        status: row.status as CollectionRunStatus,
+        cursorBefore: row.cursorBefore,
+        cursorAfter: row.cursorAfter,
+        counts: row.counts ?? {},
+        errorSummary: row.errorSummary,
+        createdAt: row.createdAt,
+      };
+    },
+
+    async create(input: CreateCollectionRunInput): Promise<CollectionRunRecord> {
+      const [inserted] = await db
+        .insert(collectionRuns)
+        .values({
+          ...(input.id ? { id: input.id } : {}),
+          sourceId: input.sourceId,
+          scheduledAt: input.scheduledAt,
+          startedAt: input.startedAt ?? null,
+          status: input.status ?? 'pending',
+          cursorBefore: input.cursorBefore ?? null,
+          counts: input.counts ?? {},
+        })
+        .returning();
+      if (!inserted) throw new Error('Failed to create collection run');
+      return {
+        id: inserted.id,
+        sourceId: inserted.sourceId,
+        scheduledAt: inserted.scheduledAt,
+        startedAt: inserted.startedAt,
+        endedAt: inserted.endedAt,
+        status: inserted.status as CollectionRunStatus,
+        cursorBefore: inserted.cursorBefore,
+        cursorAfter: inserted.cursorAfter,
+        counts: inserted.counts ?? {},
+        errorSummary: inserted.errorSummary,
+        createdAt: inserted.createdAt,
+      };
+    },
+
+    async update(id: string, input: UpdateCollectionRunInput): Promise<CollectionRunRecord> {
+      const setValues: Record<string, unknown> = {};
+      if (input.status !== undefined) setValues['status'] = input.status;
+      if (input.startedAt !== undefined) setValues['startedAt'] = input.startedAt;
+      if (input.endedAt !== undefined) setValues['endedAt'] = input.endedAt;
+      if (input.cursorBefore !== undefined) setValues['cursorBefore'] = input.cursorBefore;
+      if (input.cursorAfter !== undefined) setValues['cursorAfter'] = input.cursorAfter;
+      if (input.counts !== undefined) setValues['counts'] = input.counts;
+      if (input.errorSummary !== undefined) setValues['errorSummary'] = input.errorSummary;
+
+      const [updated] = await db
+        .update(collectionRuns)
+        .set(setValues)
+        .where(eq(collectionRuns.id, id))
+        .returning();
+      if (!updated) throw new Error(`Collection run not found: ${id}`);
+      return {
+        id: updated.id,
+        sourceId: updated.sourceId,
+        scheduledAt: updated.scheduledAt,
+        startedAt: updated.startedAt,
+        endedAt: updated.endedAt,
+        status: updated.status as CollectionRunStatus,
+        cursorBefore: updated.cursorBefore,
+        cursorAfter: updated.cursorAfter,
+        counts: updated.counts ?? {},
+        errorSummary: updated.errorSummary,
+        createdAt: updated.createdAt,
+      };
+    },
+
+    async findBySourceAndScheduledAt(
+      sourceId: string,
+      scheduledAt: Date,
+    ): Promise<CollectionRunRecord | null> {
+      const row = await db.query.collectionRuns.findFirst({
+        where: and(
+          eq(collectionRuns.sourceId, sourceId),
+          eq(collectionRuns.scheduledAt, scheduledAt),
+        ),
+      });
+      if (!row) return null;
+      return {
+        id: row.id,
+        sourceId: row.sourceId,
+        scheduledAt: row.scheduledAt,
+        startedAt: row.startedAt,
+        endedAt: row.endedAt,
+        status: row.status as CollectionRunStatus,
+        cursorBefore: row.cursorBefore,
+        cursorAfter: row.cursorAfter,
+        counts: row.counts ?? {},
+        errorSummary: row.errorSummary,
+        createdAt: row.createdAt,
+      };
+    },
+  };
+}
+
+export function createRawItemRepository(db: NeonDatabase<typeof schema>): RawItemRepositoryPort {
+  return {
+    async findById(id: string): Promise<RawItemRecord | null> {
+      const row = await db.query.rawItems.findFirst({
+        where: eq(rawItems.id, id),
+      });
+      if (!row) return null;
+      return {
+        id: row.id,
+        sourceId: row.sourceId,
+        runId: row.runId,
+        externalId: row.externalId,
+        canonicalUrl: row.canonicalUrl,
+        payload: row.payload as Record<string, unknown>,
+        payloadHash: row.payloadHash,
+        publishedAt: row.publishedAt,
+        collectedAt: row.collectedAt,
+        httpMetadata: row.httpMetadata as Record<string, unknown>,
+        rightsMetadata: row.rightsMetadata as Record<string, unknown>,
+      };
+    },
+
+    async upsert(input: UpsertRawItemInput): Promise<UpsertRawItemResult> {
+      const inserted = await db
+        .insert(rawItems)
+        .values({
+          ...(input.id ? { id: input.id } : {}),
+          sourceId: input.sourceId,
+          runId: input.runId,
+          externalId: input.externalId,
+          canonicalUrl: input.canonicalUrl,
+          payload: input.payload,
+          payloadHash: input.payloadHash,
+          publishedAt: input.publishedAt ?? null,
+          collectedAt: input.collectedAt ?? new Date(),
+          httpMetadata: input.httpMetadata ?? {},
+          rightsMetadata: input.rightsMetadata ?? {},
+        })
+        .onConflictDoNothing({
+          target: [rawItems.sourceId, rawItems.externalId, rawItems.payloadHash],
+        })
+        .returning();
+
+      if (inserted[0]) {
+        const row = inserted[0];
+        return {
+          item: {
+            id: row.id,
+            sourceId: row.sourceId,
+            runId: row.runId,
+            externalId: row.externalId,
+            canonicalUrl: row.canonicalUrl,
+            payload: row.payload as Record<string, unknown>,
+            payloadHash: row.payloadHash,
+            publishedAt: row.publishedAt,
+            collectedAt: row.collectedAt,
+            httpMetadata: row.httpMetadata as Record<string, unknown>,
+            rightsMetadata: row.rightsMetadata as Record<string, unknown>,
+          },
+          isNew: true,
+        };
+      }
+
+      const existing = await db.query.rawItems.findFirst({
+        where: and(
+          eq(rawItems.sourceId, input.sourceId),
+          eq(rawItems.externalId, input.externalId),
+          eq(rawItems.payloadHash, input.payloadHash),
+        ),
+      });
+      if (!existing) throw new Error('Raw revision disappeared during replay');
+
+      return {
+        item: {
+          id: existing.id,
+          sourceId: existing.sourceId,
+          runId: existing.runId,
+          externalId: existing.externalId,
+          canonicalUrl: existing.canonicalUrl,
+          payload: existing.payload as Record<string, unknown>,
+          payloadHash: existing.payloadHash,
+          publishedAt: existing.publishedAt,
+          collectedAt: existing.collectedAt,
+          httpMetadata: existing.httpMetadata as Record<string, unknown>,
+          rightsMetadata: existing.rightsMetadata as Record<string, unknown>,
+        },
+        isNew: false,
+      };
+    },
+
+    async findByRevision(
+      sourceId: string,
+      externalId: string,
+      payloadHash: string,
+    ): Promise<RawItemRecord | null> {
+      const row = await db.query.rawItems.findFirst({
+        where: and(
+          eq(rawItems.sourceId, sourceId),
+          eq(rawItems.externalId, externalId),
+          eq(rawItems.payloadHash, payloadHash),
+        ),
+      });
+      if (!row) return null;
+      return {
+        id: row.id,
+        sourceId: row.sourceId,
+        runId: row.runId,
+        externalId: row.externalId,
+        canonicalUrl: row.canonicalUrl,
+        payload: row.payload as Record<string, unknown>,
+        payloadHash: row.payloadHash,
+        publishedAt: row.publishedAt,
+        collectedAt: row.collectedAt,
+        httpMetadata: row.httpMetadata as Record<string, unknown>,
+        rightsMetadata: row.rightsMetadata as Record<string, unknown>,
+      };
+    },
+
+    async listByRunId(runId: string): Promise<readonly RawItemRecord[]> {
+      const rows = await db.query.rawItems.findMany({
+        where: eq(rawItems.runId, runId),
+      });
+      return rows.map((row) => ({
+        id: row.id,
+        sourceId: row.sourceId,
+        runId: row.runId,
+        externalId: row.externalId,
+        canonicalUrl: row.canonicalUrl,
+        payload: row.payload as Record<string, unknown>,
+        payloadHash: row.payloadHash,
+        publishedAt: row.publishedAt,
+        collectedAt: row.collectedAt,
+        httpMetadata: row.httpMetadata as Record<string, unknown>,
+        rightsMetadata: row.rightsMetadata as Record<string, unknown>,
+      }));
+    },
+  };
+}
+
+export function createPipelineEventRepository(
+  db: NeonDatabase<typeof schema>,
+): PipelineEventRepositoryPort {
+  return {
+    async create(input: CreatePipelineEventInput): Promise<PipelineEventRecord> {
+      const [inserted] = await db
+        .insert(pipelineEvents)
+        .values({
+          rawItemId: input.rawItemId,
+          stage: input.stage,
+          processorVersion: input.processorVersion,
+          status: input.status,
+          attempt: input.attempt ?? 1,
+          errorCode: input.errorCode ?? null,
+          occurredAt: input.occurredAt ?? new Date(),
+        })
+        .returning();
+      if (!inserted) throw new Error('Failed to create pipeline event');
+      return {
+        id: inserted.id,
+        rawItemId: inserted.rawItemId,
+        stage: inserted.stage,
+        processorVersion: inserted.processorVersion,
+        status: inserted.status as PipelineEventStatus,
+        attempt: inserted.attempt,
+        errorCode: inserted.errorCode,
+        occurredAt: inserted.occurredAt,
+      };
+    },
+
+    async listByRawItemId(rawItemId: string): Promise<readonly PipelineEventRecord[]> {
+      const rows = await db.query.pipelineEvents.findMany({
+        where: eq(pipelineEvents.rawItemId, rawItemId),
+      });
+      return rows.map((row) => ({
+        id: row.id,
+        rawItemId: row.rawItemId,
+        stage: row.stage,
+        processorVersion: row.processorVersion,
+        status: row.status as PipelineEventStatus,
+        attempt: row.attempt,
+        errorCode: row.errorCode,
+        occurredAt: row.occurredAt,
       }));
     },
   };
