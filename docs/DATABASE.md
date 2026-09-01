@@ -151,12 +151,13 @@ embedding column은 모델 dimensions가 결정된 후 `vector(n)`으로 정의�
 
 ## 7. 마이그레이션과 데이터 버전
 
-마이그레이션 도구와 ORM/query builder는 미결정이다. 선택 기준은 다음과 같다.
+[ADR-0009](./adr/0009-drizzle-orm-migrations.md)에 따라 `packages/database`가 Drizzle ORM schema, repository adapter와 Drizzle Kit migration 설정을 소유한다. schema 선언을 변경하면 `drizzle-kit generate`로 SQL migration을 만들고, 생성 SQL과 필요한 custom SQL을 검토·커밋한 뒤 `drizzle-kit migrate`로 적용한다. `drizzle-kit push`는 disposable local exploration에만 한정하고 공유·운영 환경의 migration history를 대체하지 않는다.
 
-- PostgreSQL/pgvector 기능을 직접 표현할 수 있음
-- generated migration의 검토와 rollback/forward-fix 전략
-- TypeScript backend 후보와의 호환성
-- integration test에서 실제 PostgreSQL migration을 검증 가능
+첫 migration은 PostgreSQL `vector` extension을 bootstrap한다. Drizzle Kit이 직접 표현하지 못하는 extension, pgvector operator class, expression/partial index는 명시적인 custom SQL로 관리한다. migration metadata와 커밋된 SQL은 적용 이력을 추적할 수 있어야 한다.
+
+적용된 migration은 immutable로 취급한다. 이미 적용된 파일을 수정·삭제하지 않고, 오류는 backward-compatible forward-fix migration으로 수정한다. rollback을 자동 역변환으로 가정하지 않으며, 장애 복구는 백업/PITR 또는 forward-fix 절차를 따른다.
+
+database adapter 밖으로 Drizzle type과 PostgreSQL client를 노출하지 않는다. domain port는 ORM에 의존하지 않으며, schema migration은 immutable document revision과 citation provenance를 덮어쓰지 않는다.
 
 schema, normalizer, chunker, taxonomy, embedding, prompt, workflow 버전은 독립적으로 기록한다. 파생 데이터 재처리는 새 버전을 만들고 기존 citation이 가리키는 revision을 파괴하지 않는다.
 
@@ -170,7 +171,6 @@ schema, normalizer, chunker, taxonomy, embedding, prompt, workflow 버전은 독
 ## 9. 미결정 사항
 
 - PostgreSQL 최소 버전과 pgvector 버전 pin
-- ORM/query builder 및 migration tool
 - embedding provider/model/dimensions
 - HNSW 도입 임계 데이터량과 파라미터
 - raw payload retention과 object storage 전환

@@ -1,10 +1,11 @@
 # ADR-0007: Repository layout and package management
 
-- 상태: Accepted
+- 상태: Superseded
 - 작성일: 2026-09-01
 - 승인일: 2026-09-01
 - 승인 주체: 사용자
-- 결정: pnpm workspaces를 사용하고 초기에는 Turborepo/Nx를 추가하지 않는다. package 경계는 `apps/{web,api,worker}`와 `packages/{contracts,domain,database,collectors,rag,observability}`다
+- 결정(당시): pnpm workspaces를 사용하고 초기에는 Turborepo/Nx를 추가하지 않는다. package 경계는 `apps/{web,api,worker}`와 `packages/{contracts,domain,database,collectors,rag,observability}`다
+- 대체 관계: [ADR-0010](./0010-turborepo-monorepo.md)가 orchestration 선택을 대체한다. pnpm workspaces와 package 경계·의존 방향은 유지된다
 
 ## Context
 
@@ -37,7 +38,7 @@ web, API, worker와 공유 contract/domain/database/RAG 모듈을 한 저장소�
 
 ## Recommendation
 
-**pnpm workspaces**를 추천하고, 초기에는 Turborepo/Nx를 추가하지 않는다. CI 시간이 실제 문제가 될 때 task orchestrator를 별도 ADR로 검토한다.
+- **당시에는 pnpm workspaces**를 추천하고, 초기에는 Turborepo/Nx를 추가하지 않았다. CI 시간이 실제 문제가 될 때 task orchestrator를 별도 ADR로 검토하기로 했으며, 그 후속 결정이 [ADR-0010](./0010-turborepo-monorepo.md)이다.
 
 제안 package 경계는 `apps/{web,api,worker}`와 `packages/{contracts,domain,database,collectors,rag,observability}`다.
 

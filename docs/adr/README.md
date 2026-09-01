@@ -19,8 +19,10 @@ ADR은 중요한 기술 선택의 맥락과 승인을 기록한다. `Proposed` A
 | [ADR-0004](./0004-initial-data-sources.md) | Initial data sources | **Accepted** (2026-09-01) | GitHub Releases + Stack Exchange + Rust forum + arXiv + Chrome + react.dev + npm + GitHub search + Hugging Face |
 | [ADR-0005](./0005-frontend.md) | Frontend | **Superseded** by ADR-0008 | Next.js (더 이상 유효하지 않음) |
 | [ADR-0006](./0006-model-providers.md) | LLM and embedding providers | Proposed | provider adapters + experiment |
-| [ADR-0007](./0007-repository-layout.md) | Repository layout | **Accepted** (2026-09-01) | pnpm workspaces, 초기 build orchestrator 없음 |
+| [ADR-0007](./0007-repository-layout.md) | Repository layout | **Superseded** by ADR-0010 | 당시 pnpm workspaces, 초기 build orchestrator 없음 |
 | [ADR-0008](./0008-frontend-sveltekit.md) | Frontend framework change to SvelteKit | **Accepted** (2026-09-01) | SvelteKit, UI 전달과 최소 BFF로 제한 |
+| [ADR-0009](./0009-drizzle-orm-migrations.md) | Drizzle ORM and Drizzle Kit migration strategy | **Accepted** (2026-09-01) | Drizzle ORM + Drizzle Kit, 검토·커밋된 forward-only SQL migration |
+| [ADR-0010](./0010-turborepo-monorepo.md) | Turborepo monorepo orchestration | **Accepted** (2026-09-01) | pnpm workspaces + Turborepo, 승인 package 경계와 dependency-aware task graph |
 
 ## 작성 규칙
 

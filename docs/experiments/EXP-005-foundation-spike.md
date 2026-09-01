@@ -1,7 +1,7 @@
 # EXP-005: Foundation stack spike
 
 - 상태: Completed — 5개 run 측정 완료(2026-09-01). 미측정 항목은 구현 task로 이관
-- 연결 ADR: [ADR-0001](../adr/0001-backend-framework.md), [ADR-0003](../adr/0003-queue-and-scheduling.md), [ADR-0007](../adr/0007-repository-layout.md)
+- 연결 ADR: [ADR-0001](../adr/0001-backend-framework.md), [ADR-0003](../adr/0003-queue-and-scheduling.md), [ADR-0007](../adr/0007-repository-layout.md) (당시 판단 기록), [ADR-0010](../adr/0010-turborepo-monorepo.md) (현행 orchestration 결정)
 - 실행 승인: 사용자, 2026-09-01
 - 코드 위치: `experiments/exp-005/` (폐기 대상)
 
@@ -82,7 +82,7 @@ Playwright 항목은 별도로 판정한다. Bun runtime에서 fixture 페이지
 | workspace 링크 | `packages/domain/node_modules/@exp/contracts`가 Junction으로 연결됨 (Windows) |
 | cross-package import | `@exp/domain`이 `@exp/contracts`를, `@exp/api`가 `@exp/domain`을 정상 해석 |
 
-**추가 build orchestrator 없이 focused test가 동작한다.** [ADR-0007](../adr/0007-repository-layout.md)의 "초기에는 Turborepo/Nx를 추가하지 않는다"는 판단을 뒷받침한다.
+**추가 build orchestrator 없이 focused test가 동작했다.** 이는 run 당시 pnpm workspace만 사용한 실험 관찰이며, [ADR-0007](../adr/0007-repository-layout.md)의 당시 초기 orchestration 판단에 대한 역사적 근거다. 현재 orchestration 선택은 [ADR-0010](../adr/0010-turborepo-monorepo.md)으로 대체됐다.
 
 한계: 실제 TypeScript 빌드와 Docker build context는 측정하지 않았다. 이 spike는 JavaScript와 `node --test`만 사용했다.
 
@@ -108,7 +108,7 @@ Playwright 항목은 별도로 판정한다. Bun runtime에서 fixture 페이지
 |---|---|
 | [ADR-0001](../adr/0001-backend-framework.md) | **Revise.** framework는 Elysia 유지, runtime은 Bun → **Node**로 변경. Playwright가 Bun에서 두 transport 모두 실패했고 우회 경로도 막혔다 |
 | [ADR-0003](../adr/0003-queue-and-scheduling.md) | **Accept 가능.** BullMQ를 전달·예약 계층으로만 쓰고 business 완료를 PostgreSQL에 기록하는 구조가 실측으로 성립. 미측정 항목은 `QUE-001`로 이관 |
-| [ADR-0007](../adr/0007-repository-layout.md) | **Accept 유지.** pnpm workspace만으로 focused test가 실용적임을 확인 |
+| [ADR-0007](../adr/0007-repository-layout.md) | 당시 판단의 근거 유지. pnpm workspace만으로 focused test가 실용적임을 확인했으며, 현행 orchestration 결정은 [ADR-0010](../adr/0010-turborepo-monorepo.md)에 기록한다 |
 
 ### 미측정 항목
 

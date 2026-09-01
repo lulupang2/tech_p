@@ -104,7 +104,8 @@ MVP 로컬 환경의 추천은 Docker Compose에서 `web`, `api`, `worker`, `pos
 | Backend | Elysia(Node), Elysia(Bun), Fastify, NestJS, FastAPI | Node runtime 위의 Elysia | **Accepted** — [ADR-0001](./adr/0001-backend-framework.md) |
 | Queue | Redis + BullMQ, PostgreSQL job table, MVP cron | Redis + BullMQ | **Accepted** — [ADR-0003](./adr/0003-queue-and-scheduling.md) |
 | AI workflow | LangChain.js, LangGraph.js | LangGraph.js deterministic workflow | **Accepted** — [ADR-0002](./adr/0002-ai-orchestration.md) |
-| Repository | pnpm workspace, npm workspace, Turborepo | pnpm workspace, 초기에는 Turborepo 없음 | **Accepted** — [ADR-0007](./adr/0007-repository-layout.md) |
+| Repository and orchestration | pnpm workspaces만 사용, npm workspaces, Nx | pnpm workspaces + Turborepo | **Accepted** — [ADR-0010](./adr/0010-turborepo-monorepo.md); [ADR-0007](./adr/0007-repository-layout.md)는 Superseded |
+| Database access and migrations | Drizzle ORM + Drizzle Kit, Prisma + Prisma Migrate, Kysely + 수동 SQL | Drizzle ORM + Drizzle Kit, 검토·커밋된 forward-only SQL migration | **Accepted** — [ADR-0009](./adr/0009-drizzle-orm-migrations.md) |
 | LLM/Embedding | 복수 상용 API, 로컬 모델 | provider-neutral adapter 후 실험으로 선정 | Proposed — [ADR-0006](./adr/0006-model-providers.md) |
 
 `작업 전달 계층`은 Redis + BullMQ로 확정됐다. §2의 다이어그램에서 그 계층이 이에 해당한다.
@@ -117,7 +118,7 @@ Elysia 추천 이유는 하나의 스키마 정의에서 runtime validation, Typ
 
 ## 7. 승인된 저장소 구조
 
-[ADR-0007](./adr/0007-repository-layout.md)이 2026-09-01에 승인됐다. 아래 구조를 사용한다. 디렉터리 생성은 `FND-001`에서 한다.
+[ADR-0010](./adr/0010-turborepo-monorepo.md)이 package 경계와 monorepo orchestration을 승인했다. [ADR-0007](./adr/0007-repository-layout.md)는 당시의 초기 orchestration 판단으로 Superseded다. 아래 구조와 경계는 승인됐으며, 실제 Turborepo task wiring은 이 문서 변경만으로 구현됐다고 주장하지 않는다. 디렉터리 생성은 `FND-001`에서 한다.
 
 ```text
 apps/
@@ -127,7 +128,7 @@ apps/
 packages/
   contracts/    # API/job/event schemas. TypeBox 단일 출처
   domain/       # source-neutral domain rules
-  database/     # schema, migrations, repositories
+  database/     # Drizzle schema, migrations, repositories (ADR-0009)
   collectors/   # source adapters (11개 source, ADR-0004)
   rag/          # LangGraph.js retrieval and answer workflow (ADR-0002)
   observability/
@@ -137,6 +138,8 @@ tests/
 ```
 
 의존 방향은 `apps → packages`, adapter → domain port다. `domain`은 HTTP, queue, LLM 공급자 SDK에 직접 의존하지 않는다.
+
+pnpm은 package 설치·workspace linking을 담당하고 Turborepo는 task graph와 cache를 담당한다. 어느 쪽도 PostgreSQL business state나 runtime queue를 대체하지 않는다.
 
 framework별 경계 규칙은 다음과 같다.
 
