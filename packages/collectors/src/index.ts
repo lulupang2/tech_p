@@ -8,3 +8,11 @@ export {
   type GitHubReleasePayload,
   type GitHubReleasesConfig,
 } from './github-releases.js';
+export {
+  StackExchangeCollector,
+  detectTombstoneCandidates,
+  type StackExchangeCollectorOptions,
+  type StackExchangeCursorPayload,
+  type StackExchangeRawQuestion,
+  type StackExchangeApiResponse,
+} from './stack-exchange.js';
