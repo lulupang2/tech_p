@@ -12,6 +12,7 @@ export {
   schema,
   sources,
   duplicateClusters,
+  duplicateClusterMemberships,
   documents,
   documentRevisions,
   chunks,

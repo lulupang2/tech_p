@@ -51,6 +51,24 @@ describeIntegration('DB Deduplication Clusters & Document Linking Integration', 
     // 3. Assign duplicateClusterId to both documents
     await docRepo.assignDuplicateCluster(doc1.document.id, cluster.id);
     await docRepo.assignDuplicateCluster(doc2.document.id, cluster.id);
+    const membership1 = await clusterRepo.createMembership!({
+      clusterId: cluster.id,
+      documentId: doc1.document.id,
+      revisionId: doc1.revision.id,
+      algorithmVersion: 'exp004-dedup-v1.0.0',
+      confidence: 100,
+      status: 'accepted',
+    });
+    const membership2 = await clusterRepo.createMembership!({
+      clusterId: cluster.id,
+      documentId: doc2.document.id,
+      revisionId: doc2.revision.id,
+      algorithmVersion: 'exp004-dedup-v1.0.0',
+      confidence: 100,
+      status: 'accepted',
+    });
+    assert.equal(membership1.algorithmVersion, 'exp004-dedup-v1.0.0');
+    assert.equal(membership2.revisionId, doc2.revision.id);
 
     // 4. Verify documents are linked to the cluster
     const updated1 = await docRepo.findById(doc1.document.id);
@@ -65,5 +83,11 @@ describeIntegration('DB Deduplication Clusters & Document Linking Integration', 
     const memberIds = clusterMembers.map((m) => m.id);
     assert.ok(memberIds.includes(doc1.document.id));
     assert.ok(memberIds.includes(doc2.document.id));
+    const memberships = await clusterRepo.listMemberships!(cluster.id);
+    assert.equal(memberships.length, 2);
+    assert.deepEqual(
+      memberships.map((membership) => membership.revisionId).sort(),
+      [doc1.revision.id, doc2.revision.id].sort(),
+    );
   });
 });

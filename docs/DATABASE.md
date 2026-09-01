@@ -61,6 +61,7 @@ raw payload column type과 압축·외부 object storage 전환 시점은 데이
 | `documents` | id, artifact_type, canonical_url, duplicate_cluster_id, current_revision_id, created_at | canonical URL은 nullable, 단독 global unique로 가정하지 않음 |
 | `document_revisions` | id, document_id, raw_item_id, title, body_text, author, language, published_at, license_id, normalized_hash, normalizer_version, status, searchable_at | `(document_id, normalized_hash)` unique |
 | `duplicate_clusters` | id, representative_document_id, algorithm_version, confidence, created_at | 원본 문서는 삭제하지 않음 |
+| `duplicate_cluster_memberships` | id, cluster_id, document_id, revision_id, raw_item_id, algorithm_version, confidence, status, created_at | append-only; `(cluster, document, revision, algorithm_version)` unique; revision/raw FK는 restrict |
 | `topics` | id, slug, display_name, parent_id, aliases, taxonomy_version | `(slug, taxonomy_version)` unique |
 | `document_topics` | document_id, topic_id, method, confidence, classifier_version | `(document_id, topic_id, classifier_version)` unique |
 

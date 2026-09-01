@@ -18,6 +18,7 @@
 | chunk | 검색·인용 단위. revision 내 `ordinal`로 순서 고정 | DATABASE §3.3 |
 | embedding | chunk의 벡터 표현. provider/model/dimensions/input hash로 식별 | DATABASE §3.3 |
 | duplicate cluster | 서로 같은 발표를 다룬 문서 묶음. 원본을 삭제하지 않는 link | DATA_PIPELINE §5.5 |
+| duplicate cluster membership | 특정 algorithm version이 immutable document revision을 cluster에 연결했다는 append-only evidence row | DATABASE §3.2 |
 | metric observation | 기간과 단위가 있는 숫자 관측값. 텍스트 문서와 분리 저장 | DATABASE §3.4 |
 | topic | canonical 기술 entity와 alias 집합 | DATABASE §3.2 |
 | query run | 하나의 질의 처리 실행 기록. 검색 설정과 citation을 포함 | DATABASE §3.4 |

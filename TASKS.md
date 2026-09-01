@@ -126,7 +126,7 @@
 | PIPE-002 | deterministic normalization | PIPE-001, DB-003 | DONE | JSON/HTML fixture가 공통 document/metric으로 변환; 게시일 unknown은 null; sanitizer가 script/hidden instruction을 제거; normalizer version 기록 |
 | PIPE-003 | exact dedup과 duplicate cluster | PIPE-002 | DONE | external ID/canonical URL/hash 우선 규칙 통과; cross-source 원본을 삭제하지 않고 cluster link 생성; 동일 재처리 결과 불변 |
 | EXP-004 | deduplication 실험 실행 | PIPE-003, COL-002, COL-003 | DONE | [EXP-004](./docs/experiments/EXP-004-deduplication.md)의 240-pair labeled synthetic/redacted dataset(160 train/80 fixed holdout), 고정 normalization/boilerplate, blinded train threshold search, 4 variant confusion matrix 및 source/type error analysis가 기록됨; 추천 `v2_lexical_fingerprint` threshold 0.80의 holdout precision 1.0000·false-merge rate 0.0000 gate 통과; raw provenance·`verbatim_only` safeguard와 reclustering migration plan 포함 |
-| PIPE-004 | near-duplicate 후보·versioned clustering | EXP-004 | BLOCKED | 승인 algorithm/threshold만 사용; low-confidence는 자동 merge하지 않음; recluster가 기존 provenance/citation을 파괴하지 않음 |
+| PIPE-004 | near-duplicate 후보·versioned clustering | EXP-004 | DONE | 승인 lexical algorithm `exp004-dedup-v1.0.0`·threshold `0.80`·fixed boilerplate만 사용; candidate/link suggestion만 반환하고 low-confidence·threshold-near·`verbatim_only`는 manual review; versioned append-only membership가 immutable revision/raw provenance와 citation을 보존 |
 | PIPE-005 | topic alias/classification과 chunking | PIPE-004, DB-003 | BLOCKED | [TOPIC_TAXONOMY](./docs/TOPIC_TAXONOMY.md)의 deterministic alias가 우선 적용되고 단어 경계·ambiguous 규칙이 unit test로 검증됨; classifier version/confidence 저장; heading-aware stable chunks; 동일 input/version의 chunk hash·ordinal 불변 |
 | PIPE-006 | metric aggregation | COL-003, COL-004, COL-007, COL-009, COL-010, PIPE-003, DB-004 | BLOCKED | 8개 지표가 각각 고유 unit으로 저장되고 서로 합산되지 않음; `community_mentions`는 duplicate cluster 기준; `repo_attention`은 스냅샷 기준이며 수집 시작 이전 구간을 생성하지 않음; `query_signature`와 `is_incomplete`가 검색 기반 관측값에 기록됨; missing window를 0으로 오인하지 않는 테스트 통과 |
 | PIPE-007 | replay, dead-letter, source disable flow | PIPE-001, PIPE-005 | BLOCKED | run/raw/stage 범위 replay가 멱등; 영구 실패와 policy failure를 구분; disabled source는 새 job을 만들지 않음; 운영 audit event 기록 |
@@ -268,3 +268,10 @@ flowchart TD
 ### corpus가 필요한 작업
 
 `EXP-002`는 실제 수집 retrieval corpus가 준비된 뒤 실행한다. `EXP-004`는 문서화된 synthetic/redacted metadata-only dataset으로 완료되었고, `EVAL-001`은 [EVAL_GOLDEN_SET](./docs/EVAL_GOLDEN_SET.md)의 골든셋 작성이 완료되었으므로 두 task는 실제 수집 데이터 대기 항목이 아니다.
+
+### PIPE-004 완료 증빙 (2026-09-02)
+
+- `@techpulse/domain`은 PIPE-003 exact identity → canonical URL → exact body hash 우선순위를 유지하면서 EXP-004 lexical Jaccard(`0.72 * body + 0.28 * title`)와 threshold `0.80`을 적용한다. `exp004-dedup-v1.0.0` 및 `exp004-boilerplate-v1`은 domain/worker 결과 metadata에 기록되며 provider/embedding 코드는 사용하지 않는다.
+- near-duplicate 결과는 자동 merge하지 않는 candidate/link suggestion이며 confidence, algorithm version, threshold, manual-review 이유와 후보 revision/raw/canonical/license provenance를 포함한다. threshold 근처·`verbatim_only` 후보는 review 대상으로 유지되고 기존 source/raw/revision/citation row는 수정·삭제하지 않는다.
+- `duplicate_cluster_memberships` append-only table과 migration `0005_gray_domino.sql`이 cluster/document/immutable revision/raw IDs, algorithm version, confidence, review status를 version namespace별로 보존한다. exact cluster linking은 기존 pointer 호환성을 유지하면서 membership evidence를 멱등 저장한다.
+- 검증: domain deduplication 17개, worker deduplication 6개, database schema/migration 8개 테스트 통과(통합 DB 1개 skip); domain/worker/database typecheck 통과.

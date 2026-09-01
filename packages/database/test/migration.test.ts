@@ -25,12 +25,13 @@ describe('migration files and metadata structure', () => {
     };
 
     assert.ok(Array.isArray(journal.entries));
-    assert.equal(journal.entries.length, 5);
+    assert.equal(journal.entries.length, 6);
     assert.equal(journal.entries[0]?.tag, '0000_bootstrap_pgvector');
     assert.equal(journal.entries[1]?.tag, '0001_complete_puck');
     assert.equal(journal.entries[2]?.tag, '0002_mature_post');
     assert.equal(journal.entries[3]?.tag, '0003_amusing_stone_men');
     assert.equal(journal.entries[4]?.tag, '0004_pale_ironclad');
+    assert.equal(journal.entries[5]?.tag, '0005_gray_domino');
   });
 
   test('meta/0000_snapshot.json exists and defines schema snapshot', () => {
@@ -40,6 +41,20 @@ describe('migration files and metadata structure', () => {
     const rawSnapshot = readFileSync(snapshotPath, 'utf8');
     const snapshot = JSON.parse(rawSnapshot) as { dialect?: string };
     assert.equal(snapshot.dialect, 'postgresql');
+  });
+
+  test('PIPE-004 migration defines append-only versioned membership constraints', () => {
+    const migration = readFileSync(
+      resolve(DEFAULT_MIGRATIONS_FOLDER, '0005_gray_domino.sql'),
+      'utf8',
+    );
+    assert.match(migration, /CREATE TABLE "duplicate_cluster_memberships"/u);
+    assert.match(
+      migration,
+      /UNIQUE\("cluster_id","document_id","revision_id","algorithm_version"\)/u,
+    );
+    assert.match(migration, /ON DELETE restrict/u);
+    assert.match(migration, /'suggested', 'accepted', 'superseded'/u);
   });
 });
 

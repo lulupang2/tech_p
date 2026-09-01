@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'vitest';
 import {
   DEDUPLICATION_ALGORITHM_VERSION,
+  DEDUPLICATION_THRESHOLD,
+  DEDUPLICATION_BOILERPLATE_RULE_VERSION,
   createDeduplicationService,
   normalizeCanonicalUrl,
   computeTitleFingerprint,
@@ -12,12 +14,14 @@ import {
   type ExistingDedupDocument,
 } from '../src/index.js';
 
-describe('PIPE-003 Deduplication and Duplicate Cluster Service', () => {
+describe('PIPE-004 Deduplication and Duplicate Cluster Service', () => {
   const dedupService = createDeduplicationService();
 
   test('records deduplication version correctly', () => {
-    assert.equal(dedupService.deduplicationVersion, 'v1.0.0');
-    assert.equal(DEDUPLICATION_ALGORITHM_VERSION, 'v1.0.0');
+    assert.equal(dedupService.deduplicationVersion, 'exp004-dedup-v1.0.0');
+    assert.equal(DEDUPLICATION_ALGORITHM_VERSION, 'exp004-dedup-v1.0.0');
+    assert.equal(dedupService.nearDuplicateThreshold, DEDUPLICATION_THRESHOLD);
+    assert.equal(dedupService.boilerplateRuleVersion, DEDUPLICATION_BOILERPLATE_RULE_VERSION);
   });
 
   describe('1. Canonical URL Normalization', () => {
@@ -330,7 +334,7 @@ describe('PIPE-003 Deduplication and Duplicate Cluster Service', () => {
     });
   });
 
-  describe('5. Near-Duplicate Candidate Suggestion Only (EXP-004 Pending)', () => {
+  describe('5. Near-Duplicate Candidate Suggestion Only (EXP-004 Approved)', () => {
     test('suggests candidates for similar title/body without creating cluster or auto-merging', () => {
       const existingDoc: ExistingDedupDocument = {
         documentId: 'doc-forum-1',
@@ -343,7 +347,7 @@ describe('PIPE-003 Deduplication and Duplicate Cluster Service', () => {
           'https://users.rust-lang.org/t/how-to-use-async-await-in-rust-2024/9999',
         title: 'How to use async await syntax in Rust 2024 Edition',
         bodyText:
-          'I am trying to understand the new async closures and async await features introduced in Rust 2024 edition with tokio runtime.',
+          'I am trying to understand the new async closures and async await features introduced in Rust 2024 edition with tokio runtime. read_more generated_by_fixture',
         normalizedHash: 'rust-forum-hash-1',
       };
 
@@ -357,8 +361,9 @@ describe('PIPE-003 Deduplication and Duplicate Cluster Service', () => {
           'https://stackoverflow.com/questions/8888/how-to-use-async-await-in-rust-2024',
         title: 'How do I use async await in Rust 2024 Edition?', // Near identical title
         bodyText:
-          'I want to understand the new async closures and async await features in Rust 2024 edition with tokio.', // Near identical body
+          'I want to understand the new async closures and async await features introduced in Rust 2024 edition with tokio runtime. read_more generated_by_fixture', // Near identical body
         normalizedHash: 'se-qa-hash-2',
+        verbatimOnly: true,
       };
 
       const result = dedupService.deduplicate(nearDupDoc, [existingDoc]);
@@ -375,9 +380,54 @@ describe('PIPE-003 Deduplication and Duplicate Cluster Service', () => {
       assert.equal(candidate.candidateDocumentId, 'doc-forum-1');
       assert.equal(candidate.candidateSourceKey, 'users_rust_lang');
       assert.ok(
-        candidate.similarity >= 0.7,
-        `Expected candidate similarity (${candidate.similarity}) to be >= 0.70`,
+        candidate.similarity >= 0.8,
+        `Expected candidate similarity (${candidate.similarity}) to be >= 0.80`,
       );
+      assert.equal(candidate.algorithmVersion, DEDUPLICATION_ALGORITHM_VERSION);
+      assert.equal(candidate.threshold, DEDUPLICATION_THRESHOLD);
+      assert.equal(candidate.manualReviewRequired, true);
+      assert.ok(candidate.manualReviewReasons.includes('threshold_near'));
+      assert.ok(candidate.manualReviewReasons.includes('verbatim_only'));
+      assert.equal(result.manualReviewRequired, true);
+    });
+
+    test('does not suggest a low-confidence lexical match or create a cluster', () => {
+      const target: DeduplicationTargetDoc = {
+        documentId: 'doc-low-confidence',
+        title: 'Rust async overview',
+        bodyText: 'A short unrelated note about deployment.',
+        normalizedHash: 'low-confidence-hash',
+      };
+      const existing: ExistingDedupDocument = {
+        documentId: 'doc-existing-low-confidence',
+        title: 'Rust release analysis',
+        bodyText: 'Rust release compatibility and performance details.',
+        normalizedHash: 'existing-low-confidence-hash',
+      };
+
+      const result = dedupService.deduplicate(target, [existing]);
+      assert.equal(result.nearDuplicateCandidates.length, 0);
+      assert.equal(result.clusterAction, 'none');
+      assert.equal(result.manualReviewRequired, false);
+    });
+
+    test('removes fixed boilerplate before lexical scoring', () => {
+      const target: DeduplicationTargetDoc = {
+        documentId: 'doc-boilerplate-target',
+        title: 'A deterministic title',
+        bodyText: 'shared lexical content read_more generated_by_fixture',
+        normalizedHash: 'boilerplate-target-hash',
+      };
+      const existing: ExistingDedupDocument = {
+        documentId: 'doc-boilerplate-existing',
+        title: 'A deterministic title',
+        bodyText: 'shared lexical content',
+        normalizedHash: 'boilerplate-existing-hash',
+      };
+
+      const result = dedupService.deduplicate(target, [existing]);
+      assert.equal(result.nearDuplicateCandidates.length, 1);
+      assert.equal(result.nearDuplicateCandidates[0]?.bodySimilarity, 1);
     });
   });
 

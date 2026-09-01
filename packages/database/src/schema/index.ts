@@ -253,6 +253,52 @@ export const documentRevisions = pgTable(
   ],
 );
 
+/**
+ * Versioned, append-only cluster membership evidence.  The legacy document pointer remains a
+ * read convenience for the active exact-dedup cluster; this table prevents a recluster from
+ * rewriting the historical revision/provenance relationship.
+ */
+export const duplicateClusterMemberships = pgTable(
+  'duplicate_cluster_memberships',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    clusterId: uuid('cluster_id')
+      .notNull()
+      .references(() => duplicateClusters.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    documentId: uuid('document_id')
+      .notNull()
+      .references(() => documents.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    revisionId: uuid('revision_id')
+      .notNull()
+      .references(() => documentRevisions.id, { onDelete: 'restrict', onUpdate: 'cascade' }),
+    rawItemId: uuid('raw_item_id').references(() => rawItems.id, {
+      onDelete: 'restrict',
+      onUpdate: 'cascade',
+    }),
+    algorithmVersion: text('algorithm_version').notNull(),
+    confidence: integer('confidence').notNull(),
+    status: text('status').notNull().default('suggested'),
+    createdAt: utcTimestamp('created_at'),
+  },
+  (table) => [
+    unique('duplicate_cluster_memberships_identity_unique').on(
+      table.clusterId,
+      table.documentId,
+      table.revisionId,
+      table.algorithmVersion,
+    ),
+    index('duplicate_cluster_memberships_document_idx').on(table.documentId, table.createdAt),
+    check(
+      'duplicate_cluster_memberships_confidence_range',
+      sql`${table.confidence} BETWEEN 0 AND 100`,
+    ),
+    check(
+      'duplicate_cluster_memberships_status_valid',
+      sql`${table.status} IN ('suggested', 'accepted', 'superseded')`,
+    ),
+  ],
+);
+
 export const topics = pgTable(
   'topics',
   {
@@ -471,6 +517,7 @@ export const schema = {
   pipelineEvents,
   licenses,
   duplicateClusters,
+  duplicateClusterMemberships,
   documents,
   documentRevisions,
   topics,

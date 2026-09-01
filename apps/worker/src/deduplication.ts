@@ -4,6 +4,7 @@ import {
   type DeduplicationResult,
   type DeduplicationServicePort,
   type DeduplicationTargetDoc,
+  type NearDuplicateCandidate,
   type DocumentRepositoryPort,
   type DocumentRevisionRecord,
   type DuplicateClusterRepositoryPort,
@@ -29,6 +30,13 @@ export interface DeduplicationExecutionResult {
   readonly clusterId?: string | null;
   readonly representativeDocumentId?: string | null;
   readonly nearDuplicateCandidatesCount: number;
+  readonly nearDuplicateCandidates: readonly NearDuplicateCandidate[];
+  readonly deduplicationVersion: string;
+  readonly nearDuplicateThreshold: number;
+  readonly boilerplateRuleVersion: string;
+  readonly confidence: number | null;
+  readonly manualReviewRequired: boolean;
+  readonly manualReviewReasons: readonly string[];
   readonly status: 'succeeded' | 'failed' | 'quarantined';
   readonly errorSummary?: string | null;
 }
@@ -49,7 +57,7 @@ export type DeduplicationOperation = (
  *   - Preserves all provenance, raw items, and URLs
  *
  * For near-duplicates:
- *   - Generates candidate suggestions only (EXP-004 threshold pending)
+ *   - Generates EXP-004 candidate suggestions only; it never auto-merges them
  */
 export function createDeduplicationJobHandler(
   options: DeduplicationJobHandlerOptions,
@@ -84,6 +92,8 @@ export function createDeduplicationJobHandler(
       if (rawItemId && rawItemRepository) {
         rawItem = await rawItemRepository.findById(rawItemId);
       }
+      const isVerbatimOnly = (item: RawItemRecord | null): boolean =>
+        item?.rightsMetadata['verbatim_only'] === true;
 
       const target: DeduplicationTargetDoc = {
         documentId: doc.id,
@@ -97,6 +107,8 @@ export function createDeduplicationJobHandler(
         normalizedHash: revision.normalizedHash,
         publishedAt: revision.publishedAt,
         duplicateClusterId: doc.duplicateClusterId,
+        licenseId: revision.licenseId,
+        verbatimOnly: isVerbatimOnly(rawItem),
         createdAt: doc.createdAt,
       };
 
@@ -124,6 +136,10 @@ export function createDeduplicationJobHandler(
           }
 
           if (rev) {
+            const existingRawItem =
+              rawItemRepository && rev.rawItemId
+                ? await rawItemRepository.findById(rev.rawItemId)
+                : null;
             existingDocs.push({
               documentId: d.id,
               revisionId: rev.id,
@@ -133,6 +149,8 @@ export function createDeduplicationJobHandler(
               bodyText: rev.bodyText,
               normalizedHash: rev.normalizedHash,
               duplicateClusterId: d.duplicateClusterId,
+              licenseId: rev.licenseId,
+              verbatimOnly: isVerbatimOnly(existingRawItem),
               createdAt: d.createdAt,
             });
           }
@@ -144,6 +162,10 @@ export function createDeduplicationJobHandler(
           if (d.currentRevisionId) {
             const rev = await documentRepository.findRevisionById(d.currentRevisionId);
             if (rev) {
+              const existingRawItem =
+                rawItemRepository && rev.rawItemId
+                  ? await rawItemRepository.findById(rev.rawItemId)
+                  : null;
               existingDocs.push({
                 documentId: d.id,
                 revisionId: rev.id,
@@ -153,6 +175,8 @@ export function createDeduplicationJobHandler(
                 bodyText: rev.bodyText,
                 normalizedHash: rev.normalizedHash,
                 duplicateClusterId: d.duplicateClusterId,
+                licenseId: rev.licenseId,
+                verbatimOnly: isVerbatimOnly(existingRawItem),
                 createdAt: d.createdAt,
               });
             }
@@ -164,6 +188,25 @@ export function createDeduplicationJobHandler(
       const result: DeduplicationResult = deduplicationService.deduplicate(target, existingDocs);
 
       let finalClusterId = doc.duplicateClusterId;
+
+      const recordMembership = async (
+        clusterId: string,
+        documentId: string,
+        memberRevisionId: string,
+        memberRawItemId: string | null,
+        confidence: number,
+      ): Promise<void> => {
+        if (!duplicateClusterRepository.createMembership) return;
+        await duplicateClusterRepository.createMembership({
+          clusterId,
+          documentId,
+          revisionId: memberRevisionId,
+          rawItemId: memberRawItemId,
+          algorithmVersion: result.deduplicationVersion,
+          confidence,
+          status: 'accepted',
+        });
+      };
 
       if (result.isExactDuplicate) {
         if (result.clusterAction === 'create_cluster') {
@@ -181,13 +224,33 @@ export function createDeduplicationJobHandler(
               result.representativeDocumentId,
               newCluster.id,
             );
+            const representative = existingDocs.find(
+              (candidate) => candidate.documentId === result.representativeDocumentId,
+            );
+            if (representative?.revisionId) {
+              await recordMembership(
+                newCluster.id,
+                representative.documentId,
+                representative.revisionId,
+                representative.rawItemId ?? null,
+                100,
+              );
+            }
           }
           await documentRepository.assignDuplicateCluster(target.documentId, newCluster.id);
+          await recordMembership(newCluster.id, target.documentId, revision.id, rawItemId, 100);
         } else if (result.clusterAction === 'join_cluster' && result.targetClusterId) {
           finalClusterId = result.targetClusterId;
           await documentRepository.assignDuplicateCluster(
             target.documentId,
             result.targetClusterId,
+          );
+          await recordMembership(
+            result.targetClusterId,
+            target.documentId,
+            revision.id,
+            rawItemId,
+            100,
           );
         }
       }
@@ -209,6 +272,14 @@ export function createDeduplicationJobHandler(
         clusterId: finalClusterId,
         representativeDocumentId: result.representativeDocumentId,
         nearDuplicateCandidatesCount: result.nearDuplicateCandidates.length,
+        nearDuplicateCandidates: result.nearDuplicateCandidates,
+        deduplicationVersion: result.deduplicationVersion,
+        nearDuplicateThreshold: result.nearDuplicateThreshold,
+        boilerplateRuleVersion: result.boilerplateRuleVersion,
+        confidence:
+          result.exactMatch?.confidence ?? result.nearDuplicateCandidates[0]?.confidence ?? null,
+        manualReviewRequired: result.manualReviewRequired,
+        manualReviewReasons: result.manualReviewReasons,
         status: 'succeeded',
       };
     } catch (err) {
@@ -230,6 +301,13 @@ export function createDeduplicationJobHandler(
         clusterId: null,
         representativeDocumentId: null,
         nearDuplicateCandidatesCount: 0,
+        nearDuplicateCandidates: [],
+        deduplicationVersion: deduplicationService.deduplicationVersion,
+        nearDuplicateThreshold: deduplicationService.nearDuplicateThreshold,
+        boilerplateRuleVersion: deduplicationService.boilerplateRuleVersion,
+        confidence: null,
+        manualReviewRequired: false,
+        manualReviewReasons: [],
         status: 'failed',
         errorSummary: err instanceof Error ? err.message : String(err),
       };

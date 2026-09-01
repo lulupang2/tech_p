@@ -9,7 +9,10 @@ import type {
   MetricObservationRepositoryPort,
   DuplicateClusterRepositoryPort,
   DuplicateClusterRecord,
+  DuplicateClusterMembershipRecord,
+  DuplicateClusterMembershipStatus,
   CreateDuplicateClusterInput,
+  CreateDuplicateClusterMembershipInput,
   UpdateDuplicateClusterInput,
   DocumentRecord,
   DocumentRevisionRecord,
@@ -34,11 +37,13 @@ import type {
   PaginationParams,
   PaginatedResult,
 } from '@techpulse/domain';
+import { DEDUPLICATION_ALGORITHM_VERSION } from '@techpulse/domain';
 import {
   documents,
   documentRevisions,
   chunks,
   duplicateClusters,
+  duplicateClusterMemberships,
   sources,
   collectionRuns,
   rawItems,
@@ -961,7 +966,7 @@ export function createDuplicateClusterRepository(
       const values: typeof duplicateClusters.$inferInsert = {
         id: input.id,
         representativeDocumentId: input.representativeDocumentId ?? null,
-        algorithmVersion: input.algorithmVersion ?? 'v1.0.0',
+        algorithmVersion: input.algorithmVersion ?? DEDUPLICATION_ALGORITHM_VERSION,
         confidence: input.confidence ?? 100,
       };
 
@@ -1020,6 +1025,72 @@ export function createDuplicateClusterRepository(
         algorithmVersion: r.algorithmVersion,
         confidence: r.confidence,
         createdAt: r.createdAt,
+      }));
+    },
+
+    async createMembership(
+      input: CreateDuplicateClusterMembershipInput,
+    ): Promise<DuplicateClusterMembershipRecord> {
+      const inserted = await db
+        .insert(duplicateClusterMemberships)
+        .values({
+          ...(input.id ? { id: input.id } : {}),
+          clusterId: input.clusterId,
+          documentId: input.documentId,
+          revisionId: input.revisionId,
+          rawItemId: input.rawItemId ?? null,
+          algorithmVersion: input.algorithmVersion,
+          confidence: input.confidence,
+          status: input.status ?? 'suggested',
+        })
+        .onConflictDoNothing({
+          target: [
+            duplicateClusterMemberships.clusterId,
+            duplicateClusterMemberships.documentId,
+            duplicateClusterMemberships.revisionId,
+            duplicateClusterMemberships.algorithmVersion,
+          ],
+        })
+        .returning();
+      const row =
+        inserted[0] ??
+        (await db.query.duplicateClusterMemberships.findFirst({
+          where: and(
+            eq(duplicateClusterMemberships.clusterId, input.clusterId),
+            eq(duplicateClusterMemberships.documentId, input.documentId),
+            eq(duplicateClusterMemberships.revisionId, input.revisionId),
+            eq(duplicateClusterMemberships.algorithmVersion, input.algorithmVersion),
+          ),
+        }));
+
+      if (!row) throw new Error('Failed to create duplicate cluster membership');
+      return {
+        id: row.id,
+        clusterId: row.clusterId,
+        documentId: row.documentId,
+        revisionId: row.revisionId,
+        rawItemId: row.rawItemId,
+        algorithmVersion: row.algorithmVersion,
+        confidence: row.confidence,
+        status: row.status as DuplicateClusterMembershipStatus,
+        createdAt: row.createdAt,
+      };
+    },
+
+    async listMemberships(clusterId: string): Promise<readonly DuplicateClusterMembershipRecord[]> {
+      const rows = await db.query.duplicateClusterMemberships.findMany({
+        where: eq(duplicateClusterMemberships.clusterId, clusterId),
+      });
+      return rows.map((row) => ({
+        id: row.id,
+        clusterId: row.clusterId,
+        documentId: row.documentId,
+        revisionId: row.revisionId,
+        rawItemId: row.rawItemId,
+        algorithmVersion: row.algorithmVersion,
+        confidence: row.confidence,
+        status: row.status as DuplicateClusterMembershipStatus,
+        createdAt: row.createdAt,
       }));
     },
   };

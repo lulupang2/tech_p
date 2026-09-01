@@ -260,7 +260,7 @@ function createFakeRepositories() {
   };
 }
 
-describe('PIPE-003 Worker Deduplication Job Handler', () => {
+describe('PIPE-004 Worker Deduplication Job Handler', () => {
   describe('1. Deduplication Job Data Contract Validation', () => {
     test('creates and parses valid deduplication job data', () => {
       const jobData = createDeduplicationJobData({
@@ -476,6 +476,54 @@ describe('PIPE-003 Worker Deduplication Job Handler', () => {
       assert.equal(secondRun.status, 'succeeded');
       assert.equal(firstRun.clusterId, secondRun.clusterId);
       assert.equal(firstRun.isExactDuplicate, secondRun.isExactDuplicate);
+    });
+
+    test('returns versioned near-duplicate suggestions without linking or overwriting provenance', async () => {
+      const fakes = createFakeRepositories();
+      const dedupService = createDeduplicationService();
+      const handler = createDeduplicationJobHandler({
+        deduplicationService: dedupService,
+        documentRepository: fakes.docRepo,
+        duplicateClusterRepository: fakes.clusterRepo,
+      });
+
+      const existing = await fakes.docRepo.saveNormalizedDocument({
+        artifactType: 'article',
+        canonicalUrl: 'https://source.example/existing',
+        title: 'Deterministic lexical announcement',
+        bodyText: 'shared lexical content with stable release details',
+        normalizedHash: 'a'.repeat(64),
+        normalizerVersion: 'pipe-002-v1.0.0',
+        rawItemId: 'raw-existing',
+      });
+      const target = await fakes.docRepo.saveNormalizedDocument({
+        artifactType: 'article',
+        canonicalUrl: 'https://other.example/target',
+        title: 'Deterministic lexical announcement updated',
+        bodyText: 'shared lexical content with stable release details updated',
+        normalizedHash: 'b'.repeat(64),
+        normalizerVersion: 'pipe-002-v1.0.0',
+        rawItemId: 'raw-target',
+      });
+
+      const result = await handler(
+        createDeduplicationJobData({
+          documentId: target.document.id,
+          revisionId: target.revision.id,
+          rawItemId: 'raw-target',
+        }),
+      );
+
+      assert.equal(result.status, 'succeeded');
+      assert.equal(result.isExactDuplicate, false);
+      assert.equal(result.clusterId, null);
+      assert.equal(result.nearDuplicateCandidates.length, 1);
+      assert.equal(result.nearDuplicateCandidates[0]?.candidateDocumentId, existing.document.id);
+      assert.equal(result.deduplicationVersion, 'exp004-dedup-v1.0.0');
+      assert.equal(result.nearDuplicateThreshold, 0.8);
+      assert.equal(result.manualReviewRequired, true);
+      assert.equal((await fakes.docRepo.findById(target.document.id))?.duplicateClusterId, null);
+      assert.equal(fakes.revisions.size, 2);
     });
   });
 });
