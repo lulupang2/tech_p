@@ -97,7 +97,10 @@ describe('DB-002 PostgreSQL integration', () => {
           .returning();
         assert.ok(event);
         await assert.rejects(
-          client.pool.query('UPDATE raw_items SET payload = $1 WHERE id = $2', [{ changed: true }, first.id]),
+          client.pool.query('UPDATE raw_items SET payload = $1 WHERE id = $2', [
+            { changed: true },
+            first.id,
+          ]),
           /immutable/u,
         );
         await assert.rejects(
@@ -105,7 +108,10 @@ describe('DB-002 PostgreSQL integration', () => {
           /immutable/u,
         );
         await assert.rejects(
-          client.pool.query('UPDATE pipeline_events SET status = $1 WHERE id = $2', ['failed', event.id]),
+          client.pool.query('UPDATE pipeline_events SET status = $1 WHERE id = $2', [
+            'failed',
+            event.id,
+          ]),
           /immutable/u,
         );
         await assert.rejects(

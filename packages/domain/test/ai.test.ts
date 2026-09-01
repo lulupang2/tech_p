@@ -13,7 +13,11 @@ describe('provider-neutral deterministic AI ports', () => {
     const result = await chat.complete({ messages: [{ role: 'user', content: 'hello world' }] });
     expect(result).toEqual({
       content: 'grounded answer',
-      metadata: { model: 'test-chat', latencyMs: 0, usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 } },
+      metadata: {
+        model: 'test-chat',
+        latencyMs: 0,
+        usage: { inputTokens: 2, outputTokens: 2, totalTokens: 4 },
+      },
     });
   });
 
@@ -32,12 +36,20 @@ describe('provider-neutral deterministic AI ports', () => {
     vi.useFakeTimers();
     try {
       const chat = createDeterministicChatPort({ latencyMs: 20 });
-      const pending = chat.complete({ messages: [{ role: 'user', content: 'hello' }], timeoutMs: 10 });
-      const outcome = pending.then(() => undefined, (error: unknown) => error);
+      const pending = chat.complete({
+        messages: [{ role: 'user', content: 'hello' }],
+        timeoutMs: 10,
+      });
+      const outcome = pending.then(
+        () => undefined,
+        (error: unknown) => error,
+      );
       await vi.advanceTimersByTimeAsync(10);
       const error = await outcome;
       expect(error).toMatchObject({
-        name: 'AiTimeoutError', kind: 'timeout', retryable: true,
+        name: 'AiTimeoutError',
+        kind: 'timeout',
+        retryable: true,
         metadata: { model: 'fake-chat-v1', latencyMs: 20 },
       });
       expect(chat.calls).toHaveLength(1);
@@ -51,11 +63,16 @@ describe('provider-neutral deterministic AI ports', () => {
     const controller = new AbortController();
     const embedding = createDeterministicEmbeddingPort({ latencyMs: 30 });
     const pending = embedding.embed({ input: 'abort me', signal: controller.signal });
-    const outcome = pending.then(() => undefined, (error: unknown) => error);
+    const outcome = pending.then(
+      () => undefined,
+      (error: unknown) => error,
+    );
     controller.abort();
     const error = await outcome;
     expect(error).toMatchObject({
-      name: 'AiTimeoutError', kind: 'timeout', message: 'AI request was aborted',
+      name: 'AiTimeoutError',
+      kind: 'timeout',
+      message: 'AI request was aborted',
     });
   });
 
@@ -68,9 +85,15 @@ describe('provider-neutral deterministic AI ports', () => {
 
   test('provider failures normalize to typed errors with safe metadata', async () => {
     const failure = new Error('provider secret response');
-    const embedding = createDeterministicEmbeddingPort({ failWith: failure, model: 'test-embed', dimensions: 3 });
+    const embedding = createDeterministicEmbeddingPort({
+      failWith: failure,
+      model: 'test-embed',
+      dimensions: 3,
+    });
     await expect(embedding.embed({ input: 'text' })).rejects.toMatchObject({
-      name: 'AiProviderError', kind: 'provider_error', retryable: true,
+      name: 'AiProviderError',
+      kind: 'provider_error',
+      retryable: true,
       message: 'AI provider request failed',
       metadata: { model: 'test-embed', dimensions: 3, latencyMs: 0 },
     });

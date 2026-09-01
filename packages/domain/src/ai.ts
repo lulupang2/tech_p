@@ -186,7 +186,8 @@ export function createDeterministicChatPort(
   const response = options.response ?? 'deterministic fake response';
   const model = options.model ?? 'fake-chat-v1';
   const latencyMs = options.latencyMs ?? 0;
-  if (!Number.isInteger(latencyMs) || latencyMs < 0) throw new RangeError('latencyMs must be non-negative');
+  if (!Number.isInteger(latencyMs) || latencyMs < 0)
+    throw new RangeError('latencyMs must be non-negative');
   const calls: ChatCompletionRequest[] = [];
   return {
     calls,
@@ -208,7 +209,6 @@ export function createDeterministicChatPort(
     reset: () => calls.splice(0),
   };
 }
- 
 
 export interface DeterministicEmbeddingOptions {
   readonly dimensions?: number;
@@ -224,7 +224,8 @@ export interface DeterministicEmbeddingPort extends EmbeddingPort {
 
 function hash(input: string, index: number): number {
   let value = (2166136261 ^ index) >>> 0;
-  for (let i = 0; i < input.length; i += 1) value = Math.imul(value ^ input.charCodeAt(i), 16777619) >>> 0;
+  for (let i = 0; i < input.length; i += 1)
+    value = Math.imul(value ^ input.charCodeAt(i), 16777619) >>> 0;
   return value;
 }
 
@@ -234,17 +235,23 @@ export function createDeterministicEmbeddingPort(
   const dimensions = options.dimensions ?? 8;
   const model = options.model ?? 'fake-embedding-v1';
   const latencyMs = options.latencyMs ?? 0;
-  if (!Number.isInteger(dimensions) || dimensions < 1) throw new RangeError('dimensions must be a positive integer');
-  if (!Number.isInteger(latencyMs) || latencyMs < 0) throw new RangeError('latencyMs must be non-negative');
+  if (!Number.isInteger(dimensions) || dimensions < 1)
+    throw new RangeError('dimensions must be a positive integer');
+  if (!Number.isInteger(latencyMs) || latencyMs < 0)
+    throw new RangeError('latencyMs must be non-negative');
   const calls: EmbeddingRequest[] = [];
   const embed = async (request: EmbeddingRequest): Promise<EmbeddingResult> => {
-    if (request.input.trim().length === 0) throw new UnsupportedAiInputError('embedding input must be non-empty');
+    if (request.input.trim().length === 0)
+      throw new UnsupportedAiInputError('embedding input must be non-empty');
     assertTimeout(request.timeoutMs);
     calls.push({ ...request });
     const metadata = { model, dimensions, latencyMs };
     await waitForLatency(latencyMs, request.signal, request.timeoutMs, metadata);
     if (options.failWith !== undefined) throw providerError(options.failWith, metadata);
-    const vector = Array.from({ length: dimensions }, (_, i) => (hash(request.input, i) / 0xffffffff) * 2 - 1);
+    const vector = Array.from(
+      { length: dimensions },
+      (_, i) => (hash(request.input, i) / 0xffffffff) * 2 - 1,
+    );
     return { vector, metadata };
   };
   return {

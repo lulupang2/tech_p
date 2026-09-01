@@ -17,7 +17,6 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 const utcTimestamp = (name: string) =>
   timestamp(name, { withTimezone: true, mode: 'date' }).notNull().defaultNow();
 
-
 export const sources = pgTable(
   'sources',
   {
@@ -92,8 +91,14 @@ export const rawItems = pgTable(
       columns: [table.sourceId, table.runId],
       foreignColumns: [collectionRuns.sourceId, collectionRuns.id],
       name: 'raw_items_source_run_consistency_fk',
-    }).onDelete('restrict').onUpdate('cascade'),
-    unique('raw_items_revision_identity_unique').on(table.sourceId, table.externalId, table.payloadHash),
+    })
+      .onDelete('restrict')
+      .onUpdate('cascade'),
+    unique('raw_items_revision_identity_unique').on(
+      table.sourceId,
+      table.externalId,
+      table.payloadHash,
+    ),
     index('raw_items_source_external_idx').on(table.sourceId, table.externalId),
     index('raw_items_payload_hash_idx').on(table.payloadHash),
     check('raw_items_external_id_nonempty', sql`length(trim(${table.externalId})) > 0`),

@@ -107,12 +107,8 @@
           "name": "collection_runs_source_id_sources_id_fk",
           "tableFrom": "collection_runs",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "cascade"
         }
@@ -216,12 +212,8 @@
           "name": "pipeline_events_raw_item_id_raw_items_id_fk",
           "tableFrom": "pipeline_events",
           "tableTo": "raw_items",
-          "columnsFrom": [
-            "raw_item_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["raw_item_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "cascade"
         }
@@ -363,12 +355,8 @@
           "name": "raw_items_source_id_sources_id_fk",
           "tableFrom": "raw_items",
           "tableTo": "sources",
-          "columnsFrom": [
-            "source_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "cascade"
         },
@@ -376,12 +364,8 @@
           "name": "raw_items_run_id_collection_runs_id_fk",
           "tableFrom": "raw_items",
           "tableTo": "collection_runs",
-          "columnsFrom": [
-            "run_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["run_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "cascade"
         }
@@ -391,11 +375,7 @@
         "raw_items_revision_identity_unique": {
           "name": "raw_items_revision_identity_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "source_id",
-            "external_id",
-            "payload_hash"
-          ]
+          "columns": ["source_id", "external_id", "payload_hash"]
         }
       },
       "policies": {},
@@ -491,9 +471,7 @@
         "sources_key_unique": {
           "name": "sources_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+          "columns": ["key"]
         }
       },
       "policies": {},
