@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`, `QUE-001`, `AI-001`, `DEC-008` 완료. `DB-002`는 구현·review 완료 후 Docker PostgreSQL integration 검증 대기로 `READY`이며, 나머지는 표의 상태와 dependency gate를 따른다
+- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`, `DB-002`, `QUE-001`, `AI-001`, `DEC-008` 완료. `DB-003` 착수 가능 상태이며, 나머지는 표의 상태와 dependency gate를 따른다
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -105,9 +105,8 @@
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
-| DB-001 | Drizzle ORM/Drizzle Kit migration bootstrap | DEC-002, FND-004 | DONE | [ADR-0009](./docs/adr/0009-drizzle-orm-migrations.md)에 도구 선택과 migration 전략이 기록됨; `packages/database`의 첫 Drizzle migration에 pgvector extension bootstrap을 포함하고, 빈 DB에 migration metadata와 schema를 적용·검증함 |
-| DB-002 | source, run, raw item schema | DB-001 | READY | source/run/raw/pipeline event table과 FK/unique/check가 migration으로 생성됨; 동일 raw revision 2회 insert가 한 logical row를 유지; 구현·review 완료, Docker PostgreSQL integration은 환경 blocker |
-| DB-003 | document, revision, topic, chunk, embedding schema | DB-002 | BLOCKED | revision 불변성, publish status, topic link, chunk ordinal, versioned embedding uniqueness가 실제 PostgreSQL integration test로 검증됨 |
+| DB-002 | source, run, raw item schema | DB-001 | DONE | source/run/raw/pipeline event table과 FK/unique/check가 migration으로 생성됨; 동일 raw revision 2회 insert가 한 logical row를 유지; Neon integration test 통과 (2026-09-02) |
+| DB-003 | document, revision, topic, chunk, embedding schema | DB-002 | READY | revision 불변성, publish status, topic link, chunk ordinal, versioned embedding uniqueness가 실제 PostgreSQL integration test로 검증됨 |
 | DB-004 | metric observation, query run, citation schema | DB-003 | BLOCKED | metric 자연 키, query/citation FK와 query-run 내 citation key uniqueness가 검증됨; citation이 immutable revision/chunk를 가리킴 |
 | DB-005 | repository ports/adapters 구현 | DB-004, CON-001 | BLOCKED | domain port가 framework type에 의존하지 않음; transaction rollback, pagination, publish/read filter integration test 통과 |
 | DB-006 | baseline FTS와 exact vector query | DB-003 | BLOCKED | time/status filter를 강제한 FTS·cosine exact query가 seeded corpus에서 결정적 결과 반환; query plan/latency baseline 기록 |
@@ -151,7 +150,7 @@
 ### DB-002 구현·검토 증빙 (2026-09-02; merge `bc2d449`)
 
 - `packages/database`에 source/run/raw/pipeline event schema와 `0001_complete_puck.sql`, `0002_mature_post.sql` migration을 추가했다. source/run 관계, raw revision natural key, FK/check 제약과 raw/pipeline event 불변성 트리거를 반영했다.
-- review fixes `9c5e4cb`, `f58fc94`가 raw/event immutability와 composite FK migration ordering을 보완했다. `pnpm run test`에서 database 17개 테스트가 통과했고, Docker PostgreSQL integration 2개는 환경 blocker로 skip됐다.
+- review fixes `9c5e4cb`, `f58fc94`가 raw/event immutability와 composite FK migration ordering을 보완했다. Neon PostgreSQL 환경에서 `pnpm --filter @techpulse/database test` 실행 결과 6개 test file·19개 test(마이그레이션 2회 적용 멱등성, vector 확장 확인, raw revision 중복 억제 integration test 포함)가 모두 성공적으로 통과했다.
 
 ### DEC-008 완료 증빙 (2026-09-02; merge `43cb706` 및 Neon 변경 통합)
 
