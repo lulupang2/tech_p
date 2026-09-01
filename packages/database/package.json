@@ -14,11 +14,12 @@
     "format": "pnpm --dir ../.. exec prettier --check packages/database",
     "lint": "eslint .",
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
-    "test": "vitest run",
+    "test": "vitest run --fileParallelism=false",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
+    "@techpulse/domain": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {

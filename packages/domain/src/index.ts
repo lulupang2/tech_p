@@ -31,3 +31,21 @@ export type {
   EmbeddingResult,
   TokenUsage,
 } from './ai.js';
+export type {
+  SourceRecord,
+  DocumentRecord,
+  DocumentRevisionRecord,
+  ChunkRecord,
+  PaginationParams,
+  PaginatedResult,
+  DocumentFilter,
+  DocumentRepositoryPort,
+  SourceRepositoryPort,
+} from './repository.js';
+export type {
+  SearchHit,
+  SearchFilter,
+  FtsQueryParams,
+  ExactVectorQueryParams,
+  SearchServicePort,
+} from './search.js';

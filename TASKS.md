@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`, `DB-002`, `QUE-001`, `AI-001`, `DEC-008` 완료. `DB-003` 착수 가능 상태이며, 나머지는 표의 상태와 dependency gate를 따른다
+- 구현 상태: `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`, `DB-002`, `DB-003`, `DB-004`, `DB-005`, `DB-006`, `QUE-001`, `AI-001`, `DEC-008` 완료. `COL-001` 및 `FND-006` 착수 준비 상태이며, 나머지는 표의 상태와 dependency gate를 따른다
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -106,15 +106,11 @@
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
 | DB-002 | source, run, raw item schema | DB-001 | DONE | source/run/raw/pipeline event table과 FK/unique/check가 migration으로 생성됨; 동일 raw revision 2회 insert가 한 logical row를 유지; Neon integration test 통과 (2026-09-02) |
-| DB-003 | document, revision, topic, chunk, embedding schema | DB-002 | READY | revision 불변성, publish status, topic link, chunk ordinal, versioned embedding uniqueness가 실제 PostgreSQL integration test로 검증됨 |
-| DB-004 | metric observation, query run, citation schema | DB-003 | BLOCKED | metric 자연 키, query/citation FK와 query-run 내 citation key uniqueness가 검증됨; citation이 immutable revision/chunk를 가리킴 |
-| DB-005 | repository ports/adapters 구현 | DB-004, CON-001 | BLOCKED | domain port가 framework type에 의존하지 않음; transaction rollback, pagination, publish/read filter integration test 통과 |
-| DB-006 | baseline FTS와 exact vector query | DB-003 | BLOCKED | time/status filter를 강제한 FTS·cosine exact query가 seeded corpus에서 결정적 결과 반환; query plan/latency baseline 기록 |
+| DB-003 | document, revision, topic, chunk, embedding schema | DB-002 | DONE | revision 불변성, publish status, topic link, chunk ordinal, versioned embedding uniqueness가 실제 PostgreSQL integration test로 검증됨 (2026-09-02) |
+| DB-004 | metric observation, query run, citation schema | DB-003 | DONE | metric 자연 키, query/citation FK와 query-run 내 citation key uniqueness가 검증됨; citation이 immutable revision/chunk를 가리킴 (2026-09-02) |
+| DB-005 | repository ports/adapters 구현 | DB-004, CON-001 | DONE | domain port가 framework type에 의존하지 않음; transaction rollback, pagination, publish/read filter integration test 통과 (2026-09-02) |
+| DB-006 | baseline FTS와 exact vector query | DB-003 | DONE | time/status filter를 강제한 FTS·cosine exact query가 seeded corpus에서 결정적 결과 반환; query plan/latency baseline 기록 (2026-09-02) |
 
-## 5. Collection and processing
-
-| ID | Task | Dependencies | Status | Acceptance criteria |
-|---|---|---|---|---|
 | COL-001 | collector port와 source policy guard | DEC-001, EXP-001, DISC-002, CON-001, DB-002, TST-001 | BLOCKED | collector 결과가 공통 raw contract를 만족; host/scheme/size/redirect guard가 SSRF corpus를 거부; cursor가 opaque하게 보존됨; source별 `verbatim_only`·license·개인정보 제거 규칙이 설정에서 강제됨 |
 | COL-002 | GitHub Releases collector | COL-001 | BLOCKED | 승인 repo의 pagination, conditional request, rate headers, release update fixture 통과; stable external ID/URL/date 저장; `published_at`과 `created_at` 구분; author 객체 제거; live canary 분리 |
 | COL-003 | Stack Exchange collector | COL-001 | BLOCKED | 게시물별 `content_license` 저장; `verbatim_only` 표시 전파; 응답 본문 `backoff` 준수; 부재 기반 삭제 감지가 rate limit·오류를 삭제로 오인하지 않음; owner 개인정보 제거 fixture 통과 |
@@ -153,7 +149,13 @@
 - review fixes `9c5e4cb`, `f58fc94`가 raw/event immutability와 composite FK migration ordering을 보완했다. Neon PostgreSQL 환경에서 `pnpm --filter @techpulse/database test` 실행 결과 6개 test file·19개 test(마이그레이션 2회 적용 멱등성, vector 확장 확인, raw revision 중복 억제 integration test 포함)가 모두 성공적으로 통과했다.
 
 ### DEC-008 완료 증빙 (2026-09-02; merge `43cb706` 및 Neon 변경 통합)
+### DB-003, DB-004, DB-005, DB-006 완료 증빙 (2026-09-02)
 
+- **DB-003**: `documents`, `document_revisions`, `topics`, `document_topics`, `chunks`, `embeddings`, `licenses`, `duplicate_clusters` 테이블 정의 및 migration(`0003_amusing_stone_men.sql`) 적용 완료. revision uniqueness, chunk ordinal, pgvector embedding 제약 검증 통과.
+- **DB-004**: `metric_observations`, `query_runs`, `answer_citations` 테이블 정의 및 migration(`0004_pale_ironclad.sql`) 적용 완료. metric 자연 키 uniqueness, query citation 관계 검증 통과.
+- **DB-005**: `@techpulse/domain`에 `DocumentRepositoryPort`, `SourceRepositoryPort` 정의 및 `packages/database`에 Drizzle 기반 구현체 작성. transaction 기반 원자적 revision publish 및 pagination 검증 통과.
+- **DB-006**: `@techpulse/domain`에 `SearchServicePort` 정의 및 `packages/database`에 PostgreSQL FTS(`tsvector`/`ts_rank`) 및 exact cosine vector(`<=>` 연산자) 쿼리 서비스 구현 완료.
+- `pnpm run static` 및 `pnpm run test`(10개 workspace, 12개 database 테스트 파일·32개 테스트 전체) 모두 통과.
 - `packages/database`의 runtime client, migration runner, vector schema helper가 `@neondatabase/serverless`와 `drizzle-orm/neon-serverless`를 사용하도록 전환됐다. `DATABASE_URL`은 runtime pooled endpoint, `DATABASE_URL_DIRECT`는 Drizzle Kit migration endpoint로 문서화했고 `.env.example`에는 placeholder만 둔다.
 - Neon adapter focused test 3개 file·13개 test가 통과했고, adapter review는 API/lifecycle/credential redaction에 Critical/High/Medium/Low 이슈 없음으로 PASS했다.
 - `pnpm install --frozen-lockfile`, `pnpm run static`(typecheck·ESLint·Prettier), `pnpm run test`(10개 workspace, 10개 성공)이 Neon 변경 통합 후 통과했다. database는 17개 테스트 통과·2개 PostgreSQL integration skip, worker는 19개 테스트 통과·4개 Redis integration skip이다.
