@@ -1,0 +1,15 @@
+{
+  "name": "@techpulse/test-harness",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src test",
+    "format": "pnpm --dir ../.. exec prettier --check tooling/test-harness"
+  }
+}

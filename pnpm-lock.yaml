@@ -107,6 +107,8 @@ importers:
 
   packages/rag: {}
 
+  tooling/test-harness: {}
+
 packages:
   '@borewit/text-codec@0.2.2':
     resolution:
