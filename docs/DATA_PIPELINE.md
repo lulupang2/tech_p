@@ -123,9 +123,11 @@ HTML은 script/style/navigation을 제거한 안전한 text로 변환한다. 원
 2. 정규화 canonical URL
 3. 정규화 본문 exact hash
 4. 제목·본문 fingerprint 기반 near-duplicate 후보
-5. embedding similarity는 후보 cluster 제안에만 사용
+5. embedding similarity는 후보 cluster 제안에만 사용 (PIPE-004 승인 구현에서는 사용하지 않음)
 
-cross-source 문서는 삭제·병합하지 않고 `duplicate_cluster`로 묶는다. 대표 문서를 선택해도 모든 provenance와 URL을 보존한다. near-duplicate threshold는 [EXP-004](./experiments/EXP-004-deduplication.md) 전에는 확정하지 않는다.
+cross-source 문서는 삭제·병합하지 않고 `duplicate_cluster`로 묶는다. 대표 문서를 선택해도 모든 provenance와 URL을 보존한다. PIPE-004는 [EXP-004](./experiments/EXP-004-deduplication.md)의 승인 규칙만 사용한다: provider-free lexical fingerprint, `exp004-dedup-v1.0.0`, threshold `0.80`, fixed boilerplate rule `exp004-boilerplate-v1`. 점수 이상은 candidate/link suggestion일 뿐 자동 병합이 아니며, threshold ±0.08·`verbatim_only`·low-confidence 후보는 manual review로 보낸다.
+
+cluster membership는 `algorithm_version`, `confidence`, immutable `revision_id`·`raw_item_id`를 포함한 append-only versioned row로 기록한다. 재클러스터링은 새 version namespace에만 기록하고 이전 membership와 source/raw/revision/citation row를 수정·삭제하지 않는다.
 
 ### 5.6 Enrich and classify
 

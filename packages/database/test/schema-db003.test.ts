@@ -3,6 +3,7 @@ import { describe, test } from 'vitest';
 import {
   licenses,
   duplicateClusters,
+  duplicateClusterMemberships,
   documents,
   documentRevisions,
   topics,
@@ -15,6 +16,7 @@ describe('Database Schema DB-003 definition', () => {
   test('exports all DB-003 tables', () => {
     assert(licenses);
     assert(duplicateClusters);
+    assert(duplicateClusterMemberships);
     assert(documents);
     assert(documentRevisions);
     assert(topics);
@@ -27,6 +29,15 @@ describe('Database Schema DB-003 definition', () => {
     assert.equal(documents.artifactType.name, 'artifact_type');
     assert.equal(documents.canonicalUrl.name, 'canonical_url');
     assert.equal(documents.duplicateClusterId.name, 'duplicate_cluster_id');
+  });
+
+  test('versioned cluster memberships retain immutable revision and algorithm metadata', () => {
+    assert.equal(duplicateClusterMemberships.clusterId.name, 'cluster_id');
+    assert.equal(duplicateClusterMemberships.documentId.name, 'document_id');
+    assert.equal(duplicateClusterMemberships.revisionId.name, 'revision_id');
+    assert.equal(duplicateClusterMemberships.algorithmVersion.name, 'algorithm_version');
+    assert.equal(duplicateClusterMemberships.confidence.name, 'confidence');
+    assert.equal(duplicateClusterMemberships.status.name, 'status');
   });
 
   test('document_revisions table has correct structure and constraints', () => {

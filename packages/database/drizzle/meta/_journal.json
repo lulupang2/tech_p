@@ -36,6 +36,13 @@
       "when": 1788280543195,
       "tag": "0004_pale_ironclad",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788297279498,
+      "tag": "0005_gray_domino",
+      "breakpoints": true
     }
   ]
 }

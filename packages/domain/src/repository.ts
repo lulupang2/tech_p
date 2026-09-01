@@ -214,6 +214,32 @@ export interface DuplicateClusterRecord {
   readonly createdAt: Date;
 }
 
+/** Append-only membership evidence for a specific immutable revision and algorithm version. */
+export type DuplicateClusterMembershipStatus = 'suggested' | 'accepted' | 'superseded';
+
+export interface DuplicateClusterMembershipRecord {
+  readonly id: string;
+  readonly clusterId: string;
+  readonly documentId: string;
+  readonly revisionId: string;
+  readonly rawItemId: string | null;
+  readonly algorithmVersion: string;
+  readonly confidence: number;
+  readonly status: DuplicateClusterMembershipStatus;
+  readonly createdAt: Date;
+}
+
+export interface CreateDuplicateClusterMembershipInput {
+  readonly id?: string;
+  readonly clusterId: string;
+  readonly documentId: string;
+  readonly revisionId: string;
+  readonly rawItemId?: string | null;
+  readonly algorithmVersion: string;
+  readonly confidence: number;
+  readonly status?: DuplicateClusterMembershipStatus;
+}
+
 export interface CreateDuplicateClusterInput {
   readonly id?: string;
   readonly representativeDocumentId?: string | null;
@@ -236,6 +262,13 @@ export interface DuplicateClusterRepositoryPort {
   readonly listByRepresentativeDocumentId: (
     docId: string,
   ) => Promise<readonly DuplicateClusterRecord[]>;
+  /** Optional for backwards-compatible adapters; implementations must be append-only. */
+  readonly createMembership?: (
+    input: CreateDuplicateClusterMembershipInput,
+  ) => Promise<DuplicateClusterMembershipRecord>;
+  readonly listMemberships?: (
+    clusterId: string,
+  ) => Promise<readonly DuplicateClusterMembershipRecord[]>;
 }
 
 export interface DocumentRepositoryPort {

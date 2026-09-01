@@ -1,8 +1,19 @@
 import { createHash } from 'node:crypto';
 import type { SourceKey } from './collector.js';
 
-export const DEDUPLICATION_ALGORITHM_VERSION = 'v1.0.0' as const;
+export const DEDUPLICATION_ALGORITHM_VERSION = 'exp004-dedup-v1.0.0' as const;
+export const DEDUPLICATION_THRESHOLD = 0.8 as const;
+export const DEDUPLICATION_BOILERPLATE_RULE_VERSION = 'exp004-boilerplate-v1' as const;
 export const DEDUPLICATION_STAGE = 'deduplication' as const;
+
+const BOILERPLATE_TOKENS = new Set([
+  'read_more',
+  'subscribe',
+  'all_rights_reserved',
+  'cookie_notice',
+  'view_on_github',
+  'generated_by_fixture',
+]);
 
 const TRACKING_QUERY_PARAM_PREFIXES: readonly string[] = ['utm_', 'ga_', 'hsa_'] as const;
 
@@ -122,20 +133,20 @@ export function normalizeCanonicalUrl(rawUrl: string | null | undefined): string
 }
 
 /**
- * Tokenizes text for fingerprint generation (NFKD normalize, lowercase, word tokenization).
+ * Tokenizes text for fingerprint generation (NFKC normalize, lowercase, word tokenization).
  */
 export function tokenizeTextForFingerprint(text: string): string[] {
   if (!text || typeof text !== 'string') return [];
 
   const normalized = text
-    .normalize('NFKD')
+    .normalize('NFKC')
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/[^\p{L}\p{N}_\s]/gu, ' ')
     .trim();
 
   if (normalized.length === 0) return [];
 
-  const words = normalized.split(/\s+/gu).filter((w) => w.length > 0);
+  const words = normalized.split(/\s+/gu).filter((w) => w.length > 0 && !BOILERPLATE_TOKENS.has(w));
 
   // Generate 2-gram shingles in addition to single words for richer fingerprinting
   const tokens: string[] = [...words];
@@ -148,6 +159,32 @@ export function tokenizeTextForFingerprint(text: string): string[] {
   }
 
   return tokens;
+}
+
+/** EXP-004 lexical tokens: NFKC/lowercase identity with fixed boilerplate removed. */
+function tokenizeLexicalFingerprint(text: string): string[] {
+  if (!text || typeof text !== 'string') return [];
+
+  return text
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}_\s]/gu, ' ')
+    .trim()
+    .split(/\s+/gu)
+    .filter((token) => token.length > 0 && !BOILERPLATE_TOKENS.has(token));
+}
+
+function jaccardSimilarity(left: readonly string[], right: readonly string[]): number {
+  const leftSet = new Set(left);
+  const rightSet = new Set(right);
+  const union = new Set([...leftSet, ...rightSet]);
+  if (union.size === 0) return 1;
+
+  let intersection = 0;
+  for (const token of leftSet) {
+    if (rightSet.has(token)) intersection += 1;
+  }
+  return intersection / union.size;
 }
 
 /**
@@ -239,6 +276,7 @@ export function computeExactBodyHash(bodyText: string): string {
 }
 
 export type DeduplicationMatchReason = 'natural_key' | 'canonical_url' | 'exact_body_hash';
+export type NearDuplicateReviewReason = 'threshold_near' | 'verbatim_only';
 
 export interface DeduplicationMatch {
   readonly matchReason: DeduplicationMatchReason;
@@ -254,10 +292,20 @@ export interface NearDuplicateCandidate {
   readonly candidateDocumentId: string;
   readonly candidateRevisionId?: string | null;
   readonly candidateSourceKey?: string | null;
+  readonly candidateRawItemId?: string | null;
+  readonly candidateCanonicalUrl?: string | null;
+  readonly candidateLicenseId?: string | null;
+  readonly candidateVerbatimOnly?: boolean;
   readonly candidateTitle?: string | null;
   readonly titleSimilarity: number;
   readonly bodySimilarity: number;
   readonly similarity: number;
+  /** Similarity is also the deterministic confidence, in the range [0, 1]. */
+  readonly confidence: number;
+  readonly algorithmVersion: string;
+  readonly threshold: number;
+  readonly manualReviewRequired: boolean;
+  readonly manualReviewReasons: readonly NearDuplicateReviewReason[];
   readonly reason: string;
 }
 
@@ -274,6 +322,8 @@ export interface DeduplicationTargetDoc {
   readonly normalizedHash: string;
   readonly publishedAt?: Date | null;
   readonly duplicateClusterId?: string | null;
+  readonly licenseId?: string | null;
+  readonly verbatimOnly?: boolean;
   readonly createdAt?: Date | null;
 }
 
@@ -291,6 +341,8 @@ export interface ExistingDedupDocument {
   readonly bodyExactHash?: string | null;
   readonly normalizedHash: string;
   readonly duplicateClusterId?: string | null;
+  readonly licenseId?: string | null;
+  readonly verbatimOnly?: boolean;
   readonly createdAt?: Date | null;
 }
 
@@ -306,16 +358,22 @@ export interface DeduplicationResult {
   readonly bodyFingerprint: string;
   readonly titleFingerprint: string;
   readonly deduplicationVersion: string;
+  readonly nearDuplicateThreshold: number;
+  readonly boilerplateRuleVersion: string;
+  readonly manualReviewRequired: boolean;
+  readonly manualReviewReasons: readonly NearDuplicateReviewReason[];
 }
 
 export interface DeduplicationServiceOptions {
   readonly algorithmVersion?: string;
-  /** Minimum similarity threshold to report as a near-duplicate candidate (default: 0.70) */
+  /** EXP-004 threshold. Other thresholds are rejected to prevent unapproved behavior. */
   readonly nearDuplicateThreshold?: number;
 }
 
 export interface DeduplicationServicePort {
   readonly deduplicationVersion: string;
+  readonly nearDuplicateThreshold: number;
+  readonly boilerplateRuleVersion: string;
   normalizeCanonicalUrl(url: string | null | undefined): string | null;
   computeTitleFingerprint(title: string): string;
   computeBodyFingerprint(bodyText: string): string;
@@ -334,17 +392,26 @@ export interface DeduplicationServicePort {
  *   2. Normalized canonical URL match
  *   3. Normalized body exact hash match
  *
- * Near-duplicate candidates are suggested based on title and body SimHash fingerprints,
- * but NEVER merged automatically (pending EXP-004 threshold confirmation).
+ * Near-duplicate candidates are suggested by EXP-004's deterministic lexical rule,
+ * but NEVER merged automatically.
  */
 export function createDeduplicationService(
   options: DeduplicationServiceOptions = {},
 ): DeduplicationServicePort {
   const version = options.algorithmVersion ?? DEDUPLICATION_ALGORITHM_VERSION;
-  const nearDupThreshold = options.nearDuplicateThreshold ?? 0.7;
+  const nearDupThreshold = options.nearDuplicateThreshold ?? DEDUPLICATION_THRESHOLD;
+
+  if (version !== DEDUPLICATION_ALGORITHM_VERSION) {
+    throw new Error(`Unsupported deduplication algorithm version: ${version}`);
+  }
+  if (nearDupThreshold !== DEDUPLICATION_THRESHOLD) {
+    throw new Error(`PIPE-004 requires near-duplicate threshold ${DEDUPLICATION_THRESHOLD}`);
+  }
 
   return {
     deduplicationVersion: version,
+    nearDuplicateThreshold: nearDupThreshold,
+    boilerplateRuleVersion: DEDUPLICATION_BOILERPLATE_RULE_VERSION,
 
     normalizeCanonicalUrl(url: string | null | undefined): string | null {
       return normalizeCanonicalUrl(url);
@@ -481,38 +548,70 @@ export function createDeduplicationService(
           bodyFingerprint: targetBodyFp,
           titleFingerprint: targetTitleFp,
           deduplicationVersion: version,
+          nearDuplicateThreshold: nearDupThreshold,
+          boilerplateRuleVersion: DEDUPLICATION_BOILERPLATE_RULE_VERSION,
+          manualReviewRequired: false,
+          manualReviewReasons: [],
         };
       }
 
-      // Stage 4: Near-duplicate candidates suggestion (Title and Body Fingerprint)
-      // Note: EXP-004 threshold is pending, so we ONLY produce candidate suggestions and do NOT merge.
+      // Stage 4: EXP-004 lexical near-duplicate candidate suggestion.
+      // Candidates are never merged automatically, including high-confidence matches.
       const nearDuplicateCandidates: NearDuplicateCandidate[] = [];
+      const targetLexicalTitle = tokenizeLexicalFingerprint(target.title);
+      const targetLexicalBody = tokenizeLexicalFingerprint(target.bodyText);
+      const manualReviewReasons = new Set<NearDuplicateReviewReason>();
 
       for (const candidate of otherDocs) {
-        const candidateTitleFp = computeTitleFingerprint(candidate.title);
-        const candidateBodyFp = computeBodyFingerprint(candidate.bodyText);
+        const titleSim = jaccardSimilarity(
+          targetLexicalTitle,
+          tokenizeLexicalFingerprint(candidate.title),
+        );
+        const bodySim = jaccardSimilarity(
+          targetLexicalBody,
+          tokenizeLexicalFingerprint(candidate.bodyText),
+        );
+        // EXP-004 v2_lexical_fingerprint: 0.72 body + 0.28 title.
+        const combinedSim = 0.72 * bodySim + 0.28 * titleSim;
 
-        const titleSim = computeFingerprintSimilarity(targetTitleFp, candidateTitleFp);
-        const bodySim = computeFingerprintSimilarity(targetBodyFp, candidateBodyFp);
-        // Weighted combined similarity: 0.3 * title + 0.7 * body
-        const combinedSim = 0.3 * titleSim + 0.7 * bodySim;
-
-        if (combinedSim >= nearDupThreshold || titleSim >= 0.9 || bodySim >= 0.85) {
+        if (combinedSim >= nearDupThreshold) {
+          const reasons: NearDuplicateReviewReason[] = [];
+          if (Math.abs(combinedSim - nearDupThreshold) <= 0.08) {
+            reasons.push('threshold_near');
+            manualReviewReasons.add('threshold_near');
+          }
+          if (candidate.verbatimOnly || target.verbatimOnly) {
+            reasons.push('verbatim_only');
+            manualReviewReasons.add('verbatim_only');
+          }
+          const confidence = Number(combinedSim.toFixed(6));
           nearDuplicateCandidates.push({
             candidateDocumentId: candidate.documentId,
             candidateRevisionId: candidate.revisionId ?? null,
             candidateSourceKey: candidate.sourceKey ? String(candidate.sourceKey) : null,
+            candidateRawItemId: candidate.rawItemId ?? null,
+            candidateCanonicalUrl: candidate.canonicalUrl ?? null,
+            candidateLicenseId: candidate.licenseId ?? null,
+            candidateVerbatimOnly: candidate.verbatimOnly ?? false,
             candidateTitle: candidate.title,
             titleSimilarity: Number(titleSim.toFixed(4)),
             bodySimilarity: Number(bodySim.toFixed(4)),
             similarity: Number(combinedSim.toFixed(4)),
+            confidence,
+            algorithmVersion: version,
+            threshold: nearDupThreshold,
+            manualReviewRequired: reasons.length > 0,
+            manualReviewReasons: reasons,
             reason: 'fingerprint_near_duplicate_candidate',
           });
         }
       }
 
       // Sort candidates by highest similarity descending
-      nearDuplicateCandidates.sort((a, b) => b.similarity - a.similarity);
+      nearDuplicateCandidates.sort(
+        (a, b) =>
+          b.similarity - a.similarity || a.candidateDocumentId.localeCompare(b.candidateDocumentId),
+      );
 
       return {
         documentId: target.documentId,
@@ -526,6 +625,10 @@ export function createDeduplicationService(
         bodyFingerprint: targetBodyFp,
         titleFingerprint: targetTitleFp,
         deduplicationVersion: version,
+        nearDuplicateThreshold: nearDupThreshold,
+        boilerplateRuleVersion: DEDUPLICATION_BOILERPLATE_RULE_VERSION,
+        manualReviewRequired: manualReviewReasons.size > 0,
+        manualReviewReasons: [...manualReviewReasons],
       };
     },
   };

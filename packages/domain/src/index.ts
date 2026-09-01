@@ -47,7 +47,10 @@ export type {
   CreatePipelineEventInput,
   PipelineEventRepositoryPort,
   DuplicateClusterRecord,
+  DuplicateClusterMembershipStatus,
+  DuplicateClusterMembershipRecord,
   CreateDuplicateClusterInput,
+  CreateDuplicateClusterMembershipInput,
   UpdateDuplicateClusterInput,
   DuplicateClusterRepositoryPort,
   DocumentRecord,
@@ -133,6 +136,8 @@ export type {
 
 export {
   DEDUPLICATION_ALGORITHM_VERSION,
+  DEDUPLICATION_THRESHOLD,
+  DEDUPLICATION_BOILERPLATE_RULE_VERSION,
   DEDUPLICATION_STAGE,
   normalizeCanonicalUrl,
   tokenizeTextForFingerprint,
@@ -147,6 +152,7 @@ export {
 
 export type {
   DeduplicationMatchReason,
+  NearDuplicateReviewReason,
   DeduplicationMatch,
   NearDuplicateCandidate,
   DeduplicationTargetDoc,
