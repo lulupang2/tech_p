@@ -38,13 +38,13 @@
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
 | FND-001 | 승인된 workspace/app/package skeleton 생성 | DEC-002, DEC-003, DEC-004, DEC-005, DEC-006 | DONE | pnpm workspace에 `apps/{web,api,worker}`와 `packages/{contracts,domain,database,collectors,rag,observability}` 생성; **`web`은 SvelteKit, `api`는 Elysia on Node, `worker`는 Node 진입점**; web이 contracts만 import하고 database/collectors/rag를 import하지 않음; 각 package의 focused build·test 명령이 성공; application feature는 없음 |
-| FND-002 | 공통 TypeScript·format·lint·test 설정 | FND-001 | BLOCKED | strict typecheck와 format/lint/test 명령이 workspace root 및 package filter에서 동작; intentional failing sample로 CI failure가 확인됨 |
+| FND-002 | 공통 TypeScript·format·lint·test 설정 | FND-001 | READY | strict typecheck와 format/lint/test 명령이 workspace root 및 package filter에서 동작; intentional failing sample로 CI failure가 확인됨 |
 | FND-003 | CI 기본 pipeline | FND-002 | BLOCKED | clean checkout에서 install with lockfile → static → unit 순서가 성공; cache 없이도 재현 가능; branch protection용 필수 check 이름 문서화 |
-| FND-004 | 로컬 dependency Compose 구성 | FND-001, DEC-004 | BLOCKED | PostgreSQL+pgvector와 승인 queue dependency가 healthcheck를 통과; persistent/ephemeral profile 구분; secret 기본값이 production에 안전하지 않음을 명시 |
-| FND-005 | runtime config와 secret validation | FND-001 | BLOCKED | API/worker별 필요한 env schema가 startup에 검증됨; secret 값은 log/error에 없음; `.env.example`에는 placeholder만 있음 |
+| FND-004 | 로컬 dependency Compose 구성 | FND-001, DEC-004 | READY | PostgreSQL+pgvector와 승인 queue dependency가 healthcheck를 통과; persistent/ephemeral profile 구분; secret 기본값이 production에 안전하지 않음을 명시 |
+| FND-005 | runtime config와 secret validation | FND-001 | READY | API/worker별 필요한 env schema가 startup에 검증됨; secret 값은 log/error에 없음; `.env.example`에는 placeholder만 있음 |
 | FND-006 | CI에 integration·contract·E2E·security 단계 확장 | FND-003, FND-004, DB-003 | BLOCKED | [TESTING §11](./docs/TESTING.md)의 단계 순서가 CI에 존재하고 실패가 merge를 차단; live canary와 유료 LLM 평가는 blocking pipeline 밖에서 실행됨; 아직 구현되지 않은 suite는 빈 통과가 아니라 미등록으로 남고 해당 task 완료 시 추가하는 규칙이 문서화됨 |
-| OBS-001 | 구조화 logging과 correlation contract | FND-001 | BLOCKED | request/run/job/source/query ID가 공통 schema로 전달됨; redaction unit test가 token·cookie·payload를 가림 |
-| CON-001 | API/job/domain contract package | FND-001 | BLOCKED | answer request/response, error, collection job schema가 versioned runtime validation과 TS type을 한 source에서 제공; invalid fixture 거부 테스트 통과; **알 수 없는 요청 필드 거부가 명시적으로 설정됨**(framework 기본값이 아님, EXP-005 run 2); 검증 실패가 400으로 매핑됨; 미선언 응답 필드 제거가 회귀 테스트로 고정됨 |
+| OBS-001 | 구조화 logging과 correlation contract | FND-001 | READY | request/run/job/source/query ID가 공통 schema로 전달됨; redaction unit test가 token·cookie·payload를 가림 |
+| CON-001 | API/job/domain contract package | FND-001 | READY | answer request/response, error, collection job schema가 versioned runtime validation과 TS type을 한 source에서 제공; invalid fixture 거부 테스트 통과; **알 수 없는 요청 필드 거부가 명시적으로 설정됨**(framework 기본값이 아님, EXP-005 run 2); 검증 실패가 400으로 매핑됨; 미선언 응답 필드 제거가 회귀 테스트로 고정됨 |
 | TST-001 | 공통 fixture·fake clock/ID/provider harness | FND-002, CON-001 | BLOCKED | unit test가 network 없이 deterministic하게 실행; 승인된 runtime의 test runner에서 fake 주입이 성립; fixture provenance/redaction metadata schema가 검증됨 |
 
 ### FND-001 완료 증빙 (2026-09-01)
@@ -180,7 +180,7 @@ flowchart TD
 
 ### 구현 순서
 
-`FND-001` → `FND-002` → `FND-003`이 코드가 도는 최소 골격이다. 그 다음은 `FND-004`(Compose), `FND-005`(config), `CON-001`(contract), `OBS-001`(logging), `TST-001`(harness)이 병렬 가능하고, 이어서 `DB-001`~`DB-006`이다.
+`FND-002`, `FND-004`, `FND-005`, `CON-001`, `OBS-001`은 현재 병렬로 착수 가능하다. `FND-003`은 `FND-002` 완료 뒤, `TST-001`은 `FND-002`와 `CON-001` 완료 뒤 착수한다. 그 뒤 `DB-001`~`DB-006`으로 진행한다.
 
 ### 아직 사람이 처리해야 할 것
 
