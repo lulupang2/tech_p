@@ -194,7 +194,7 @@ web은 SvelteKit이다([ADR-0008](./adr/0008-frontend-sveltekit.md)). E2E는 Sve
 
 성능 수치는 고정 fixture, DB row count, hardware/container resource를 결과와 함께 기록한다.
 
-## 11. CI 제안
+## 11. CI pipeline
 
 ```mermaid
 flowchart LR
@@ -209,6 +209,8 @@ flowchart LR
 live canary와 유료 LLM 평가는 이 blocking pipeline 밖에서 실행하고 결과를 release decision에 첨부한다.
 
 이 pipeline의 구현 task는 `FND-003`(install → static → unit)과 `FND-006`(integration, contract, E2E, security 확장)이다. 아직 구현되지 않은 suite는 항상 통과하는 빈 단계로 만들지 않는다.
+
+현재 기본 blocking workflow는 `.github/workflows/ci.yml`이며 `main` push와 모든 pull request에서 실행된다. Branch protection에 등록할 필수 check 이름은 정확히 `CI / install → static → unit`이다. 이 check는 clean checkout과 Node.js 22, pnpm 10.32.1을 사용하고 `pnpm install --frozen-lockfile` → `pnpm run static` → `pnpm run test` 순으로 실행한다.
 
 ## 12. 완료 정의
 
