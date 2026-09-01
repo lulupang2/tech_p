@@ -104,7 +104,8 @@ MVP 로컬 환경의 추천은 Docker Compose에서 `web`, `api`, `worker`, `pos
 | Backend | Elysia(Node), Elysia(Bun), Fastify, NestJS, FastAPI | Node runtime 위의 Elysia | **Accepted** — [ADR-0001](./adr/0001-backend-framework.md) |
 | Queue | Redis + BullMQ, PostgreSQL job table, MVP cron | Redis + BullMQ | **Accepted** — [ADR-0003](./adr/0003-queue-and-scheduling.md) |
 | AI workflow | LangChain.js, LangGraph.js | LangGraph.js deterministic workflow | **Accepted** — [ADR-0002](./adr/0002-ai-orchestration.md) |
-| Repository | pnpm workspace, npm workspace, Turborepo | pnpm workspace, 초기에는 Turborepo 없음 | **Accepted** — [ADR-0007](./adr/0007-repository-layout.md) |
+| Repository and orchestration | pnpm workspaces만 사용, npm workspaces, Nx | pnpm workspaces + Turborepo | **Accepted** — [ADR-0010](./adr/0010-turborepo-monorepo.md); [ADR-0007](./adr/0007-repository-layout.md)는 Superseded |
+| Database access and migrations | Drizzle ORM + Drizzle Kit, Prisma + Prisma Migrate, Kysely + 수동 SQL | Drizzle ORM + Drizzle Kit, 검토·커밋된 forward-only SQL migration | **Accepted** — [ADR-0009](./adr/0009-drizzle-orm-migrations.md) |
 | LLM/Embedding | 복수 상용 API, 로컬 모델 | provider-neutral adapter 후 실험으로 선정 | Proposed — [ADR-0006](./adr/0006-model-providers.md) |
 
 `작업 전달 계층`은 Redis + BullMQ로 확정됐다. §2의 다이어그램에서 그 계층이 이에 해당한다.
@@ -113,11 +114,13 @@ Elysia 추천 이유는 하나의 스키마 정의에서 runtime validation, Typ
 
 **runtime은 Node를 사용한다.** 당초 추천은 Bun이었으나 `EXP-005` run 1에서 **Bun runtime의 Playwright가 local launch와 ws connect 두 transport 모두 실패**했다. 동일 Chromium 바이너리로 Node는 206ms에 launch하고 전 항목을 통과했다. browser server 원격 접속 우회도 Bun에서 막혔으므로, Bun을 유지하려면 browser collector를 완전한 별도 Node 애플리케이션으로 두어야 한다. 그 비용을 감수할 근거가 없어 runtime을 Node로 되돌렸다.
 
-이 결정으로 browser collector는 다른 worker와 같은 runtime에 둔다. Vitest와 Testcontainers도 Node에서 동작이 확인됐다. Fastify는 대체안으로 남기며, NestJS는 강한 구조와 DI가 필요할 때, FastAPI는 Python AI 생태계가 TypeScript 일관성보다 중요하다는 증거가 있을 때 유리하다. 이는 아직 결정이 아니며 `DEC-002` 승인 대상이다.
+이 결정으로 browser collector는 다른 worker와 같은 runtime에 둔다. Vitest와 Testcontainers도 Node에서 동작이 확인됐다. Fastify는 대체안으로 남기며, NestJS는 강한 구조와 DI가 필요할 때, FastAPI는 Python AI 생태계가 TypeScript 일관성보다 중요하다는 증거가 있을 때 유리하다. **DEC-002에서 Node runtime 위의 Elysia가 이미 Accepted됐으므로 backend framework 결정은 완료됐다.**
 
 ## 7. 승인된 저장소 구조
 
-[ADR-0007](./adr/0007-repository-layout.md)이 2026-09-01에 승인됐다. 아래 구조를 사용한다. 디렉터리 생성은 `FND-001`에서 한다.
+[ADR-0010](./adr/0010-turborepo-monorepo.md)이 package 경계와 monorepo orchestration을 승인했다. [ADR-0007](./adr/0007-repository-layout.md)는 당시의 초기 orchestration 판단으로 Superseded다. 아래는 승인된 repository tree이며, 현재 존재하는 foundation 경로와 아직 생성하지 않은 계획 경로를 구분한다. 실제 Turborepo task wiring은 이 문서 변경만으로 구현됐다고 주장하지 않는다.
+
+현재 존재 — `FND-001`에서 생성된 foundation 경로:
 
 ```text
 apps/
@@ -127,16 +130,23 @@ apps/
 packages/
   contracts/    # API/job/event schemas. TypeBox 단일 출처
   domain/       # source-neutral domain rules
-  database/     # schema, migrations, repositories
+  database/     # Drizzle schema, migrations, repositories (ADR-0009)
   collectors/   # source adapters (11개 source, ADR-0004)
   rag/          # LangGraph.js retrieval and answer workflow (ADR-0002)
   observability/
+```
+
+계획됨 — 현재 생성하지 않은 테스트 경로:
+
+```text
 tests/
-  fixtures/
-  e2e/          # Playwright UI E2E
+  fixtures/     # planned; TST-001 fixture harness
+  e2e/          # planned; TST-002 Playwright UI E2E
 ```
 
 의존 방향은 `apps → packages`, adapter → domain port다. `domain`은 HTTP, queue, LLM 공급자 SDK에 직접 의존하지 않는다.
+
+pnpm은 package 설치·workspace linking을 담당하고 Turborepo는 task graph와 cache를 담당한다. 어느 쪽도 PostgreSQL business state나 runtime queue를 대체하지 않는다.
 
 framework별 경계 규칙은 다음과 같다.
 

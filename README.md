@@ -2,15 +2,15 @@
 
 개발 기술 트렌드 Intelligence 서비스. 여러 개발 데이터 소스를 주기적으로 수집·정규화·임베딩하고, 자연어 질문에 대해 기간과 출처가 명시된 답변을 제공한다.
 
-포트폴리오 프로젝트이며 현재는 **구현 단계**다. 설계 문서와 기술 결정은 확정됐고 `FND-001`부터 코드 작업을 시작한다.
+포트폴리오 프로젝트이며 현재는 **구현 단계**다. 설계 문서와 기술 결정은 확정됐고 `FND-001`~`FND-005`, `CON-001`, `OBS-001`이 완료됐다.
 
 ## 현재 상태
 
-**구현 단계다.** `DEC-002`와 `DEC-004`가 2026-09-01에 승인되어 `FND-001`부터 코드 작업을 시작한다.
+**구현 단계다.** `DEC-002`와 `DEC-004`가 2026-09-01에 승인됐고 foundation·contract·observability 작업이 완료됐다.
 
-확정된 스택은 TypeScript, Node runtime 위의 Elysia, Redis + BullMQ, LangGraph.js, SvelteKit, pnpm workspaces, PostgreSQL + pgvector, Playwright, Docker다.
+확정된 스택은 TypeScript, Node runtime 위의 Elysia, Redis + BullMQ, LangGraph.js, SvelteKit, pnpm workspaces, Turborepo, PostgreSQL + pgvector, Drizzle ORM + Drizzle Kit, Playwright, Docker다.
 
-- ADR 8건 중 **6건이 `Accepted`**다. [0001](./docs/adr/0001-backend-framework.md) Elysia on Node, [0002](./docs/adr/0002-ai-orchestration.md) LangGraph.js, [0003](./docs/adr/0003-queue-and-scheduling.md) Redis+BullMQ, [0004](./docs/adr/0004-initial-data-sources.md) 초기 source set, [0007](./docs/adr/0007-repository-layout.md) pnpm workspaces, [0008](./docs/adr/0008-frontend-sveltekit.md) SvelteKit. [0005](./docs/adr/0005-frontend.md)(Next.js)는 `Superseded`, [0006](./docs/adr/0006-model-providers.md)(provider)은 `Proposed`다.
+- ADR 10건 중 **7건이 `Accepted`**다. [0001](./docs/adr/0001-backend-framework.md) Elysia on Node, [0002](./docs/adr/0002-ai-orchestration.md) LangGraph.js, [0003](./docs/adr/0003-queue-and-scheduling.md) Redis+BullMQ, [0004](./docs/adr/0004-initial-data-sources.md) 초기 source set, [0008](./docs/adr/0008-frontend-sveltekit.md) SvelteKit, [0009](./docs/adr/0009-drizzle-orm-migrations.md) Drizzle ORM + Drizzle Kit, [0010](./docs/adr/0010-turborepo-monorepo.md) pnpm+Turborepo. [0005](./docs/adr/0005-frontend.md)와 [0007](./docs/adr/0007-repository-layout.md)는 각각 [0008](./docs/adr/0008-frontend-sveltekit.md)·[0010](./docs/adr/0010-turborepo-monorepo.md)으로 `Superseded`, [0006](./docs/adr/0006-model-providers.md)(provider)은 `Proposed`다.
 - `EXP-005` 완료, `EXP-001` run 1·2 완료. 측정 근거는 각 실험 문서에 있다.
 - `experiments/` 아래 코드는 폐기 전제의 spike다. production 경로에 섞지 않는다.
 
@@ -37,7 +37,7 @@
 | [docs/SOURCE_CATALOG.md](./docs/SOURCE_CATALOG.md) | source별 endpoint, 질의, 필드 매핑, 수집 주기 |
 | [docs/TOPIC_TAXONOMY.md](./docs/TOPIC_TAXONOMY.md) | canonical topic과 alias, source별 식별자 매핑 |
 | [docs/EVAL_GOLDEN_SET.md](./docs/EVAL_GOLDEN_SET.md) | RAG 평가 골든셋 질문 목록과 라벨 규칙 |
-| [docs/adr/](./docs/adr/README.md) | 미결정 기술 선택의 대안과 추천 |
+| [docs/adr/](./docs/adr/README.md) | 확정·미결정 기술 선택의 맥락과 대안 |
 | [docs/experiments/](./docs/experiments/README.md) | 결정을 검증할 실험 계획 |
 | [TASKS.md](./TASKS.md) | dependency와 acceptance criteria가 있는 구현 backlog |
 
@@ -45,13 +45,13 @@
 
 TypeScript, Playwright, PostgreSQL, pgvector, RAG, LangGraph.js deterministic workflow, LLM API, Docker, 자동화 테스트, 실제 외부 데이터 수집 파이프라인이 실행 또는 검증 경로에 포함된다.
 
-framework, queue, AI orchestration, frontend, repository layout은 모두 확정됐다. Node runtime 위의 Elysia, Redis + BullMQ, LangGraph.js, SvelteKit, pnpm workspaces다. 근거는 [SSOT §3.3](./docs/SSOT.md)에 있다.
+framework, queue, AI orchestration, frontend, repository orchestration, database access는 모두 확정됐다. Node runtime 위의 Elysia, Redis + BullMQ, LangGraph.js, SvelteKit, pnpm workspaces + Turborepo, Drizzle ORM + Drizzle Kit이다. 근거는 [SSOT §3.3](./docs/SSOT.md)에 있다.
 
-[SSOT §5](./docs/SSOT.md)에 남은 미결정은 LLM·embedding provider와 model, source별 수집 주기와 schedule 설정값, ORM/query builder와 migration tool, hosting·production topology·secret manager·배포 adapter, 인증과 rate limit 수치, chunking·embedding dimensions·retrieval 가중치와 index, 데이터·질문·답변 보존 기간, 성능·품질 수치의 최종 acceptance threshold다.
+[SSOT §5](./docs/SSOT.md)에 남은 미결정은 LLM·embedding provider와 model, source별 수집 주기와 schedule 설정값, hosting·production topology·secret manager·배포 adapter, 인증과 rate limit 수치, chunking·embedding dimensions·retrieval 가중치와 index, 데이터·질문·답변 보존 기간, 성능·품질 수치의 최종 acceptance threshold다.
 
 ## 다음 행동
 
-`FND-001` workspace/app/package skeleton 생성부터 시작한다. 이후 `FND-002`(TypeScript·lint·test 설정) → `FND-003`(CI)까지가 코드가 도는 최소 골격이다.
+`DB-001` Drizzle ORM/Drizzle Kit migration bootstrap부터 진행한다. 이후 `DB-002`~`DB-006`으로 schema·repository·검색 기반을 확장한다. ADR-0010은 orchestration 선택 승인이고, 실제 Turborepo task wiring은 별도 구조 작업의 산출물이며 이 문서 변경으로 구현됐다고 주장하지 않는다.
 
 아직 사람이 처리해야 하는 것은 셋이며 `FND-*`와 `DB-*` 진행을 막지 않는다.
 

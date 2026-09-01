@@ -5,7 +5,7 @@
 - 형식: JSON over HTTP 추천
 - base path: `/api/v1` 추천
 
-백엔드 프레임워크와 streaming 방식은 미결정이지만 외부 계약은 프레임워크에 독립적이다. 구현 시 OpenAPI 문서를 생성하고 contract test의 기준으로 사용한다.
+백엔드 프레임워크와 server runtime은 [ADR-0001](./adr/0001-backend-framework.md)과 `DEC-002`에서 **Node runtime 위의 Elysia**로 Accepted됐다. streaming 방식은 아직 미결정이지만 외부 계약은 framework에 독립적이다. 구현 시 OpenAPI 문서를 생성하고 contract test의 기준으로 사용한다.
 
 ## 1. 공통 규칙
 
@@ -266,7 +266,6 @@ stack trace, SQL, provider body, secret는 응답에 포함하지 않는다.
 
 ## 8. 미결정 사항
 
-- REST framework와 server runtime. schema library는 별도 결정이 아니라 이 선택에 종속된다. [ADR-0001](./adr/0001-backend-framework.md)의 현재 추천안은 framework 내장 스키마를 단일 출처로 사용하며 별도 library를 도입하지 않는다
 - 응답 streaming 도입 여부
 - 공개 데모 인증·rate-limit 기준
 - answer 원문 저장·재조회 endpoint 여부

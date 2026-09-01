@@ -69,7 +69,8 @@ Playwright 수집 대상은 `developer.chrome.com/origintrials/`다. 서버 HTML
 | Queue와 scheduler | **Redis + BullMQ.** 전달·예약 계층으로만 사용하고 business completion은 PostgreSQL에 기록 | [ADR-0003](./adr/0003-queue-and-scheduling.md), 2026-09-01 |
 | AI orchestration | LangGraph.js deterministic workflow. agent loop 미사용 | [ADR-0002](./adr/0002-ai-orchestration.md), 2026-09-01 |
 | Frontend | SvelteKit. RAG·DB·수집 로직은 backend API에만 두고 server 기능은 UI 전달과 최소 BFF로 제한 | [ADR-0008](./adr/0008-frontend-sveltekit.md), 2026-09-01. [ADR-0005](./adr/0005-frontend.md)(Next.js)를 대체 |
-| Repository layout | pnpm workspaces. 초기에는 Turborepo/Nx 미사용. `apps/{web,api,worker}` + `packages/{contracts,domain,database,collectors,rag,observability}` | [ADR-0007](./adr/0007-repository-layout.md), 2026-09-01 |
+| Repository layout and orchestration | **pnpm workspaces + Turborepo**. pnpm은 package manager·workspace linker, Turborepo는 dependency-aware task orchestration·cache 계층이다. 승인 package 경계는 `apps/{web,api,worker}` + `packages/{contracts,domain,database,collectors,rag,observability}`이며 의존 방향은 `apps → packages`, adapter → domain port다 | [ADR-0010](./adr/0010-turborepo-monorepo.md), 2026-09-01. [ADR-0007](./adr/0007-repository-layout.md)는 Superseded |
+| Database access and migrations | **Drizzle ORM + Drizzle Kit**. `packages/database`가 schema·repository adapter·검토된 forward-only SQL migration을 소유하고 첫 migration에서 pgvector extension을 bootstrap한다 | [ADR-0009](./adr/0009-drizzle-orm-migrations.md), 2026-09-01 |
 
 날짜 계산, SQL 필터, 점수 집계, citation·라이선스 검증은 LLM이 아니라 deterministic node에서 수행한다. web은 database package를 import하지 않고 contracts를 통해서만 타입을 얻는다. package dependency cycle은 CI에서 차단한다.
 
@@ -132,7 +133,6 @@ Backend와 queue 결정에서 파생되는 구현 조건은 다음과 같다. �
 
 - LLM·embedding provider와 model
 - source별 수집 주기와 schedule 설정값
-- ORM/query builder와 migration tool
 - hosting, production topology, secret manager, 배포 adapter
 - 사용자 인증, 운영 API 인증, rate limit 수치
 - chunking, embedding dimensions, retrieval 가중치·index

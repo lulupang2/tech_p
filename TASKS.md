@@ -30,7 +30,7 @@
 | DEC-003 | AI orchestration 승인 | - | DONE | ADR-0002가 Accepted(2026-09-01); LangGraph.js deterministic workflow 확정, agent loop·장기 memory 미사용 명시; SSOT §3.3·RAG §3·§12 동기화 완료 |
 | DEC-004 | queue/scheduler 승인 | EXP-005 | DONE | ADR-0003이 Accepted(2026-09-01); **Redis + BullMQ**를 전달·예약 계층으로 확정, business completion은 PostgreSQL에 기록; job은 멱등해야 하며 자연 키 unique + upsert로 확보; source별 상이한 주기·concurrency 요구 반영; SSOT §3.3·ARCHITECTURE §2·§6 동기화 완료 |
 | DEC-005 | frontend 승인 | - | DONE | **SvelteKit 확정.** ADR-0005(Next.js)가 Accepted됐으나 같은 날 [ADR-0008](./docs/adr/0008-frontend-sveltekit.md)로 대체되어 `Superseded`; RAG·DB·수집 로직은 backend API에만 두고 server 기능은 UI 전달과 최소 BFF로 제한; SSOT §3.3·ARCHITECTURE §6 동기화 완료. frontend 코드가 없는 시점의 변경이라 마이그레이션 비용 0 |
-| DEC-006 | repository layout/package manager 승인 | - | DONE | ADR-0007이 Accepted(2026-09-01); pnpm workspaces와 package 경계·의존 방향·lockfile 정책이 SSOT §3.3·ARCHITECTURE §7·AGENTS에 반영됨 |
+| DEC-006 | repository layout/package manager/orchestration 승인 | - | DONE | [ADR-0010](./docs/adr/0010-turborepo-monorepo.md)이 Accepted(2026-09-01); pnpm workspaces + Turborepo와 승인 package 경계·의존 방향이 SSOT §3.3·ARCHITECTURE §6·§7에 반영됨. [ADR-0007](./docs/adr/0007-repository-layout.md)는 Superseded |
 | EXP-005 | foundation stack spike 실행 | - | DONE | [EXP-005](./docs/experiments/EXP-005-foundation-spike.md) 5개 run 측정 완료(2026-09-01); Playwright는 Bun 실패·Node 통과, 계약 스키마 단일 소스·BullMQ 멱등성·pgvector·Vitest·Testcontainers·pnpm focused test 모두 통과; 미측정 항목이 구현 task로 이관됨; spike code 폐기 범위 명시 |
 
 ## 3. Project foundation
@@ -94,7 +94,7 @@
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
-| DB-001 | migration tool 선택과 extension bootstrap | DEC-002, FND-004 | READY | 도구 선택이 Accepted ADR 또는 기존 ADR 부록에 기록됨; 빈 DB에 pgvector extension과 migration metadata가 적용·검증됨 |
+| DB-001 | Drizzle ORM/Drizzle Kit migration bootstrap | DEC-002, FND-004 | READY | [ADR-0009](./docs/adr/0009-drizzle-orm-migrations.md)에 도구 선택과 migration 전략이 기록됨; `packages/database`의 첫 Drizzle migration에 pgvector extension bootstrap을 포함하고, 빈 DB에 migration metadata와 schema를 적용·검증함 |
 | DB-002 | source, run, raw item schema | DB-001 | BLOCKED | source/run/raw/pipeline event table과 FK/unique/check가 migration으로 생성됨; 동일 raw revision 2회 insert가 한 logical row를 유지 |
 | DB-003 | document, revision, topic, chunk, embedding schema | DB-002 | BLOCKED | revision 불변성, publish status, topic link, chunk ordinal, versioned embedding uniqueness가 실제 PostgreSQL integration test로 검증됨 |
 | DB-004 | metric observation, query run, citation schema | DB-003 | BLOCKED | metric 자연 키, query/citation FK와 query-run 내 citation key uniqueness가 검증됨; citation이 immutable revision/chunk를 가리킴 |
@@ -208,14 +208,14 @@ flowchart TD
 | Queue | Redis + BullMQ (전달·예약 계층 한정) |
 | AI orchestration | LangGraph.js deterministic workflow |
 | Frontend | SvelteKit |
-| Repository | pnpm workspaces |
-| Database | PostgreSQL + pgvector |
+| Repository | pnpm workspaces + Turborepo |
+| Database | PostgreSQL + pgvector; Drizzle ORM + Drizzle Kit |
 
-미결정은 LLM·embedding provider(`DEC-007`), ORM/migration tool(`DB-001`), hosting과 배포 adapter다.
+미결정은 LLM·embedding provider(`DEC-007`), hosting과 배포 adapter다.
 
 ### 구현 순서
 
-`CON-001`과 `OBS-001`은 각각 `5c2045d`와 `1d59cb3`에서 완료됐고, 현재 main gate 및 영향 범위 테스트로 확인됐다. `DB-001`은 `DEC-002`·`FND-004`, `QUE-001`은 `DEC-004`·`FND-004`·`CON-001`, `TST-001`은 `FND-002`·`CON-001`이 모두 `DONE`이므로 병렬 착수 가능하다. 이후에는 `DB-001` 완료 뒤 `DB-002`~`DB-006`으로 진행한다.
+`CON-001`과 `OBS-001`은 각각 `5c2045d`와 `1d59cb3`에서 완료됐고, 현재 main gate 및 영향 범위 테스트로 확인됐다. `DB-001`은 Drizzle Kit migration 생성·검토, pgvector extension bootstrap과 빈 DB 적용을 먼저 수행한다. `QUE-001`은 `DEC-004`·`FND-004`·`CON-001`, `TST-001`은 `FND-002`·`CON-001`이 모두 `DONE`이므로 `DB-001`과 병렬 착수 가능하다. 이후에는 `DB-001` 완료 뒤 `DB-002`~`DB-006`으로 진행한다.
 
 ### 아직 사람이 처리해야 할 것
 

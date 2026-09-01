@@ -227,11 +227,11 @@ live canary와 유료 LLM 평가는 이 blocking pipeline 밖에서 실행하고
 
 | 영역 | Alternatives | Recommendation | 상태 |
 |---|---|---|---|
-| TS unit/integration | Vitest, Bun native runner, Jest, Node test runner | **Vitest** — Node runtime에서 실측 통과 | Proposed, 근거 확보 |
-| DB/Redis environment | Testcontainers, 격리 Compose | **Testcontainers** — Node에서 pgvector 컨테이너 기동과 시간 필터 벡터 질의 실측 통과 | Proposed, 근거 확보 |
+| TS unit/integration | Vitest, Bun native runner, Jest, Node test runner | **Vitest** — Node runtime에서 실측 통과 | **Accepted** (2026-09-01; [ADR-0001](./adr/0001-backend-framework.md)) |
+| DB/Redis environment | Testcontainers, 격리 Compose | **Testcontainers** — Node에서 pgvector 컨테이너 기동과 시간 필터 벡터 질의 실측 통과 | **Accepted** (2026-09-01; [ADR-0001](./adr/0001-backend-framework.md)) |
 | UI E2E | Playwright | Playwright | 필수 기술로 확정 |
 | Collector browser runtime | app runtime과 동일, Node 전용 프로세스 분리 | **Node runtime**. Bun에서 Playwright가 두 transport 모두 실패 | `EXP-005` run 1 측정 완료 |
-| API contract | generated OpenAPI + runtime schema, handwritten spec | 하나의 runtime schema에서 OpenAPI 생성 — 두 framework에서 실측 통과 | Proposed, 근거 확보 |
+| API contract | generated OpenAPI + runtime schema, handwritten spec | 하나의 runtime schema에서 OpenAPI 생성 — 두 framework에서 실측 통과 | **Accepted** (2026-09-01; `CON-001` 완료) |
 | RAG eval | custom harness, LangSmith, 별도 도구 | provider-neutral custom core + 선택적 trace 도구 | Proposed |
 
 `EXP-005`의 측정 결과([상세](./experiments/EXP-005-foundation-spike.md))로 도구 추천의 근거가 바뀌었다.
@@ -239,5 +239,5 @@ live canary와 유료 LLM 평가는 이 blocking pipeline 밖에서 실행하고
 - Vitest 5개 테스트가 fake clock·주입 ID·기간 경계·`published_at` null 제외를 9ms에 검증했다. `TST-001` harness가 성립한다.
 - Testcontainers가 `pgvector/pgvector:pg17` 컨테이너를 띄워 migration, unique 제약, 시간 필터 벡터 질의를 검증했다. 격리 Compose를 기본으로 두려던 판단을 되돌린다.
 - Playwright는 Bun runtime에서 local launch와 ws connect가 모두 실패했고 Node에서는 전 항목을 통과했다. **collector browser runtime은 Node여야 한다.**
-- 위 세 항목은 모두 Node runtime 전제다. `DEC-002`가 Bun을 선택하면 Vitest와 Testcontainers를 다시 평가해야 하고, browser collector는 별도 Node 애플리케이션이 된다.
+- 위 세 항목은 모두 Node runtime 전제다. `DEC-002`에서 **Node runtime 위의 Elysia가 Accepted**돼 Vitest와 Testcontainers를 현재 baseline으로 확정하고 browser collector도 Node에 둔다. Bun runtime은 현재 경로로 채택하지 않는다.
 - UI E2E는 `playwright test`가 기본적으로 Node로 실행되므로 영향을 받지 않는다.

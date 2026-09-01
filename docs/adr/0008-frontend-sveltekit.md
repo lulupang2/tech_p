@@ -59,7 +59,7 @@ ADR-0005의 기준을 그대로 유지한다.
 - 지표는 이름과 단위를 함께 표시하고 서로 다른 단위를 하나의 그래프나 종합 점수로 합치지 않는다. `repo_attention`은 수집 시작 이후 구간만 있다는 표시가 필요하다.
 - Playwright UI E2E는 framework에 종속되지 않으므로 [TESTING](../TESTING.md) §8의 흐름을 그대로 사용한다. `EXP-005`의 측정 결과도 영향을 받지 않는다. frontend는 그 실험 범위에 없었다.
 - 배포 adapter는 hosting 결정과 함께 정한다. [SSOT §5](../SSOT.md)의 hosting 미결정 항목에 종속된다.
-- `apps/web`의 내부 구조만 바뀌고 [ADR-0007](./0007-repository-layout.md)의 package 경계와 의존 방향은 그대로다.
+- `apps/web`의 내부 구조만 바뀌고 [ADR-0010](./0010-turborepo-monorepo.md)이 승인한 package 경계와 의존 방향은 그대로다. [ADR-0007](./0007-repository-layout.md)는 해당 경계의 당시 근거를 기록한 Superseded ADR이다.
 
 ## Validation before implementation
 

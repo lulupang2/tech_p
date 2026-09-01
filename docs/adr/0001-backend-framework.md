@@ -70,7 +70,7 @@ Playwright 버전, Chromium 바이너리(151.0.7922.34), 스크립트, 머신을
 
 따라서 이 ADR의 Fallback 조항에 따라 **추천을 `Node runtime 위의 Elysia`로 변경한다.** framework 선택은 바뀌지 않고 runtime만 되돌린다. 스키마 단일 소스 이점은 유지되고 Vitest·Testcontainers 추천안도 다시 유효해진다.
 
-Bun을 유지하는 선택도 여전히 가능하다. 그 경우 런타임 이원화와 CI·이미지·의존성 관리 이중화를 감수한다는 뜻이며 `DEC-002`에 그 근거를 남긴다.
+결정 전에는 Bun을 유지하는 선택도 가능했지만, `DEC-002`에서 **Node runtime 위의 Elysia가 Accepted**됐다. Bun 경로는 현재 채택하지 않으며, 런타임 이원화를 새로 선택하려면 별도 ADR이 필요하다.
 
 ## Recommendation
 
@@ -86,7 +86,7 @@ Bun을 유지하는 선택도 여전히 가능하다. 그 경우 런타임 이�
 
 ### Bun을 채택할 경우의 조건
 
-`DEC-002`에서 Bun을 선택한다면 다음을 함께 승인하는 것으로 본다.
+결정 전 `DEC-002`에서 Bun을 선택했다면 다음을 함께 승인하는 대안 시나리오였다. 현재 결정은 Node runtime 위의 Elysia이며 이 대안은 채택하지 않는다.
 
 - browser collector를 브라우저 구동까지 포함한 별도 Node 애플리케이션으로 분리한다. `apps/`에 Node 전용 deployable이 하나 늘어난다.
 - 런타임 이원화에 따른 CI matrix, 컨테이너 이미지, 의존성 잠금 파일 관리 비용을 감수한다.
