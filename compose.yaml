@@ -1,0 +1,79 @@
+# Local development dependencies only. These services are not production deployment configuration.
+# Select exactly one profile:
+#   docker compose --profile persistent up -d --wait
+#   docker compose --profile ephemeral up -d --wait
+# Persistent cleanup (keeps data): docker compose --profile persistent down
+# Persistent data deletion (intentional): docker compose --profile persistent down --volumes
+# Ephemeral cleanup (all data is tmpfs and disappears when containers stop): docker compose --profile ephemeral down
+#
+# The fallback PostgreSQL credentials below are deliberately named UNSAFE and are
+# suitable only for a local machine. Override them with TECHPULSE_DEV_POSTGRES_* if needed.
+
+x-postgres-environment: &postgres-environment
+  POSTGRES_DB: ${TECHPULSE_DEV_POSTGRES_DB:-techpulse_dev}
+  POSTGRES_USER: ${TECHPULSE_DEV_POSTGRES_USER:-techpulse_dev_unsafe}
+  POSTGRES_PASSWORD: ${TECHPULSE_DEV_POSTGRES_PASSWORD:-unsafe-local-development-only}
+
+x-postgres-healthcheck: &postgres-healthcheck
+  test:
+    - CMD-SHELL
+    - >-
+      pg_isready --quiet --username="$${POSTGRES_USER}" --dbname="$${POSTGRES_DB}"
+      && psql --no-psqlrc --tuples-only --no-align --username="$${POSTGRES_USER}"
+      --dbname="$${POSTGRES_DB}"
+      --command="SELECT 1 FROM pg_available_extensions WHERE name = 'vector';"
+      | grep --quiet '^1$'
+  interval: 5s
+  timeout: 5s
+  retries: 20
+  start_period: 5s
+
+x-redis-healthcheck: &redis-healthcheck
+  test: ["CMD", "redis-cli", "ping"]
+  interval: 5s
+  timeout: 3s
+  retries: 20
+  start_period: 3s
+
+services:
+  postgres-persistent:
+    image: pgvector/pgvector:pg17
+    profiles: [persistent]
+    environment: *postgres-environment
+    ports:
+      - 127.0.0.1:5432:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck: *postgres-healthcheck
+
+  redis-persistent:
+    image: redis:7.4-alpine
+    profiles: [persistent]
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - 127.0.0.1:6379:6379
+    volumes:
+      - redis-data:/data
+    healthcheck: *redis-healthcheck
+
+  postgres-ephemeral:
+    image: pgvector/pgvector:pg17
+    profiles: [ephemeral]
+    environment: *postgres-environment
+    ports:
+      - 127.0.0.1:5432:5432
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck: *postgres-healthcheck
+
+  redis-ephemeral:
+    image: redis:7.4-alpine
+    profiles: [ephemeral]
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - 127.0.0.1:6379:6379
+    healthcheck: *redis-healthcheck
+
+volumes:
+  postgres-data:
+  redis-data:
