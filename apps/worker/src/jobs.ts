@@ -6,6 +6,7 @@ import {
 
 export const WORKER_JOB_SCHEMA_VERSION = 1 as const;
 export const COLLECTION_JOB_NAME = 'collection' as const;
+export const NORMALIZATION_JOB_NAME = 'normalization' as const;
 export const MAX_JOB_ATTEMPTS = 5 as const;
 export const RETRY_BACKOFF_BASE_MS = 1_000 as const;
 export const RETRY_BACKOFF_MAX_MS = 16_000 as const;
@@ -22,6 +23,16 @@ export interface CollectionJobData {
   readonly payload: CollectionJobPayload;
   readonly scheduleWindow: ScheduleWindow;
   readonly naturalKey: string;
+}
+
+export interface NormalizationJobData {
+  readonly schemaVersion: typeof WORKER_JOB_SCHEMA_VERSION;
+  readonly stage: 'normalization';
+  readonly rawItemId: string;
+  readonly sourceKey: SourceKey;
+  readonly runId: string;
+  readonly externalId: string;
+  readonly payloadHash: string;
 }
 
 export class WorkerJobValidationError extends Error {
@@ -115,6 +126,81 @@ export function parseCollectionJobData(value: unknown): CollectionJobData {
     throw new WorkerJobValidationError('job data naturalKey does not match payload and window');
   }
   return data;
+}
+
+export function createNormalizationJobData(input: {
+  readonly rawItemId: string;
+  readonly sourceKey: SourceKey;
+  readonly runId: string;
+  readonly externalId: string;
+  readonly payloadHash: string;
+}): NormalizationJobData {
+  return {
+    schemaVersion: WORKER_JOB_SCHEMA_VERSION,
+    stage: 'normalization',
+    rawItemId: input.rawItemId,
+    sourceKey: input.sourceKey,
+    runId: input.runId,
+    externalId: input.externalId,
+    payloadHash: input.payloadHash,
+  };
+}
+
+export function parseNormalizationJobData(value: unknown): NormalizationJobData {
+  if (!isRecord(value)) {
+    throw new WorkerJobValidationError('Normalization job data must be a non-null object');
+  }
+
+  assertOnlyKeys(
+    value,
+    ['schemaVersion', 'stage', 'rawItemId', 'sourceKey', 'runId', 'externalId', 'payloadHash'],
+    'normalization job data',
+  );
+
+  if (value['schemaVersion'] !== WORKER_JOB_SCHEMA_VERSION) {
+    throw new WorkerJobValidationError(
+      `Invalid worker job schemaVersion: expected ${WORKER_JOB_SCHEMA_VERSION}, received ${String(value['schemaVersion'])}`,
+    );
+  }
+
+  if (value['stage'] !== 'normalization') {
+    throw new WorkerJobValidationError(
+      `Invalid stage: expected 'normalization', received '${String(value['stage'])}'`,
+    );
+  }
+
+  if (typeof value['rawItemId'] !== 'string' || value['rawItemId'].trim().length === 0) {
+    throw new WorkerJobValidationError('rawItemId must be a non-empty string');
+  }
+
+  if (typeof value['sourceKey'] !== 'string' || value['sourceKey'].trim().length === 0) {
+    throw new WorkerJobValidationError('sourceKey must be a non-empty string');
+  }
+
+  if (typeof value['runId'] !== 'string' || value['runId'].trim().length === 0) {
+    throw new WorkerJobValidationError('runId must be a non-empty string');
+  }
+
+  if (typeof value['externalId'] !== 'string' || value['externalId'].trim().length === 0) {
+    throw new WorkerJobValidationError('externalId must be a non-empty string');
+  }
+
+  if (
+    typeof value['payloadHash'] !== 'string' ||
+    !/^[0-9a-fA-F]{64}$/u.test(value['payloadHash'])
+  ) {
+    throw new WorkerJobValidationError('payloadHash must be a 64-character hex string');
+  }
+
+  return {
+    schemaVersion: WORKER_JOB_SCHEMA_VERSION,
+    stage: 'normalization',
+    rawItemId: value['rawItemId'],
+    sourceKey: value['sourceKey'] as SourceKey,
+    runId: value['runId'],
+    externalId: value['externalId'],
+    payloadHash: value['payloadHash'],
+  };
 }
 
 export function retryBackoffMs(attempt: number): number {

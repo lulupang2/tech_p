@@ -52,7 +52,13 @@ export type {
   PaginationParams,
   PaginatedResult,
   DocumentFilter,
+  SaveNormalizedDocumentInput,
+  SaveNormalizedDocumentResult,
   DocumentRepositoryPort,
+  MetricObservationRecord,
+  InsertMetricObservationInput,
+  MetricObservationFilter,
+  MetricObservationRepositoryPort,
   SourceRepositoryPort,
 } from './repository.js';
 export type {
@@ -92,3 +98,31 @@ export type {
   RawIngestionServiceOptions,
   RawIngestionServicePort,
 } from './ingestion.js';
+
+export {
+  SANITIZER_VERSION,
+  decodeHtmlEntities,
+  stripInvisibleCharacters,
+  sanitizeHtml,
+  sanitizeText,
+} from './sanitizer.js';
+
+export {
+  NORMALIZER_VERSION,
+  computeNormalizedHash,
+  normalizeLicenseSlug,
+  parseDateOrNull,
+  createNormalizationService,
+} from './normalization.js';
+
+export type {
+  ArtifactType,
+  NormalizedMetricType,
+  DocumentRevisionStatus,
+  NormalizedDocument,
+  NormalizedMetricObservation,
+  NormalizationResult,
+  RawItemInput,
+  NormalizationServicePort,
+  NormalizationServiceOptions,
+} from './normalization.js';

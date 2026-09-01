@@ -1,16 +1,20 @@
 export {
   COLLECTION_JOB_NAME,
+  NORMALIZATION_JOB_NAME,
   MAX_JOB_ATTEMPTS,
   RETRY_BACKOFF_BASE_MS,
   RETRY_BACKOFF_MAX_MS,
   WORKER_JOB_SCHEMA_VERSION,
   collectionJobNaturalKey,
   createCollectionJobData,
+  createNormalizationJobData,
   normalizeScheduleWindow,
   parseCollectionJobData,
+  parseNormalizationJobData,
   retryBackoffMs,
   WorkerJobValidationError,
   type CollectionJobData,
+  type NormalizationJobData,
   type ScheduleWindow,
 } from './jobs.js';
 export {
@@ -43,6 +47,12 @@ export {
   type EnqueueResult,
 } from './scheduler.js';
 export { createIngestionJobHandler, type IngestionJobHandlerOptions } from './ingestion.js';
+export {
+  createNormalizationJobHandler,
+  type NormalizationJobHandlerOptions,
+  type NormalizationExecutionResult,
+  type NormalizationOperation,
+} from './normalization.js';
 import { loadWorkerConfig, type Environment, type WorkerConfig } from './config.js';
 import {
   createStructuredLogger,
