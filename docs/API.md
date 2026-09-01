@@ -266,7 +266,6 @@ stack trace, SQL, provider body, secret는 응답에 포함하지 않는다.
 
 ## 8. 미결정 사항
 
-- schema library는 [ADR-0001](./adr/0001-backend-framework.md)에 따라 Elysia의 TypeBox 계열 `t.*`를 단일 출처로 사용한다.
 - 응답 streaming 도입 여부
 - 공개 데모 인증·rate-limit 기준
 - answer 원문 저장·재조회 endpoint 여부
