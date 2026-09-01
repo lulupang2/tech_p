@@ -94,6 +94,8 @@ PIPE-005 adapter는 topic을 `(slug, taxonomy_version)`으로 upsert하고 docum
 
 `query_signature`와 `is_incomplete`는 검색 기반 관측값의 재현을 위한 필드다. GitHub search처럼 우리가 만든 질의가 값을 결정하는 source는 질의 문자열과 파라미터의 정규화된 서명을 함께 저장하고, 응답이 `incomplete_results`를 보고하면 `is_incomplete`를 true로 둔다. 이 두 필드가 없으면 관측값이 어떤 조건에서 나왔는지 사후에 알 수 없다.
 
+PIPE-006 aggregation은 source observation row를 삭제하거나 덮어쓰지 않는 deterministic 파생 연산이다. `metric_type`별 허용 unit을 검증하고 metric type 또는 unit이 다른 값은 합산하지 않는다. `community_mentions`의 accepted duplicate-cluster identity만 중복 제거 키로 사용하며, `repo_attention`의 수집 시작 이전 window와 입력이 없는 window는 생성하지 않는다.
+
 ### 3.5 삭제, 감사, 멱등성
 
 다른 문서가 요구하지만 위 카탈로그에 없던 상태를 명시한다.

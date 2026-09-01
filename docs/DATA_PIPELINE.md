@@ -150,7 +150,14 @@ cluster membership는 `algorithm_version`, `confidence`, immutable `revision_id`
 
 ### 5.8 Publish
 
- document revision의 유효한 chunk가 하나 이상 준비된 트랜잭션에서만 searchable/published로 바꾼다. chunk가 없거나 빈 content·잘못된 token count/hash이면 publish를 거부한다. embedding은 승인된 provider가 생긴 뒤 필수 조건을 추가하며, 질의 경로는 `published` revision만 검색한다.
+document revision의 유효한 chunk가 하나 이상 준비된 트랜잭션에서만 searchable/published로 바꾼다. chunk가 없거나 빈 content·잘못된 token count/hash이면 publish를 거부한다. embedding은 승인된 provider가 생긴 뒤 필수 조건을 추가하며, 질의 경로는 `published` revision만 검색한다.
+
+### 5.9 Aggregate metrics
+
+- 8개 metric type은 각각 허용된 metric-specific unit으로만 집계한다. 서로 다른 metric type·unit은 같은 값으로 합산하지 않으며, 허용되지 않은 조합은 입력 오류로 격리한다.
+- `community_mentions`는 accepted/exact duplicate-cluster identity가 있을 때 cluster당 한 번만 집계한다. 원본 source observations와 raw provenance는 삭제·수정하지 않는다.
+- `repo_attention`은 collection start 이후에 수집된 snapshot observation만 사용한다. 수집 시작 이전 window를 backfill하거나 합성하지 않는다.
+- 검색 파생 observation은 `query_signature`와 `is_incomplete`를 집계 결과에 전파한다. 입력 observation이 없는 window는 결과를 만들지 않고 0으로 채우지 않는다. 모든 window는 UTC instant로 검증한다.
 
 ## 6. Playwright collector 규칙
 

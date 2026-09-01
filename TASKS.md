@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`~`FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`~`DB-006`, `QUE-001`, `AI-001`, `DEC-008`, `COL-001`~`COL-010` (수집기 11개 전 소스 완료), `PIPE-001` (원시 수집 파이프라인 오케스트레이션 완료), `PIPE-002` (결정적 정규화 완료), `PIPE-003` (exact dedup·duplicate cluster 완료), `PIPE-004` (near-duplicate versioned clustering 완료), `PIPE-005` (deterministic topic classification·heading-aware chunking 완료), `EXP-004` (240-pair synthetic/redacted holdout 실험 완료), `EVAL-001` (골든셋 레이블링 완료). 이후 task는 표의 dependency gate를 따른다.
+- 구현 상태: `FND-001`~`FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`~`DB-006`, `QUE-001`, `AI-001`, `DEC-008`, `COL-001`~`COL-010` (수집기 11개 전 소스 완료), `PIPE-001` (원시 수집 파이프라인 오케스트레이션 완료), `PIPE-002` (결정적 정규화 완료), `PIPE-003` (exact dedup·duplicate cluster 완료), `PIPE-004` (near-duplicate versioned clustering 완료), `PIPE-005` (deterministic topic classification·heading-aware chunking 완료), `PIPE-006` (deterministic metric aggregation 완료), `EXP-004` (240-pair synthetic/redacted holdout 실험 완료), `EVAL-001` (골든셋 레이블링 완료). 이후 task는 표의 dependency gate를 따른다.
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -128,7 +128,7 @@
 | EXP-004 | deduplication 실험 실행 | PIPE-003, COL-002, COL-003 | DONE | [EXP-004](./docs/experiments/EXP-004-deduplication.md)의 240-pair labeled synthetic/redacted dataset(160 train/80 fixed holdout), 고정 normalization/boilerplate, blinded train threshold search, 4 variant confusion matrix 및 source/type error analysis가 기록됨; 추천 `v2_lexical_fingerprint` threshold 0.80의 holdout precision 1.0000·false-merge rate 0.0000 gate 통과; raw provenance·`verbatim_only` safeguard와 reclustering migration plan 포함 |
 | PIPE-004 | near-duplicate 후보·versioned clustering | EXP-004 | DONE | 승인 lexical algorithm `exp004-dedup-v1.0.0`·threshold `0.80`·fixed boilerplate만 사용; candidate/link suggestion만 반환하고 low-confidence·threshold-near·`verbatim_only`는 manual review; versioned append-only membership가 immutable revision/raw provenance와 citation을 보존 |
 | PIPE-005 | topic alias/classification과 chunking | PIPE-004, DB-003 | DONE | [TOPIC_TAXONOMY](./docs/TOPIC_TAXONOMY.md) `2026-09-01.1`의 deterministic alias가 대소문자·단어 경계·한국어 조사를 처리하고 ambiguous alias의 context/source 제약과 multiple topics를 unit test로 검증함; `deterministic-alias-2026-09-01.1`/confidence를 versioned `document_topics`에 멱등 저장; `heading-aware-v1.0.0` stable chunks가 heading path·code/table unit·SHA-256·ordinal/token count를 보존하고 valid chunk 전 publish를 차단함 |
-| PIPE-006 | metric aggregation | COL-003, COL-004, COL-007, COL-009, COL-010, PIPE-003, DB-004 | READY | 8개 지표가 각각 고유 unit으로 저장되고 서로 합산되지 않음; `community_mentions`는 duplicate cluster 기준; `repo_attention`은 스냅샷 기준이며 수집 시작 이전 구간을 생성하지 않음; `query_signature`와 `is_incomplete`가 검색 기반 관측값에 기록됨; missing window를 0으로 오인하지 않는 테스트 통과 |
+| PIPE-006 | metric aggregation | COL-003, COL-004, COL-007, COL-009, COL-010, PIPE-003, DB-004 | DONE | 8개 지표가 각각 metric-specific 허용 unit으로 검증되고 서로 합산되지 않음; `community_mentions`는 accepted/exact duplicate cluster identity 기준으로 dedup하되 원본 observation/provenance를 보존; `repo_attention`은 collection start 이후 snapshot만 허용하고 pre-collection history를 합성하지 않음; `query_signature`와 `is_incomplete`를 전파하며 missing window를 0으로 오인하지 않음; failure/unit-separation/cluster-dedup/snapshot-boundary focused test 통과 |
 | PIPE-007 | replay, dead-letter, source disable flow | PIPE-001, PIPE-005 | READY | run/raw/stage 범위 replay가 멱등; 영구 실패와 policy failure를 구분; disabled source는 새 job을 만들지 않음; 운영 audit event 기록 |
 
 ### DB-001 완료 증빙 (2026-09-01; merge `6033926`)
@@ -282,3 +282,10 @@ flowchart TD
 - `@techpulse/database` adapter는 `(slug, taxonomy_version)` topic upsert, versioned `document_topics` append-only idempotent save/list와 `(revision, ordinal, chunker_version)` chunk idempotent save/list를 제공한다. 기존 evidence를 삭제하지 않고 같은 version의 내용 충돌은 거부한다.
 - `heading-aware-v1.0.0` chunker는 heading path, stable ordinal, SHA-256 content hash, deterministic token count를 기록하고 code fence/table unit을 보존한다. valid chunk가 없거나 content/token/hash가 유효하지 않으면 revision publish를 거부한다.
 - 검증: `packages/domain` PIPE-005 focused 2개 test file·5개 test 통과, domain/database typecheck 통과; PostgreSQL adapter/publish integration fixture는 `DATABASE_URL` 미설정 환경에서 skip된다. ADR-0006 Proposed 상태를 유지하며 provider SDK·LLM 구현은 추가하지 않았다.
+
+### PIPE-006 완료 증빙 (2026-09-02)
+
+- `@techpulse/domain`에 8개 metric type과 metric-specific 허용 unit을 검증하는 provider-neutral deterministic aggregation service를 구현했다. 서로 다른 type·unit은 합산하지 않고, UTC window·safe integer·invalid input을 검증하며 입력 observation은 변경·삭제하지 않는다.
+- `community_mentions`는 accepted/exact duplicate-cluster identity별로만 dedup하고 raw/source provenance를 결과에 보존한다. `repo_attention`은 collection start 이전 window를 거부하는 snapshot metric이며, query-derived observation의 `query_signature`·`is_incomplete`를 전파하고 누락 window를 생성하지 않는다.
+- worker normalization과 Drizzle metric repository에서 공통 unit/type validation을 적용하고 기존 natural-key upsert를 유지했다. provider SDK·LLM 구현은 추가하지 않았다.
+- 검증: `packages/domain` PIPE-006 focused 6개 test 통과, worker normalization focused 4개 test 통과, domain/worker/database static checks 통과; DB integration은 `DATABASE_URL` 미설정 환경에서 skip됐다.

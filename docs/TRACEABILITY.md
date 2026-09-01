@@ -19,7 +19,7 @@
 | FR-007 자연어 질의 | RAG §4 | RAG-001 | component |
 | FR-008 기간 검색 | RAG §4~5, DATABASE §4 | RAG-001, RAG-002, DB-006 | unit, integration, RAG eval |
 | FR-009 근거 기반 답변 | RAG §6, §8 | RAG-004, RAG-005 | component, RAG eval |
-| FR-010 비교 | RAG §7 | DB-004, PIPE-006, RAG-006, WEB-003, COL-009, COL-010 | unit, component, E2E |
+| FR-010 비교 | RAG §7, DATA_PIPELINE §5.9 | DB-004, PIPE-006, RAG-006, WEB-003, COL-009, COL-010 | metric aggregation unit, component, E2E |
 | FR-011 출처 표시 | API §2.1, RAG §5.3·§6.1, SOURCE_RIGHTS | API-003, WEB-002 | contract, E2E |
 | FR-012 운영 가시성 | API §3, ARCHITECTURE §9 | PIPE-001, API-004, OPS-002 | contract, integration |
 | FR-013 실패 복구 | DATA_PIPELINE §7 | QUE-001, PIPE-007 | integration |

@@ -44,7 +44,7 @@ import type {
   PaginationParams,
   PaginatedResult,
 } from '@techpulse/domain';
-import { DEDUPLICATION_ALGORITHM_VERSION } from '@techpulse/domain';
+import { DEDUPLICATION_ALGORITHM_VERSION, validateMetricObservation } from '@techpulse/domain';
 import {
   documents,
   documentRevisions,
@@ -1026,6 +1026,7 @@ export function createMetricObservationRepository(
 ): MetricObservationRepositoryPort {
   return {
     async upsert(input: InsertMetricObservationInput): Promise<MetricObservationRecord> {
+      validateMetricObservation(input);
       const row = await db.transaction(async (tx) => {
         const [inserted] = await tx
           .insert(metricObservations)

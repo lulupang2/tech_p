@@ -70,6 +70,8 @@
 | `model_activity` | models, datasets, downloads | Hugging Face 생성 수와 다운로드 수 |
 | `package_downloads` | downloads | source가 제공한 기간·단위의 다운로드 수. mirror·CI·bot 포함 방향성 지표 |
 
+Metric observation은 위 표의 metric type과 허용 unit 조합만 사용한다. `metric aggregation`은 원본 observation을 보존한 채 같은 type·unit·subject·UTC window의 비교 가능한 값만 deterministic하게 묶는 파생 연산이다. accepted duplicate-cluster identity는 `community_mentions` deduplication에만 사용하며, `repo_attention`은 collection snapshot 경계 이후 값만 의미가 있다.
+
 “인기”, “관심도”, “점수”는 사용자 표시 용어로 사용하지 않는다. 표시할 때는 지표명과 단위를 함께 쓴다. 서로 다른 지표를 하나의 종합 점수로 합치지 않는다.
 
 ## 4. 식별자 접두어

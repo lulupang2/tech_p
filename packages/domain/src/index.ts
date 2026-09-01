@@ -186,6 +186,21 @@ export type {
   EnrichmentServicePort,
 } from './enrichment.js';
 
+export {
+  METRIC_TYPES,
+  METRIC_UNITS,
+  MetricAggregationError,
+  validateMetricObservation,
+  aggregateMetricObservations,
+  createMetricAggregationService,
+} from './metrics.js';
+export type {
+  DuplicateMembershipStatus,
+  MetricAggregationObservation,
+  AggregatedMetricObservation,
+  MetricAggregationServicePort,
+} from './metrics.js';
+
 export type {
   DeduplicationMatchReason,
   NearDuplicateReviewReason,

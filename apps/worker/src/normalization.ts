@@ -8,6 +8,7 @@ import type {
   RawItemRepositoryPort,
   SourceRepositoryPort,
 } from '@techpulse/domain';
+import { validateMetricObservation } from '@techpulse/domain';
 import type { NormalizationJobData } from './jobs.js';
 
 export interface NormalizationJobHandlerOptions {
@@ -132,6 +133,7 @@ export function createNormalizationJobHandler(
       let metricsSaved = 0;
       for (const metric of normResult.metrics) {
         if (sourceId) {
+          validateMetricObservation(metric);
           await metricObservationRepository.upsert({
             sourceId,
             subjectKey: metric.subjectKey,
