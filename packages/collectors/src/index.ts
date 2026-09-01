@@ -1,2 +1,4 @@
-/** Collector ports and source adapters are introduced by COL-001 onward. */
-export {};
+export { SOURCE_POLICIES } from './policies.js';
+export { validateUrl, stripPii, DefaultPolicyGuard } from './guard.js';
+export { encodeOpaqueCursor, decodeOpaqueCursor } from './cursor.js';
+export { BaseCollector } from './base.js';

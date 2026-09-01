@@ -105,7 +105,14 @@ importers:
         specifier: ^4.20.5
         version: 4.23.13
 
-  packages/collectors: {}
+  packages/collectors:
+    dependencies:
+      '@techpulse/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@techpulse/domain':
+        specifier: workspace:*
+        version: link:../domain
 
   packages/contracts:
     dependencies:

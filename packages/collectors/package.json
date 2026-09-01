@@ -13,5 +13,9 @@
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@techpulse/contracts": "workspace:*",
+    "@techpulse/domain": "workspace:*"
   }
 }

@@ -49,3 +49,12 @@ export type {
   ExactVectorQueryParams,
   SearchServicePort,
 } from './search.js';
+export type {
+  SourceKey,
+  CollectedRawItem,
+  CollectionResult,
+  CollectionContext,
+  SourcePolicy,
+  CollectorPort,
+  PolicyGuardPort,
+} from './collector.js';
