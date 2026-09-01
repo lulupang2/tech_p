@@ -143,17 +143,19 @@ embedding column은 모델 dimensions가 결정된 후 `vector(n)`으로 정의�
 
 ## 6. 일관성과 트랜잭션
 
-- raw item upsert와 collection count는 한 트랜잭션 또는 재계산 가능한 방식으로 처리한다.
+- raw item upsert와 collection count는 한 transaction 또는 재계산 가능한 방식으로 처리한다.
 - document revision, chunks, embeddings가 모두 유효해진 뒤 searchable status를 전환한다.
 - queue를 도입하면 DB commit 이후 job 유실을 막기 위해 transactional outbox를 추천한다.
 - `current_revision_id` 변경과 publish는 원자적으로 처리한다.
 - 삭제는 즉시 hard delete보다 tombstone → 검색 제외 → 보존 정책에 따른 purge 순서를 따른다.
 
+Neon runtime의 일반 단일 쿼리는 pooled endpoint를 사용하고, 위 원자적 작업은 Node 호환 WebSocket `Pool`/`Client`의 짧은 transaction에서 처리한다. transaction 안에서 queue·외부 API·LLM을 기다리지 않으며 session 변수, temporary table, advisory lock, named prepared statement 같은 connection-local state를 기본 경로의 불변 조건으로 삼지 않는다. commit 결과가 불명확한 transaction은 무조건 재시도하지 않고 자연 키·idempotency로 중복을 방지한다([ADR-0011](./adr/0011-neon-serverless-postgresql.md)).
+
 ## 7. 마이그레이션과 데이터 버전
 
-[ADR-0009](./adr/0009-drizzle-orm-migrations.md)에 따라 `packages/database`가 Drizzle ORM schema, repository adapter와 Drizzle Kit migration 설정을 소유한다. schema 선언을 변경하면 `drizzle-kit generate`로 SQL migration을 만들고, 생성 SQL과 필요한 custom SQL을 검토·커밋한 뒤 `drizzle-kit migrate`로 적용한다. `drizzle-kit push`는 disposable local exploration에만 한정하고 공유·운영 환경의 migration history를 대체하지 않는다.
+[ADR-0009](./adr/0009-drizzle-orm-migrations.md)와 [ADR-0011](./adr/0011-neon-serverless-postgresql.md)에 따라 `packages/database`가 Drizzle ORM schema, repository adapter와 Drizzle Kit migration 설정을 소유한다. 공유·운영 Neon에서는 일반 runtime query에 pooled endpoint를 사용하되 migration은 `DATABASE_URL_DIRECT`로 direct endpoint에 연결한다. schema 선언을 변경하면 `drizzle-kit generate`로 SQL migration을 만들고, 생성 SQL과 필요한 custom SQL을 검토·커밋한 뒤 `drizzle-kit migrate`로 적용한다. `drizzle-kit push`는 disposable local exploration에만 한정하고 공유·운영 환경의 migration history를 대체하지 않는다.
 
-첫 migration은 PostgreSQL `vector` extension을 bootstrap한다. Drizzle Kit이 직접 표현하지 못하는 extension, pgvector operator class, expression/partial index는 명시적인 custom SQL로 관리한다. migration metadata와 커밋된 SQL은 적용 이력을 추적할 수 있어야 한다.
+첫 migration은 PostgreSQL `vector` extension을 bootstrap한다. Drizzle Kit이 직접 표현하지 못하는 extension, pgvector operator class, expression/partial index는 명시적인 custom SQL로 관리한다. Neon migration role에 extension 설치 권한을 부여하고 runtime role에는 DDL 권한을 부여하지 않는다. migration metadata와 커밋된 SQL은 적용 이력을 추적할 수 있어야 한다.
 
 적용된 migration은 immutable로 취급한다. 이미 적용된 파일을 수정·삭제하지 않고, 오류는 backward-compatible forward-fix migration으로 수정한다. rollback을 자동 역변환으로 가정하지 않으며, 장애 복구는 백업/PITR 또는 forward-fix 절차를 따른다.
 

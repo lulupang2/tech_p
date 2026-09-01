@@ -23,6 +23,7 @@ ADR은 중요한 기술 선택의 맥락과 승인을 기록한다. `Proposed` A
 | [ADR-0008](./0008-frontend-sveltekit.md) | Frontend framework change to SvelteKit | **Accepted** (2026-09-01) | SvelteKit, UI 전달과 최소 BFF로 제한 |
 | [ADR-0009](./0009-drizzle-orm-migrations.md) | Drizzle ORM and Drizzle Kit migration strategy | **Accepted** (2026-09-01) | Drizzle ORM + Drizzle Kit, 검토·커밋된 forward-only SQL migration |
 | [ADR-0010](./0010-turborepo-monorepo.md) | Turborepo monorepo orchestration | **Accepted** (2026-09-01) | pnpm workspaces + Turborepo, 승인 package 경계와 dependency-aware task graph |
+| [ADR-0011](./0011-neon-serverless-postgresql.md) | Serverless Neon PostgreSQL runtime and connection strategy | **Accepted** (2026-09-02) | Neon Serverless Postgres, Drizzle 유지, pooled runtime·WebSocket transaction·direct migration endpoint |
 
 ## 작성 규칙
 

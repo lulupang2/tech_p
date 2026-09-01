@@ -95,13 +95,13 @@ flowchart LR
 
 ## 7. 데이터베이스와 secret
 
-- API와 worker 역할을 분리하고 필요한 table/action만 부여하는 것을 추천한다.
-- DB는 public network에 노출하지 않는다.
+- API와 worker 역할을 분리하고 필요한 table/action만 부여한다. Neon runtime role과 migration role도 분리한다.
+- Neon pooled/direct connection string은 secret manager 또는 배포 환경 주입으로만 제공한다. DB는 public network에 노출하지 않고, client bundle·로그·오류 본문에 connection string을 기록하지 않는다.
 - migration credential과 runtime credential을 분리한다.
 - backup은 암호화하고 restore 권한을 제한한다.
 - raw payload와 query data를 log에 직렬화하지 않는다.
-- 개발용 `.env.example`에는 이름만 두고 실제 값을 넣지 않는다.
-- secret rotation 후 재배포·worker restart 절차를 runbook에 둔다.
+- 개발용 `.env.example`에는 `DATABASE_URL`·`DATABASE_URL_DIRECT`의 이름만 두고 실제 값을 넣지 않는다.
+- secret rotation 후 API 재배포·worker restart 절차를 runbook에 둔다.
 
 ## 8. 개인정보·저작권·수집 윤리
 
