@@ -5,7 +5,16 @@
  * Exposes lazy client factory, schema entrypoint, and migration utilities.
  */
 
-export { schema, type DatabaseSchema } from './schema/index.js';
+export {
+  collectionRuns,
+  pipelineEvents,
+  rawItems,
+  schema,
+  sources,
+  type DatabaseSchema,
+  type RawItemInsert,
+  upsertRawItem,
+} from './schema/index.js';
 export {
   type DatabaseConfig,
   type Environment,
