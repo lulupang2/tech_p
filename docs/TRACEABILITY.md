@@ -34,10 +34,10 @@
 | NFR-003 멱등성 | DATA_PIPELINE §5.3, DATABASE §6 | DB-002, PIPE-001, PIPE-003 | integration |
 | NFR-004 검색 품질 | RAG §5, §11, EVAL_GOLDEN_SET | RAG-002, RAG-003, EXP-002, EVAL-002 | RAG evaluation |
 | NFR-005 인용 정확성 | RAG §6, §6.1, EVAL_GOLDEN_SET | RAG-005, EVAL-002 | RAG evaluation |
-| NFR-006 가용성 | ARCHITECTURE §5, ADR-0012 | FND-004, OPS-001, OPS-004 | Compose healthcheck, HTTPS healthcheck, rollback 절차 |
+| NFR-006 가용성 | ARCHITECTURE §5, ADR-0013 | FND-004, OPS-001, OPS-004 | Compose healthcheck, HTTPS healthcheck, rollback 절차 |
 | NFR-007 관측성 | ARCHITECTURE §9 | OBS-001, OPS-002 | unit(redaction), 운영 관측 |
 | NFR-008 보안 | SECURITY 전체 | FND-005, COL-001, SEC-001, SEC-002, SEC-003 | security |
-| NFR-009 배포 무결성 | ADR-0012, SECURITY §6 | OPS-004 | SHA image, pinned SSH host key, approval gate, static/config validation |
+| NFR-009 배포 무결성 | ADR-0013, SECURITY §6 | OPS-004 | SHA image, pinned SSH host key, approval gate, Caddy validate/reload, static/config validation |
 
 ## 3. 위협
 

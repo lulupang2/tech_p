@@ -34,7 +34,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    expose: ['3000']
+    ports:
+      - '127.0.0.1:3000:3000'
 
   worker:
     image: ${IMAGE_PREFIX}/worker:${IMAGE_TAG}
@@ -66,25 +67,9 @@ services:
       PORT: 5173
       ORIGIN: https://signal.jisung.lol
       PUBLIC_API_BASE_URL: https://signal.jisung.lol
-    expose: ['5173']
-
-  caddy:
-    image: caddy:2.10-alpine
-    restart: unless-stopped
+      __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: signal.jisung.lol
     ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-      - caddy-config:/config
-    depends_on:
-      api:
-        condition: service_started
-      web:
-        condition: service_started
+      - '127.0.0.1:5173:5173'
 
 volumes:
   redis-data:
-  caddy-data:
-  caddy-config:

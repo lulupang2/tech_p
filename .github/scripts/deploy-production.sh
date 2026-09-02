@@ -7,10 +7,12 @@ DEPLOY_ROOT="${3:-/opt/signal-archive}"
 COMPOSE_FILE="$DEPLOY_ROOT/compose.production.yaml"
 ENV_FILE="$DEPLOY_ROOT/.env"
 STATE_FILE="$DEPLOY_ROOT/current-tag"
+CADDY_SNIPPET_PATH="${CADDY_SNIPPET_PATH:-/etc/caddy/conf.d/signal-archive.caddy}"
+CADDY_SNIPPET_SOURCE="$DEPLOY_ROOT/Caddyfile"
 
 test -f "$ENV_FILE"
 test -f "$COMPOSE_FILE"
-test -f "$DEPLOY_ROOT/Caddyfile"
+test -f "$CADDY_SNIPPET_SOURCE"
 
 previous_tag=''
 if [[ -s "$STATE_FILE" ]]; then
@@ -19,6 +21,14 @@ fi
 
 compose() {
   docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+}
+
+validate_and_reload_host_caddy() {
+  # The systemd Caddy service owns the complete config and existing routes.
+  # Install only this site's snippet, then validate and reload that service.
+  sudo install -D -m 644 "$CADDY_SNIPPET_SOURCE" "$CADDY_SNIPPET_PATH"
+  sudo caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+  sudo systemctl reload caddy
 }
 
 healthcheck() {
@@ -33,6 +43,8 @@ healthcheck() {
 }
 
 export IMAGE_TAG IMAGE_PREFIX
+compose config --quiet
+validate_and_reload_host_caddy
 compose pull
 
 # Drizzle migrations are forward-only and must complete before application rollout.

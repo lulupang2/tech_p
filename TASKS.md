@@ -32,7 +32,7 @@
 | DEC-005 | frontend 승인 | - | DONE | **SvelteKit 확정.** ADR-0005(Next.js)가 Accepted됐으나 같은 날 [ADR-0008](./docs/adr/0008-frontend-sveltekit.md)로 대체되어 `Superseded`; RAG·DB·수집 로직은 backend API에만 두고 server 기능은 UI 전달과 최소 BFF로 제한; SSOT §3.3·ARCHITECTURE §6 동기화 완료. frontend 코드가 없는 시점의 변경이라 마이그레이션 비용 0 |
 | DEC-006 | repository layout/package manager/orchestration 승인 | - | DONE | [ADR-0010](./docs/adr/0010-turborepo-monorepo.md)이 Accepted(2026-09-01); pnpm workspaces + Turborepo와 승인 package 경계·의존 방향이 SSOT §3.3·ARCHITECTURE §6·§7에 반영됨. [ADR-0007](./docs/adr/0007-repository-layout.md)는 Superseded |
 | DEC-008 | database hosting과 serverless connection 전략 승인 | - | DONE | 사용자가 Neon serverless PostgreSQL 전환을 명시 승인했고 [ADR-0011](./docs/adr/0011-neon-serverless-postgresql.md)이 Accepted(2026-09-02); Drizzle/Drizzle Kit·PostgreSQL/pgvector를 유지하면서 pooled runtime endpoint, direct migration endpoint, credential 분리, pooler session 제약과 local Docker fallback을 SSOT·ARCHITECTURE·DATABASE·SECURITY에 반영 |
-| DEC-009 | production deployment adapter 승인 | - | DONE | 사용자가 [ADR-0012](./docs/adr/0012-production-deployment.md)의 Docker Compose + GHCR + SSH 방식을 승인(2026-09-03); GitHub production approval, pinned host key, Caddy TLS/reverse proxy와 SHA rollback을 문서화 |
+| DEC-009 | production deployment adapter 승인 | - | DONE | 사용자가 [ADR-0013](./docs/adr/0013-production-deployment.md)의 Docker Compose + GHCR + SSH 방식을 승인(2026-09-03); GitHub production approval, pinned host key, host Caddy snippet validate/reload, loopback API/web, SHA rollback을 문서화 |
 | EXP-005 | foundation stack spike 실행 | - | DONE | [EXP-005](./docs/experiments/EXP-005-foundation-spike.md) 5개 run 측정 완료(2026-09-01); Playwright는 Bun 실패·Node 통과, 계약 스키마 단일 소스·BullMQ 멱등성·pgvector·Vitest·Testcontainers·pnpm focused test 모두 통과; 미측정 항목이 구현 task로 이관됨; spike code 폐기 범위 명시 |
 
 ## 3. Project foundation
@@ -217,8 +217,7 @@
 
 | DOC-001 | developer/operator README와 runbook | OPS-001, OPS-002, OPS-003 | DONE | setup, source policy, collect/replay, query, evaluation, rotate secret, backup/restore, known limits가 clean-reader test를 통과 (2026-09-02) |
 
-| OPS-004 | GHCR SHA image와 SSH production deployment | OPS-001, DEC-009, API-001, DB-001 | DONE | production Compose/Caddy가 `signal.jisung.lol` TLS와 API/web routing을 정의; GitHub workflow가 production approval·concurrency·GHCR SHA push·pinned known_hosts SSH·migration-before-rollout·healthcheck·previous-SHA rollback을 수행; secret/.env 미커밋 |
-| DOC-001 | developer/operator README와 runbook | OPS-001, OPS-002, OPS-003 | BLOCKED | setup, source policy, collect/replay, query, evaluation, rotate secret, backup/restore, known limits가 clean-reader test를 통과 |
+| OPS-004 | GHCR SHA image와 SSH production deployment | OPS-001, DEC-009, API-001, DB-001 | DONE | production Compose는 Caddy 없이 API/web을 `127.0.0.1:3000`/`127.0.0.1:5173`에 publish하고, host-owned Caddy snippet이 `signal.jisung.lol` TLS와 routing을 정의; workflow/script가 production approval·concurrency·GHCR SHA push·pinned known_hosts SSH·Caddy validate/reload·migration-before-rollout·healthcheck·previous-SHA rollback을 수행; secret/.env 미커밋 |
 
 | MVP-001 | end-to-end MVP acceptance | TST-002, EVAL-002, SEC-003, OPS-001, OPS-002, DOC-001, FND-006 | BLOCKED | 승인 source 3개 이상 예약 수집; raw→normalize→dedup→embed→query 흐름; 사용자 예시 4개 결과·출처; 테스트/보안/RAG gate와 freshness/cost 보고서 통과 |
 
@@ -264,7 +263,7 @@ flowchart TD
 | Database | PostgreSQL + pgvector; Drizzle ORM + Drizzle Kit |
 
 
-미결정은 chat provider 승인(`DEC-007`은 embedding만 검증됨, chat 재승인은 ADR-0012), embedding adapter(`AI-002`), production corpus RAG gate(`EVAL-002`), hosting·배포 adapter다.
+미결정은 chat provider 승인(`DEC-007`은 embedding만 검증됨, chat 재승인은 ADR-0012), embedding adapter(`AI-002`), production corpus RAG gate(`EVAL-002`)다.
 
 미결정은 LLM·embedding provider(`DEC-007`)와 secret manager의 구체 제품이다. production hosting과 배포 adapter는 `DEC-009`/`OPS-004`로 해소됐다.
 

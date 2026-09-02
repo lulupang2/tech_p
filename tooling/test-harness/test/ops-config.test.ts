@@ -149,11 +149,16 @@ describe('OPS-004 production deployment configuration', () => {
     expect(compose).toContain('image: ${IMAGE_PREFIX}/api:${IMAGE_TAG}');
     expect(compose).toContain('image: ${IMAGE_PREFIX}/web:${IMAGE_TAG}');
     expect(compose).toContain('image: ${IMAGE_PREFIX}/worker:${IMAGE_TAG}');
-    expect(compose).toContain("'443:443'");
+    expect(compose).toContain("'127.0.0.1:3000:3000'");
+    expect(compose).toContain("'127.0.0.1:5173:5173'");
+    expect(compose).toContain('__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: signal.jisung.lol');
+    expect(compose).not.toContain('caddy:');
+    expect(compose).not.toContain("'80:80'");
+    expect(compose).not.toContain("'443:443'");
     expect(compose).toContain('condition: service_healthy');
     expect(caddy).toContain('signal.jisung.lol');
-    expect(caddy).toContain('reverse_proxy api:3000');
-    expect(caddy).toContain('reverse_proxy web:5173');
+    expect(caddy).toContain('reverse_proxy 127.0.0.1:3000');
+    expect(caddy).toContain('reverse_proxy 127.0.0.1:5173');
   });
 
   it('defines approval, pinned SSH host verification, migration, health, rollback, and concurrency', () => {
@@ -170,5 +175,12 @@ describe('OPS-004 production deployment configuration', () => {
     expect(script).toContain('db:migrate');
     expect(script).toContain('https://signal.jisung.lol/health/live');
     expect(script).toContain('previous_tag');
+    expect(script).toContain('docker compose --env-file "$ENV_FILE"');
+    expect(script).toContain('docker run --rm --env-file "$ENV_FILE"');
+    expect(script).toContain('caddy validate');
+    expect(script).toContain('systemctl reload caddy');
+    expect(script).toContain('CADDY_SNIPPET_PATH');
+    expect(script).toContain('sudo install -D -m 644');
+    expect(script).not.toMatch(/source\s+.*\.env/u);
   });
 });
