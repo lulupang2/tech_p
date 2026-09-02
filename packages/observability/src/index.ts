@@ -256,3 +256,7 @@ export class StructuredLogger {
 export function createStructuredLogger(options: StructuredLoggerOptions): StructuredLogger {
   return new StructuredLogger(options);
 }
+
+export * from './metrics.js';
+export * from './alerts.js';
+export * from './dashboard.js';

@@ -211,7 +211,7 @@
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
 | OPS-001 | API/web/worker Docker images와 full Compose | API-004, WEB-003, FND-004 | BLOCKED | non-root images, healthcheck, graceful shutdown; clean machine에서 documented one-command stack; browser binary/version pin 검증 |
-| OPS-002 | metrics/dashboard와 failure alert baseline | OBS-001, PIPE-007, API-003 | BLOCKED | source freshness, stage counts/errors, queue lag, DB/LLM latency/usage가 correlation IDs로 추적; alert test event 확인 |
+| OPS-002 | metrics/dashboard와 failure alert baseline | OBS-001, PIPE-007, API-003 | DONE | source freshness, stage counts/errors, queue lag, DB/LLM latency/usage가 correlation IDs로 추적; alert test event 확인 |
 | OPS-003 | backup/restore, retention, tombstone runbook | DB-005, PIPE-007, SEC-002 | BLOCKED | 빈 환경 restore drill 성공; source tombstone 후 search 제외; retention dry-run/count와 irreversible step 보호가 문서화됨 |
 | DOC-001 | developer/operator README와 runbook | OPS-001, OPS-002, OPS-003 | BLOCKED | setup, source policy, collect/replay, query, evaluation, rotate secret, backup/restore, known limits가 clean-reader test를 통과 |
 | MVP-001 | end-to-end MVP acceptance | TST-002, EVAL-002, SEC-003, OPS-001, OPS-002, DOC-001, FND-006 | BLOCKED | 승인 source 3개 이상 예약 수집; raw→normalize→dedup→embed→query 흐름; 사용자 예시 4개 결과·출처; 테스트/보안/RAG gate와 freshness/cost 보고서 통과 |
@@ -354,3 +354,20 @@ flowchart TD
   - `coverage`: 데이터 최신성(`dataFreshThrough`), 사용 소스 수, 검토 문서 수 및 제한사항을 표시한다.
 - 접근성 및 안전성: ARIA 랜드마크, `aria-live="polite"` / `aria-busy` 로딩 상태, `role="alert"` 에러 컨테이너, 키보드 포커스 및 스크린 리더 라벨을 보장하며 원격 스크립트나 위험한 HTML을 삽입하지 않는다.
 - 검증: `apps/web` 4개 test file·31개 test 통과(import boundary, contract drift, api-client, question-answer), static 검사(svelte-check, ESLint, Prettier) 및 Vite 프로덕션 빌드 전체 통과.
+
+### OPS-002 완료 증빙 (2026-09-02)
+
+- `@techpulse/observability` 패키지에 메트릭 수집 기본 단위(`Counter`, `Gauge`, `Histogram`), `MetricRegistry`, 대시보드 스냅샷(`createDashboardSnapshot`) 및 장애 알림 임계치 평가 엔진(`evaluateAlerts`, `DEFAULT_ALERT_RULES`, `createAlertStructuredEvent`, `createTestAlertEvent`)을 구현했다.
+- 독립된 물리 단위와 차원 보존:
+  - `techpulse_source_freshness_seconds` (Gauge, 소스별 지연시간)
+  - `techpulse_pipeline_stage_total`, `techpulse_pipeline_stage_errors_total` (Counter, 파이프라인 단계별 처리 건수 및 에러 건수)
+  - `techpulse_queue_lag_seconds`, `techpulse_queue_waiting_jobs`, `techpulse_queue_active_jobs` (Gauge, 대기열 지연 및 큐 작업 수)
+  - `techpulse_db_query_duration_ms` (Histogram, p50/p95/p99 쿼리 지연시간), `techpulse_db_pool_active_connections`, `techpulse_db_pool_saturation_ratio` (Gauge, DB 커넥션 풀 포화도)
+  - `techpulse_llm_request_duration_ms` (Histogram), `techpulse_llm_token_usage_total` (Counter, prompt/completion/total 토큰), `techpulse_llm_errors_total` (Counter, 공급자 에러 수)
+  - `techpulse_api_requests_total` (Counter), `techpulse_api_request_duration_ms` (Histogram), `techpulse_api_rate_limit_rejections_total` (Counter)
+  - 서로 다른 성격과 단위의 지표를 결합하는 임의의 복합 점수(Composite score) 생성을 배제하고 순수 물리 측정값으로 관리한다.
+- 구조화 상관관계 식별자 전파 및 비밀정보 마스킹:
+  - 메트릭 샘플 및 알림 이벤트 전반에 걸쳐 `requestId`, `runId`, `jobId`, `sourceId`, `queryId`를 일관되게 전파한다.
+  - `redact()`를 통해 `token`, `cookie`, `authorization`, `secret`, `payload` 등 민감 속성을 `[REDACTED]`로 마스킹하고, 원문 본문이나 자격증명 유출을 원천 차단한다.
+- 장애 알림 베이스라인: 소스 최신성 지연(24h 초과), 파이프라인 에러 버스트, 큐 지연(5m 초과), DB 쿼리 p95 지연(2s 초과), DB 풀 포화(90% 이상), LLM 지연(15s 초과) 및 에러 임계치 초과를 결정적으로 평가하는 기본 규칙을 제공하고, 상관관계가 유지되는 테스트 알림 이벤트 생성을 검증했다.
+- 검증: `packages/observability` 3개 test file·22개 test 통과, static checks(typecheck, ESLint, Prettier) 전체 통과.
