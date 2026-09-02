@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { locale, type Locale } from '$lib/i18n.js';
   import { ApiClient, ApiClientError } from '../api-client.js';
   import type { SourceListQuery, SourceSummary } from '@techpulse/contracts';
 
@@ -8,6 +9,8 @@
   }
 
   let { client }: Props = $props();
+  let currentLocale = $state<Locale>('ko');
+  locale.subscribe((value) => (currentLocale = value));
 
   let loading = $state(true);
   let loadingMore = $state(false);
@@ -65,11 +68,14 @@
       nextCursor = response.page.nextCursor;
     } catch (err) {
       if (err instanceof ApiClientError) {
-        errorMessage = `Failed to load data sources (${err.code}): ${err.message}`;
+        errorMessage = `${currentLocale === 'ko' ? '데이터 소스를 불러오지 못했습니다' : 'Failed to load data sources'} (${err.code}): ${err.message}`;
       } else if (err instanceof Error) {
         errorMessage = err.message;
       } else {
-        errorMessage = 'An unexpected error occurred while loading sources';
+        errorMessage =
+          currentLocale === 'ko'
+            ? '소스를 불러오는 중 예기치 않은 오류가 발생했습니다'
+            : 'An unexpected error occurred while loading sources';
       }
     } finally {
       loading = false;
@@ -86,7 +92,7 @@
       nextCursor = response.page.nextCursor;
     } catch (err) {
       if (err instanceof ApiClientError) {
-        errorMessage = `Failed to load more sources (${err.code}): ${err.message}`;
+        errorMessage = `${currentLocale === 'ko' ? '소스를 더 불러오지 못했습니다' : 'Failed to load more sources'} (${err.code}): ${err.message}`;
       }
     } finally {
       loadingMore = false;
@@ -220,7 +226,7 @@
               class:stale={source.status === 'stale'}
               class:degraded={source.status === 'degraded'}
               class:disabled={source.status === 'disabled'}
-              aria-label={`Source status: ${source.status}`}
+              aria-label={`${currentLocale === 'ko' ? '소스 상태' : 'Source status'}: ${source.status}`}
             >
               {source.status}
             </span>
@@ -237,7 +243,9 @@
               >
                 <span class="warning-icon" aria-hidden="true">⚠️</span>
                 <div class="warning-text-wrap">
-                  <strong class="warning-title">Freshness Alert ({source.status}):</strong>
+                  <strong class="warning-title"
+                    >{currentLocale === 'ko' ? '최신성 경고' : 'Freshness Alert'} ({source.status}):</strong
+                  >
                   <span class="warning-text">
                     {#if source.status === 'stale'}
                       데이터 수집 주기가 지연(Stale)되었습니다. 최근 게시된 원문 변경사항이 아직
@@ -281,7 +289,11 @@
             </div>
             {#if source.coverageNotes.length > 0}
               <div class="notes-section">
-                <span class="info-label">Coverage &amp; Rights Notes:</span>
+                <span class="info-label"
+                  >{currentLocale === 'ko'
+                    ? '수집 범위 및 권리 안내:'
+                    : 'Coverage & Rights Notes:'}</span
+                >
                 <ul class="notes-list">
                   {#each source.coverageNotes as note, idx (idx)}
                     <li>{note}</li>
@@ -305,13 +317,27 @@
 
           {#if selectedSourceKey === source.key}
             <div id={`details-${source.key}`} class="source-details-expanded" role="region">
-              <h4>Source Specifications</h4>
-              <p class="detail-line"><strong>Identifier:</strong> {source.key}</p>
-              <p class="detail-line"><strong>Data Category:</strong> {source.kind}</p>
-              <p class="detail-line"><strong>Current Ingestion Status:</strong> {source.status}</p>
+              <h4>{currentLocale === 'ko' ? '소스 상세 정보' : 'Source Specifications'}</h4>
+              <p class="detail-line">
+                <strong>{currentLocale === 'ko' ? '식별자:' : 'Identifier:'}</strong>
+                {source.key}
+              </p>
+              <p class="detail-line">
+                <strong>{currentLocale === 'ko' ? '데이터 유형:' : 'Data Category:'}</strong>
+                {source.kind}
+              </p>
+              <p class="detail-line">
+                <strong
+                  >{currentLocale === 'ko'
+                    ? '현재 수집 상태:'
+                    : 'Current Ingestion Status:'}</strong
+                >
+                {source.status}
+              </p>
               <p class="detail-guidance">
-                All raw payloads undergo strict personal data redaction prior to persistent storage.
-                Rights and license restrictions are preserved in immutable document revisions.
+                {currentLocale === 'ko'
+                  ? '모든 원본 payload는 영구 저장 전에 엄격한 개인정보 제거 절차를 거칩니다. 권리와 라이선스 제한은 변경 불가능한 문서 revision에 보존됩니다.'
+                  : 'All raw payloads undergo strict personal data redaction prior to persistent storage. Rights and license restrictions are preserved in immutable document revisions.'}
               </p>
             </div>
           {/if}
@@ -326,12 +352,13 @@
           class="load-more-btn"
           onclick={loadMore}
           disabled={loadingMore}
-          aria-label="Load more data sources"
+          aria-label={currentLocale === 'ko' ? '데이터 소스 더 불러오기' : 'Load more data sources'}
         >
           {#if loadingMore}
-            <span class="spinner" aria-hidden="true"></span> Loading more...
+            <span class="spinner" aria-hidden="true"></span>
+            {currentLocale === 'ko' ? '더 불러오는 중...' : 'Loading more...'}
           {:else}
-            Load More Sources
+            {currentLocale === 'ko' ? '소스 더 보기' : 'Load More Sources'}
           {/if}
         </button>
       </div>

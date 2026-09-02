@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { locale, type Locale } from '$lib/i18n.js';
   import { ApiClient } from '../api-client.js';
 
   interface Props {
@@ -6,6 +7,8 @@
   }
 
   let { client }: Props = $props();
+  let currentLocale = $state<Locale>('ko');
+  locale.subscribe((value) => (currentLocale = value));
 
   let answerStatus = $derived(client.getAnswerEndpointStatus());
 </script>
@@ -13,13 +16,17 @@
 <section class="qa-notice-panel" aria-labelledby="qa-heading" id="panel-qa">
   <div class="panel-header">
     <div>
-      <h2 id="qa-heading" class="panel-title">Natural-Language Q&amp;A Engine</h2>
+      <h2 id="qa-heading" class="panel-title">
+        {currentLocale === 'ko' ? '자연어 질의응답 엔진' : 'Natural-Language Q&A Engine'}
+      </h2>
       <p class="panel-description">
-        Evidence-backed comparative trend analysis and citation synthesis.
+        {currentLocale === 'ko'
+          ? '근거 기반 비교 트렌드 분석과 인용 종합을 제공합니다.'
+          : 'Evidence-backed comparative trend analysis and citation synthesis.'}
       </p>
     </div>
     <span class="status-badge pending" aria-label="Feature Status: Pending Approval">
-      Pending Provider Approval
+      {currentLocale === 'ko' ? 'Provider 승인 대기' : 'Pending Provider Approval'}
     </span>
   </div>
 
@@ -39,12 +46,20 @@
       </svg>
     </div>
     <div class="notice-body">
-      <h3 class="notice-title">Q&amp;A Service Endpoint Unavailable (Gate: API-003)</h3>
+      <h3 class="notice-title">
+        {currentLocale === 'ko'
+          ? '질의응답 서비스 엔드포인트를 사용할 수 없습니다'
+          : 'Q&A Service Endpoint Unavailable'} (Gate: API-003)
+      </h3>
       <p class="notice-text">
         {answerStatus.reason}
       </p>
       <div class="governance-box">
-        <h4 class="gov-title">Signal Archive Governance &amp; Grounding Rules:</h4>
+        <h4 class="gov-title">
+          {currentLocale === 'ko'
+            ? 'Signal Archive 근거 및 운영 원칙:'
+            : 'Signal Archive Governance & Grounding Rules:'}
+        </h4>
         <ul class="gov-list">
           <li>
             <strong>No Hallucinations:</strong> Responses are never generated without verifiable citations

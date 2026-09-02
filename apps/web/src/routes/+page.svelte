@@ -1,6 +1,7 @@
 <script lang="ts">
   import { env } from '$env/dynamic/public';
   import { createApiClient } from '$lib/api-client.js';
+  import { locale, type Locale } from '$lib/i18n.js';
   import Header from '$lib/components/Header.svelte';
   import StatusBanner from '$lib/components/StatusBanner.svelte';
   import SourceList from '$lib/components/SourceList.svelte';
@@ -12,36 +13,72 @@
     env['PUBLIC_API_BASE_URL'] ? { baseUrl: env['PUBLIC_API_BASE_URL'] } : {},
   );
   let activeTab = $state<TabId>('sources');
-  const labels: Record<TabId, { eyebrow: string; title: string; description: string }> = {
+  let currentLocale = $state<Locale>('ko');
+  locale.subscribe((value) => (currentLocale = value));
+  const koLabels: Record<TabId, { eyebrow: string; title: string; description: string }> = {
     sources: {
-      eyebrow: 'SOURCE OVERVIEW',
+      eyebrow: '소스 현황',
       title: '기술 신호를 한눈에',
       description: '공개 기술 생태계에서 검증된 출처를 수집하고 최신성을 추적합니다.',
     },
     topics: {
-      eyebrow: 'TOPIC CATALOG',
+      eyebrow: '토픽 카탈로그',
       title: '관심 기술 탐색',
       description: '표준화된 기술 토픽과 연결된 근거를 빠르게 찾아보세요.',
     },
     status: {
-      eyebrow: 'SYSTEM HEALTH',
+      eyebrow: '시스템 상태',
       title: '파이프라인 상태',
       description: 'API와 데이터 처리 계층의 현재 상태를 확인합니다.',
     },
     qa: {
-      eyebrow: 'EVIDENCE AI',
+      eyebrow: '근거 기반 AI',
       title: '근거로 답하는 기술 인텔리전스',
       description: '기간과 출처가 명확한 기술 트렌드 답변을 받아보세요.',
     },
   };
+  const enLabels: typeof koLabels = {
+    sources: {
+      eyebrow: 'SOURCE OVERVIEW',
+      title: 'Technology signals at a glance',
+      description: 'Track freshness across verified sources in the public technology ecosystem.',
+    },
+    topics: {
+      eyebrow: 'TOPIC CATALOG',
+      title: 'Explore technologies',
+      description: 'Find canonical technology topics and their linked evidence.',
+    },
+    status: {
+      eyebrow: 'SYSTEM HEALTH',
+      title: 'Pipeline health',
+      description: 'Check the current state of the API and data-processing layers.',
+    },
+    qa: {
+      eyebrow: 'EVIDENCE AI',
+      title: 'Technology intelligence grounded in evidence',
+      description: 'Get technology trend answers with explicit time ranges and sources.',
+    },
+  };
+  let labels = $derived(currentLocale === 'ko' ? koLabels : enLabels);
 </script>
 
-<svelte:head><title>Signal Archive — 개발 기술 트렌드 인텔리전스</title></svelte:head>
+<svelte:head
+  ><title
+    >Signal Archive — {currentLocale === 'ko'
+      ? '개발 기술 트렌드 인텔리전스'
+      : 'Developer technology trend intelligence'}</title
+  ></svelte:head
+>
 <Header {activeTab} onTabChange={(tab) => (activeTab = tab)} />
 <main id="main-content" class="dashboard-shell">
   <header class="topbar">
-    <div><span class="status-dot"></span> 데이터 파이프라인 연결됨</div>
-    <button onclick={() => (activeTab = 'qa')}>✦ AI에게 질문하기</button>
+    <div>
+      <span class="status-dot"></span>
+      {currentLocale === 'ko' ? '데이터 파이프라인 연결됨' : 'Data pipeline connected'}
+    </div>
+    <button onclick={() => (activeTab = 'qa')}
+      >✦ {currentLocale === 'ko' ? 'AI에게 질문하기' : 'Ask AI'}</button
+    >
   </header>
   <section class="hero">
     <div>
@@ -49,7 +86,7 @@
       <h1>{labels[activeTab].title}</h1>
       <p>{labels[activeTab].description}</p>
     </div>
-    <div class="signal-orb" aria-hidden="true"><span></span><span></span><strong>TP</strong></div>
+    <div class="signal-orb" aria-hidden="true"><span></span><span></span><strong>SA</strong></div>
   </section>
   <div class="content-wrap">
     {#if activeTab === 'sources'}<div

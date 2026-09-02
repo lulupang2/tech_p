@@ -1,14 +1,23 @@
 <script lang="ts">
   import { CONTRACT_VERSION } from '@techpulse/contracts';
+  import { locale, type Locale } from '$lib/i18n.js';
+  let currentLocale = $state<Locale>('ko');
+  locale.subscribe((value) => (currentLocale = value));
 </script>
 
 <footer class="app-footer">
   <div>
     <strong>Signal Archive</strong>
-    <p>검증 가능한 공개 기술 출처를 바탕으로 변화를 읽습니다.</p>
+    <p>
+      {currentLocale === 'ko'
+        ? '검증 가능한 공개 기술 출처를 바탕으로 변화를 읽습니다.'
+        : 'Read technology change through verifiable public sources.'}
+    </p>
   </div>
   <div class="footer-meta">
-    <span>계약 버전 v{CONTRACT_VERSION}</span><span>출처 추적 가능</span><span>UTC 기준</span>
+    <span>{currentLocale === 'ko' ? '계약 버전' : 'Contract version'} {CONTRACT_VERSION}</span><span
+      >{currentLocale === 'ko' ? '출처 추적 가능' : 'Traceable sources'}</span
+    ><span>{currentLocale === 'ko' ? 'UTC 기준' : 'UTC based'}</span>
   </div>
 </footer>
 

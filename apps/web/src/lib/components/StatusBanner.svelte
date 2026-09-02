@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { locale, type Locale } from '$lib/i18n.js';
   import { ApiClient, ApiClientError } from '../api-client.js';
   import type { HealthLiveResponse, HealthReadyResponse } from '@techpulse/contracts';
 
@@ -8,6 +9,8 @@
   }
 
   let { client }: Props = $props();
+  let currentLocale = $state<Locale>('ko');
+  locale.subscribe((value) => (currentLocale = value));
 
   let loading = $state(true);
   let refreshing = $state(false);
@@ -38,11 +41,14 @@
       lastCheckedAt = new Date().toISOString();
     } catch (err) {
       if (err instanceof ApiClientError) {
-        errorMessage = `Health check failed (${err.code}): ${err.message}`;
+        errorMessage = `${currentLocale === 'ko' ? '상태 확인에 실패했습니다' : 'Health check failed'} (${err.code}): ${err.message}`;
       } else if (err instanceof Error) {
         errorMessage = err.message;
       } else {
-        errorMessage = 'Failed to connect to backend API';
+        errorMessage =
+          currentLocale === 'ko'
+            ? '백엔드 API에 연결하지 못했습니다'
+            : 'Failed to connect to backend API';
       }
     } finally {
       loading = false;
@@ -66,12 +72,13 @@
       class="refresh-btn"
       onclick={checkHealth}
       disabled={refreshing}
-      aria-label="Refresh system health status"
+      aria-label={currentLocale === 'ko' ? '시스템 상태 새로고침' : 'Refresh system health status'}
     >
       {#if refreshing}
-        <span class="spinner" aria-hidden="true"></span> Refreshing...
+        <span class="spinner" aria-hidden="true"></span>
+        {currentLocale === 'ko' ? '새로고침 중...' : 'Refreshing...'}
       {:else}
-        Refresh
+        {currentLocale === 'ko' ? '새로고침' : 'Refresh'}
       {/if}
     </button>
   </div>
@@ -79,22 +86,36 @@
   {#if loading}
     <div class="state-container loading-state" role="status" aria-busy="true" aria-live="polite">
       <div class="spinner" aria-hidden="true"></div>
-      <span>Checking API and database readiness...</span>
+      <span
+        >{currentLocale === 'ko'
+          ? 'API와 데이터베이스 준비 상태를 확인하는 중입니다.'
+          : 'Checking API and database readiness...'}</span
+      >
     </div>
   {:else if errorMessage}
     <div class="state-container error-state" role="alert" aria-live="assertive">
       <div class="error-badge" aria-hidden="true">!</div>
       <div class="error-content">
-        <strong>Service Unavailable</strong>
+        <strong
+          >{currentLocale === 'ko' ? '서비스에 연결할 수 없습니다' : 'Service Unavailable'}</strong
+        >
         <p>{errorMessage}</p>
-        <button type="button" class="retry-btn" onclick={checkHealth}>Retry Connection</button>
+        <button type="button" class="retry-btn" onclick={checkHealth}
+          >{currentLocale === 'ko' ? '다시 연결' : 'Retry Connection'}</button
+        >
       </div>
     </div>
   {:else}
-    <div class="health-grid" role="region" aria-label="Health indicators">
+    <div
+      class="health-grid"
+      role="region"
+      aria-label={currentLocale === 'ko' ? '서비스 상태 지표' : 'Health indicators'}
+    >
       <div class="health-card">
         <div class="card-top">
-          <span class="card-label">API Process Event Loop</span>
+          <span class="card-label"
+            >{currentLocale === 'ko' ? 'API 프로세스 이벤트 루프' : 'API Process Event Loop'}</span
+          >
           <span
             class="status-indicator"
             class:ok={liveStatus?.status === 'ok'}
@@ -103,13 +124,21 @@
             {liveStatus?.status ?? 'unknown'}
           </span>
         </div>
-        <p class="card-meta">Endpoint: <code>/health/live</code></p>
-        <p class="card-time">Reported: {liveStatus?.timestamp ?? 'N/A'}</p>
+        <p class="card-meta">
+          {currentLocale === 'ko' ? '엔드포인트' : 'Endpoint'}: <code>/health/live</code>
+        </p>
+        <p class="card-time">
+          {currentLocale === 'ko' ? '보고 시각' : 'Reported'}: {liveStatus?.timestamp ?? 'N/A'}
+        </p>
       </div>
 
       <div class="health-card">
         <div class="card-top">
-          <span class="card-label">Database Dependency (PostgreSQL)</span>
+          <span class="card-label"
+            >{currentLocale === 'ko'
+              ? '데이터베이스 의존성 (PostgreSQL)'
+              : 'Database Dependency (PostgreSQL)'}</span
+          >
           <span
             class="status-indicator"
             class:ok={readyStatus?.dependencies.database === 'ok'}
@@ -120,14 +149,20 @@
             {readyStatus?.dependencies.database ?? 'unknown'}
           </span>
         </div>
-        <p class="card-meta">Endpoint: <code>/health/ready</code></p>
-        <p class="card-time">Overall Readiness: {readyStatus?.status ?? 'unknown'}</p>
+        <p class="card-meta">
+          {currentLocale === 'ko' ? '엔드포인트' : 'Endpoint'}: <code>/health/ready</code>
+        </p>
+        <p class="card-time">
+          {currentLocale === 'ko' ? '전체 준비 상태' : 'Overall Readiness'}: {readyStatus?.status ??
+            'unknown'}
+        </p>
       </div>
     </div>
 
     {#if lastCheckedAt}
       <p class="last-checked" aria-live="polite">
-        Last checked at: <time datetime={lastCheckedAt}>{lastCheckedAt}</time>
+        {currentLocale === 'ko' ? '마지막 확인 시각:' : 'Last checked at:'}
+        <time datetime={lastCheckedAt}>{lastCheckedAt}</time>
       </p>
     {/if}
   {/if}

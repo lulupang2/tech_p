@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { locale, type Locale } from '$lib/i18n.js';
   import { ApiClient, ApiClientError } from '../api-client.js';
   import type { AnswerRequest, AnswerResponse, ValidationIssue } from '@techpulse/contracts';
 
@@ -7,6 +8,8 @@
   }
 
   let { client }: Props = $props();
+  let currentLocale = $state<Locale>('ko');
+  locale.subscribe((value) => (currentLocale = value));
 
   // Form states
   let question = $state('');
@@ -45,7 +48,7 @@
   }
 
   function formatUtcDateTime(isoString: string | null | undefined): string {
-    if (!isoString) return 'Date not specified';
+    if (!isoString) return currentLocale === 'ko' ? '날짜 미지정' : 'Date not specified';
     try {
       const d = new Date(isoString);
       if (Number.isNaN(d.getTime())) return isoString;
@@ -88,16 +91,28 @@
   }
 
   function formatMetricName(metric: string): string {
-    const map: Record<string, string> = {
-      community_mentions: 'Community Mentions',
-      issue_discussion: 'Issue & Discussion Activity',
-      repo_attention: 'Repository Attention (Stars/New)',
-      source_diversity: 'Source Diversity',
-      release_activity: 'Release Cadence & Activity',
-      paper_activity: 'Research Paper Submissions',
-      model_activity: 'Model & Dataset Activity',
-      package_downloads: 'Package Downloads',
-    };
+    const map: Record<string, string> =
+      currentLocale === 'ko'
+        ? {
+            community_mentions: '커뮤니티 언급',
+            issue_discussion: '이슈 및 토론 활동',
+            repo_attention: '저장소 관심도',
+            source_diversity: '출처 다양성',
+            release_activity: '릴리스 활동',
+            paper_activity: '연구 논문 제출',
+            model_activity: '모델 및 데이터셋 활동',
+            package_downloads: '패키지 다운로드',
+          }
+        : {
+            community_mentions: 'Community Mentions',
+            issue_discussion: 'Issue & Discussion Activity',
+            repo_attention: 'Repository Attention (Stars/New)',
+            source_diversity: 'Source Diversity',
+            release_activity: 'Release Cadence & Activity',
+            paper_activity: 'Research Paper Submissions',
+            model_activity: 'Model & Dataset Activity',
+            package_downloads: 'Package Downloads',
+          };
     return map[metric] || metric.replace(/_/g, ' ');
   }
 
@@ -143,13 +158,22 @@
   });
 
   function formatIntentName(intent: string): string {
-    const map: Record<string, string> = {
-      compare_interest: 'Comparative Interest Analysis',
-      trend_summary: 'Trend Summary',
-      recent_updates: 'Recent Updates & Releases',
-      emerging_topics: 'Emerging Topics Analysis',
-      unsupported_intent: 'Unsupported Intent',
-    };
+    const map: Record<string, string> =
+      currentLocale === 'ko'
+        ? {
+            compare_interest: '관심도 비교 분석',
+            trend_summary: '트렌드 요약',
+            recent_updates: '최근 업데이트 및 릴리스',
+            emerging_topics: '신흥 토픽 분석',
+            unsupported_intent: '지원하지 않는 질문',
+          }
+        : {
+            compare_interest: 'Comparative Interest Analysis',
+            trend_summary: 'Trend Summary',
+            recent_updates: 'Recent Updates & Releases',
+            emerging_topics: 'Emerging Topics Analysis',
+            unsupported_intent: 'Unsupported Intent',
+          };
     return map[intent] || intent.replace(/_/g, ' ');
   }
 
@@ -267,8 +291,12 @@
         개발 기술의 변화와 비교 흐름을 질문하고, 색인된 출처와 인용 근거를 함께 확인하세요.
       </p>
     </div>
-    <span class="status-badge live" aria-label="Feature Status: Operational">
-      <span class="live-dot" aria-hidden="true"></span> Operational (API-003)
+    <span
+      class="status-badge live"
+      aria-label={currentLocale === 'ko' ? '기능 상태: 운영 중' : 'Feature Status: Operational'}
+    >
+      <span class="live-dot" aria-hidden="true"></span>
+      {currentLocale === 'ko' ? '운영 중' : 'Operational'} (API-003)
     </span>
   </div>
 
@@ -285,7 +313,7 @@
           class:char-limit-exceeded={questionLength > MAX_QUESTION_LENGTH}
           aria-live="polite"
         >
-          {questionLength} / {MAX_QUESTION_LENGTH} chars
+          {questionLength} / {MAX_QUESTION_LENGTH}{currentLocale === 'ko' ? '자' : ' chars'}
         </span>
       </div>
       <textarea
@@ -305,8 +333,11 @@
     </div>
 
     <!-- Sample questions chips -->
-    <div class="sample-queries" aria-label="Sample questions">
-      <span class="sample-label">Examples:</span>
+    <div
+      class="sample-queries"
+      aria-label={currentLocale === 'ko' ? '예시 질문' : 'Sample questions'}
+    >
+      <span class="sample-label">{currentLocale === 'ko' ? '예시:' : 'Examples:'}</span>
       <div class="chips-row">
         {#each sampleQuestions as sample (sample)}
           <button
@@ -323,29 +354,41 @@
 
     <!-- Controls: Time range, Timezone, Language -->
     <fieldset class="controls-fieldset">
-      <legend class="controls-legend">Query Scope &amp; Parameters</legend>
+      <legend class="controls-legend"
+        >{currentLocale === 'ko' ? '질의 범위와 설정' : 'Query Scope & Parameters'}</legend
+      >
 
       <div class="controls-grid">
         <!-- Time Range Selector -->
         <div class="control-item">
-          <label for="qa-timerange-select" class="control-label">Time Range</label>
+          <label for="qa-timerange-select" class="control-label"
+            >{currentLocale === 'ko' ? '조회 기간' : 'Time Range'}</label
+          >
           <select
             id="qa-timerange-select"
             class="form-select"
             bind:value={timePreset}
             disabled={submitting}
           >
-            <option value="auto">Default (Server Rolling 30 Days)</option>
-            <option value="7d">Past 7 Days</option>
-            <option value="30d">Past 30 Days</option>
-            <option value="90d">Past 90 Days</option>
-            <option value="custom">Custom Date Range</option>
+            <option value="auto"
+              >{currentLocale === 'ko'
+                ? '기본값 (최근 30일)'
+                : 'Default (Server Rolling 30 Days)'}</option
+            >
+            <option value="7d">{currentLocale === 'ko' ? '최근 7일' : 'Past 7 Days'}</option>
+            <option value="30d">{currentLocale === 'ko' ? '최근 30일' : 'Past 30 Days'}</option>
+            <option value="90d">{currentLocale === 'ko' ? '최근 90일' : 'Past 90 Days'}</option>
+            <option value="custom"
+              >{currentLocale === 'ko' ? '직접 기간 설정' : 'Custom Date Range'}</option
+            >
           </select>
         </div>
 
         <!-- Timezone Selector -->
         <div class="control-item">
-          <label for="qa-timezone-select" class="control-label">Timezone</label>
+          <label for="qa-timezone-select" class="control-label"
+            >{currentLocale === 'ko' ? '시간대' : 'Timezone'}</label
+          >
           <select
             id="qa-timezone-select"
             class="form-select"
@@ -362,14 +405,18 @@
 
         <!-- Language Selector -->
         <div class="control-item">
-          <label for="qa-lang-select" class="control-label">Output Language</label>
+          <label for="qa-lang-select" class="control-label"
+            >{currentLocale === 'ko' ? '답변 언어' : 'Output Language'}</label
+          >
           <select
             id="qa-lang-select"
             class="form-select"
             bind:value={selectedLanguage}
             disabled={submitting}
           >
-            <option value="auto">Auto-detect from question</option>
+            <option value="auto"
+              >{currentLocale === 'ko' ? '질문에서 자동 감지' : 'Auto-detect from question'}</option
+            >
             <option value="ko">Korean (한국어)</option>
             <option value="en">English</option>
           </select>
@@ -381,7 +428,8 @@
         <div class="custom-range-row" aria-label="Custom date range input">
           <div class="control-item">
             <label for="qa-custom-from" class="control-label">
-              Start Date (From) <span class="required" aria-hidden="true">*</span>
+              {currentLocale === 'ko' ? '시작 일시' : 'Start Date (From)'}
+              <span class="required" aria-hidden="true">*</span>
             </label>
             <input
               type="datetime-local"
@@ -394,7 +442,8 @@
           </div>
           <div class="control-item">
             <label for="qa-custom-to" class="control-label">
-              End Date (To) <span class="required" aria-hidden="true">*</span>
+              {currentLocale === 'ko' ? '종료 일시' : 'End Date (To)'}
+              <span class="required" aria-hidden="true">*</span>
             </label>
             <input
               type="datetime-local"
@@ -419,7 +468,7 @@
       >
         {#if submitting}
           <span class="spinner" aria-hidden="true"></span>
-          <span>Synthesizing Answer...</span>
+          <span>{currentLocale === 'ko' ? '답변을 생성하는 중...' : 'Synthesizing Answer...'}</span>
         {:else}
           <svg
             width="18"
@@ -455,14 +504,21 @@
       role="status"
       aria-live="polite"
       aria-busy="true"
-      aria-label="Generating evidence-backed answer"
+      aria-label={currentLocale === 'ko'
+        ? '근거 기반 답변 생성 중'
+        : 'Generating evidence-backed answer'}
     >
       <div class="loading-spinner-large" aria-hidden="true"></div>
       <div class="loading-text">
-        <h3 class="loading-title">Retrieving indexed evidence &amp; generating answer...</h3>
+        <h3 class="loading-title">
+          {currentLocale === 'ko'
+            ? '색인된 근거를 검색하고 답변을 생성하는 중입니다...'
+            : 'Retrieving indexed evidence & generating answer...'}
+        </h3>
         <p class="loading-subtext">
-          Scanning PostgreSQL vector and lexical indexes, aggregating metric observations, and
-          verifying source citations.
+          {currentLocale === 'ko'
+            ? 'PostgreSQL 벡터·키워드 색인과 지표 관측값을 조회하고 출처 인용을 검증하고 있습니다.'
+            : 'Scanning PostgreSQL vector and lexical indexes, aggregating metric observations, and verifying source citations.'}
         </p>
       </div>
     </div>
@@ -488,7 +544,8 @@
         </div>
         <div>
           <h3 id="error-card-title" class="error-title">
-            Request Failed {#if errorCode}({errorCode}){/if}
+            {currentLocale === 'ko' ? '요청 실패' : 'Request Failed'}
+            {#if errorCode}({errorCode}){/if}
           </h3>
           <p class="error-desc">{errorMessage}</p>
         </div>
@@ -496,7 +553,9 @@
 
       {#if errorDetails && errorDetails.length > 0}
         <div class="error-details">
-          <p class="details-heading">Validation details:</p>
+          <p class="details-heading">
+            {currentLocale === 'ko' ? '검증 상세:' : 'Validation details:'}
+          </p>
           <ul class="details-list">
             {#each errorDetails as issue, i (issue.path + String(i))}
               <li>
@@ -509,7 +568,8 @@
 
       {#if requestId}
         <div class="error-meta">
-          <span>Request ID: <code>{requestId}</code></span>
+          <span>{currentLocale === 'ko' ? '요청 ID:' : 'Request ID:'} <code>{requestId}</code></span
+          >
         </div>
       {/if}
     </div>
@@ -524,26 +584,30 @@
           <div class="meta-status">
             {#if response.status === 'answered'}
               <span class="badge badge-success" aria-label="Status: Answered with Evidence">
-                ✓ Answered with Evidence
+                ✓ {currentLocale === 'ko' ? '근거 확인됨' : 'Answered with Evidence'}
               </span>
             {:else if response.status === 'insufficient_evidence'}
               <span class="badge badge-warning" aria-label="Status: Insufficient Evidence">
-                ⚠ Insufficient Evidence
+                ⚠ {currentLocale === 'ko' ? '근거 부족' : 'Insufficient Evidence'}
               </span>
             {:else}
               <span class="badge badge-secondary" aria-label="Status: Unsupported Intent">
-                ℹ Unsupported Intent
+                ℹ {currentLocale === 'ko' ? '지원하지 않는 질문' : 'Unsupported Intent'}
               </span>
             {/if}
 
             <span class="badge badge-intent" title="Classified Query Intent">
-              Intent: {formatIntentName(response.intent)}
+              {currentLocale === 'ko' ? '질의 유형:' : 'Intent:'}
+              {formatIntentName(response.intent)}
             </span>
           </div>
 
           <div class="meta-ids">
             <span class="meta-id-tag">Answer ID: <code>{response.answerId}</code></span>
-            <span class="meta-id-tag">Request ID: <code>{response.requestId}</code></span>
+            <span class="meta-id-tag"
+              >{currentLocale === 'ko' ? '요청 ID:' : 'Request ID:'}
+              <code>{response.requestId}</code></span
+            >
           </div>
         </div>
 
@@ -565,7 +629,9 @@
             </svg>
           </div>
           <div class="range-content">
-            <span class="range-label">Resolved Evidence Range:</span>
+            <span class="range-label"
+              >{currentLocale === 'ko' ? '근거 조회 기간:' : 'Resolved Evidence Range:'}</span
+            >
             <span class="range-value">
               <strong>{formatUtcDateTime(response.resolvedTimeRange.from)}</strong>
               &nbsp;→&nbsp;
@@ -579,7 +645,9 @@
       <!-- State 1: Answered Successfully -->
       {#if response.status === 'answered'}
         <div class="answer-card">
-          <h3 class="answer-heading">Synthesized Answer</h3>
+          <h3 class="answer-heading">
+            {currentLocale === 'ko' ? '종합 답변' : 'Synthesized Answer'}
+          </h3>
           <div class="answer-text">
             {#if response.answer}
               <p class="answer-paragraph">{response.answer}</p>
@@ -588,7 +656,9 @@
 
           {#if response.citations.length > 0}
             <div class="citation-jump-bar">
-              <span class="jump-label">Citations referenced:</span>
+              <span class="jump-label"
+                >{currentLocale === 'ko' ? '참조한 인용:' : 'Citations referenced:'}</span
+              >
               <div class="jump-tags">
                 {#each response.citations as cit (cit.id)}
                   <button
@@ -630,7 +700,11 @@
             </svg>
           </div>
           <div class="notice-content">
-            <h3 class="notice-title">Insufficient Evidence for Requested Query</h3>
+            <h3 class="notice-title">
+              {currentLocale === 'ko'
+                ? '질문에 답하기 위한 근거가 부족합니다'
+                : 'Insufficient Evidence for Requested Query'}
+            </h3>
             <p class="notice-description">
               수집된 공개 기술 데이터 및 지정된 기간 내에 질의를 뒷받침할 수 있는 충분하고 검증된
               근거(Evidence)가 발견되지 않았습니다. Signal Archive는 환각(Hallucination) 및 미검증된
@@ -639,7 +713,11 @@
 
             {#if response.coverage.limitations.length > 0}
               <div class="limitations-box">
-                <span class="limitations-title">Reported Coverage Limitations:</span>
+                <span class="limitations-title"
+                  >{currentLocale === 'ko'
+                    ? '수집 범위의 한계:'
+                    : 'Reported Coverage Limitations:'}</span
+                >
                 <ul class="limitations-list">
                   {#each response.coverage.limitations as lim, i (lim + String(i))}
                     <li>{lim}</li>
@@ -649,7 +727,8 @@
             {/if}
 
             <div class="guidance-box">
-              <span class="guidance-title">Suggestions:</span>
+              <span class="guidance-title">{currentLocale === 'ko' ? '제안:' : 'Suggestions:'}</span
+              >
               <ul class="guidance-list">
                 <li>조회 기간을 90일 이상으로 확장하여 검색 범위를 넓혀보세요.</li>
                 <li>

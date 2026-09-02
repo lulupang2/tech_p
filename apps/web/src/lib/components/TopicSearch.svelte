@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { locale, type Locale } from '$lib/i18n.js';
   import { ApiClient, ApiClientError } from '../api-client.js';
   import type { TopicSearchQuery, TopicSummary } from '@techpulse/contracts';
 
@@ -8,6 +9,8 @@
   }
 
   let { client }: Props = $props();
+  let currentLocale = $state<Locale>('ko');
+  locale.subscribe((value) => (currentLocale = value));
 
   let searchQuery = $state('');
   let loading = $state(true);
@@ -39,11 +42,14 @@
       executedQuery = q.trim();
     } catch (err) {
       if (err instanceof ApiClientError) {
-        errorMessage = `Failed to fetch topics (${err.code}): ${err.message}`;
+        errorMessage = `${currentLocale === 'ko' ? '토픽을 불러오지 못했습니다' : 'Failed to fetch topics'} (${err.code}): ${err.message}`;
       } else if (err instanceof Error) {
         errorMessage = err.message;
       } else {
-        errorMessage = 'An error occurred while fetching topics';
+        errorMessage =
+          currentLocale === 'ko'
+            ? '토픽을 불러오는 중 오류가 발생했습니다'
+            : 'An error occurred while fetching topics';
       }
     } finally {
       loading = false;
@@ -83,22 +89,26 @@
     </div>
 
     <form class="search-form" role="search" onsubmit={handleSearch}>
-      <label for="topic-search-input" class="visually-hidden">Search Canonical Topics</label>
+      <label for="topic-search-input" class="visually-hidden"
+        >{currentLocale === 'ko' ? '표준 기술 토픽 검색' : 'Search Canonical Topics'}</label
+      >
       <div class="search-input-wrap">
         <input
           id="topic-search-input"
           type="search"
-          placeholder="Search by topic name, alias, or slug..."
+          placeholder={currentLocale === 'ko'
+            ? '토픽명, 별칭 또는 slug로 검색'
+            : 'Search by topic name, alias, or slug...'}
           bind:value={searchQuery}
           class="search-input"
-          aria-label="Search canonical topics"
+          aria-label={currentLocale === 'ko' ? '표준 기술 토픽 검색' : 'Search canonical topics'}
         />
         {#if searchQuery}
           <button
             type="button"
             class="clear-btn"
             onclick={handleClear}
-            aria-label="Clear topic search query"
+            aria-label={currentLocale === 'ko' ? '토픽 검색어 지우기' : 'Clear topic search query'}
           >
             &times;
           </button>
@@ -108,7 +118,7 @@
         {#if searching}
           <span class="spinner" aria-hidden="true"></span>
         {:else}
-          Search
+          {currentLocale === 'ko' ? '검색' : 'Search'}
         {/if}
       </button>
     </form>
@@ -117,25 +127,39 @@
   {#if loading}
     <div class="state-container loading-state" role="status" aria-busy="true" aria-live="polite">
       <div class="spinner" aria-hidden="true"></div>
-      <span>Loading topic taxonomy...</span>
+      <span
+        >{currentLocale === 'ko'
+          ? '토픽 분류 체계를 불러오는 중입니다.'
+          : 'Loading topic taxonomy...'}</span
+      >
     </div>
   {:else if errorMessage}
     <div class="state-container error-state" role="alert" aria-live="assertive">
       <div class="error-badge" aria-hidden="true">!</div>
       <div class="error-content">
-        <strong>Error Loading Topics</strong>
+        <strong
+          >{currentLocale === 'ko' ? '토픽을 불러오지 못했습니다' : 'Error Loading Topics'}</strong
+        >
         <p>{errorMessage}</p>
         <button type="button" class="retry-btn" onclick={() => fetchTopics(searchQuery)}
-          >Retry</button
+          >{currentLocale === 'ko' ? '다시 시도' : 'Retry'}</button
         >
       </div>
     </div>
   {:else if topics.length === 0}
-    <div class="state-container empty-state" role="region" aria-label="No topics found">
+    <div
+      class="state-container empty-state"
+      role="region"
+      aria-label={currentLocale === 'ko' ? '검색된 토픽 없음' : 'No topics found'}
+    >
       <p>
-        No canonical topics found matching <strong>"{executedQuery}"</strong>.
+        {currentLocale === 'ko'
+          ? '다음 검색어와 일치하는 표준 토픽이 없습니다:'
+          : 'No canonical topics found matching'} <strong>"{executedQuery}"</strong>.
       </p>
-      <button type="button" class="reset-search-btn" onclick={handleClear}>View All Topics</button>
+      <button type="button" class="reset-search-btn" onclick={handleClear}
+        >{currentLocale === 'ko' ? '전체 토픽 보기' : 'View All Topics'}</button
+      >
     </div>
   {:else}
     <div class="topic-grid" role="list">
@@ -149,18 +173,24 @@
           <div class="topic-details">
             {#if topic.parent}
               <div class="meta-row">
-                <span class="meta-label">Parent Domain:</span>
+                <span class="meta-label"
+                  >{currentLocale === 'ko' ? '상위 분야:' : 'Parent Domain:'}</span
+                >
                 <span class="meta-val parent-tag">{topic.parent}</span>
               </div>
             {/if}
             <div class="meta-row">
-              <span class="meta-label">Taxonomy Version:</span>
+              <span class="meta-label"
+                >{currentLocale === 'ko' ? '분류 체계 버전:' : 'Taxonomy Version:'}</span
+              >
               <span class="meta-val">{topic.taxonomyVersion}</span>
             </div>
 
             {#if topic.aliases.length > 0}
               <div class="aliases-wrap">
-                <span class="meta-label">Recognized Aliases:</span>
+                <span class="meta-label"
+                  >{currentLocale === 'ko' ? '인식되는 별칭:' : 'Recognized Aliases:'}</span
+                >
                 <div class="alias-chips">
                   {#each topic.aliases as alias (alias)}
                     <span class="alias-chip">{alias}</span>
@@ -180,12 +210,13 @@
           class="load-more-btn"
           onclick={loadMore}
           disabled={loadingMore}
-          aria-label="Load more topics"
+          aria-label={currentLocale === 'ko' ? '토픽 더 불러오기' : 'Load more topics'}
         >
           {#if loadingMore}
-            <span class="spinner" aria-hidden="true"></span> Loading more...
+            <span class="spinner" aria-hidden="true"></span>
+            {currentLocale === 'ko' ? '더 불러오는 중...' : 'Loading more...'}
           {:else}
-            Load More Topics
+            {currentLocale === 'ko' ? '토픽 더 보기' : 'Load More Topics'}
           {/if}
         </button>
       </div>

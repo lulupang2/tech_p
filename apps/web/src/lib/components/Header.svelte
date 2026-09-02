@@ -15,7 +15,11 @@
 <aside class="sidebar">
   <div class="brand">
     <div class="brand-logo" aria-hidden="true"><span></span><span></span></div>
-    <div><strong>Signal Archive</strong><small>INTELLIGENCE</small></div>
+    <div>
+      <strong>Signal Archive</strong><small
+        >{currentLocale === 'ko' ? '인텔리전스' : 'INTELLIGENCE'}</small
+      >
+    </div>
   </div>
   <p class="nav-eyebrow">{currentLocale === 'ko' ? '메인 메뉴' : 'MAIN MENU'}</p>
   <nav aria-label={t('navigation', currentLocale)}>
