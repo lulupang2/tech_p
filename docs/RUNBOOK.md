@@ -20,6 +20,10 @@ cp .env.example .env
 
 # 2. Start full local stack with health wait
 docker compose --profile stack up -d --wait
+# If provider credentials are stored in the local worker env file, use it for
+# Compose interpolation without committing or copying the secret:
+# docker compose --env-file apps/worker/.env --profile stack up -d --wait
+
 
 # 3. Apply database migrations
 pnpm --filter @techpulse/database run db:migrate
