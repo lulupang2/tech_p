@@ -16,18 +16,46 @@
   let errorMessage = $state<string | null>(null);
   let filterTerm = $state('');
   let selectedSourceKey = $state<string | null>(null);
+  type StatusFilter = 'all' | 'healthy' | 'stale' | 'degraded' | 'disabled';
+  let selectedStatusFilter = $state<StatusFilter>('all');
 
-  let filteredSources = $derived(
-    filterTerm.trim().length === 0
-      ? sources
-      : sources.filter(
-          (s) =>
-            s.displayName.toLowerCase().includes(filterTerm.trim().toLowerCase()) ||
-            s.key.toLowerCase().includes(filterTerm.trim().toLowerCase()) ||
-            s.kind.toLowerCase().includes(filterTerm.trim().toLowerCase()),
-        ),
-  );
+  function formatUtcDateTime(isoString: string | null | undefined): string {
+    if (!isoString) return 'None / Not collected';
+    try {
+      const d = new Date(isoString);
+      if (Number.isNaN(d.getTime())) return isoString;
+      return d.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    } catch {
+      return String(isoString);
+    }
+  }
 
+  let statusCounts = $derived.by(() => {
+    let healthy = 0;
+    let stale = 0;
+    let degraded = 0;
+    let disabled = 0;
+    for (const s of sources) {
+      if (s.status === 'healthy') healthy++;
+      else if (s.status === 'stale') stale++;
+      else if (s.status === 'degraded') degraded++;
+      else if (s.status === 'disabled') disabled++;
+    }
+    return { total: sources.length, healthy, stale, degraded, disabled };
+  });
+
+  let filteredSources = $derived.by(() => {
+    return sources.filter((s) => {
+      const matchesStatus = selectedStatusFilter === 'all' || s.status === selectedStatusFilter;
+      const term = filterTerm.trim().toLowerCase();
+      const matchesTerm =
+        term.length === 0 ||
+        s.displayName.toLowerCase().includes(term) ||
+        s.key.toLowerCase().includes(term) ||
+        s.kind.toLowerCase().includes(term);
+      return matchesStatus && matchesTerm;
+    });
+  });
   async function loadSources() {
     loading = true;
     errorMessage = null;
@@ -95,6 +123,67 @@
     </div>
   </div>
 
+  <!-- Freshness and Health Summary Bar -->
+  <div class="freshness-overview-bar" aria-label="Source Ingestion Freshness &amp; Health Overview">
+    <button
+      type="button"
+      class="overview-filter-btn total"
+      class:active={selectedStatusFilter === 'all'}
+      onclick={() => (selectedStatusFilter = 'all')}
+      aria-label={`Show all ${statusCounts.total} sources`}
+      aria-pressed={selectedStatusFilter === 'all'}
+    >
+      <span class="overview-num">{statusCounts.total}</span>
+      <span class="overview-label">Total Sources</span>
+    </button>
+    <button
+      type="button"
+      class="overview-filter-btn healthy"
+      class:active={selectedStatusFilter === 'healthy'}
+      onclick={() =>
+        (selectedStatusFilter = selectedStatusFilter === 'healthy' ? 'all' : 'healthy')}
+      aria-label={`Filter to ${statusCounts.healthy} healthy sources`}
+      aria-pressed={selectedStatusFilter === 'healthy'}
+    >
+      <span class="overview-num">{statusCounts.healthy}</span>
+      <span class="overview-label">Healthy</span>
+    </button>
+    <button
+      type="button"
+      class="overview-filter-btn stale"
+      class:active={selectedStatusFilter === 'stale'}
+      onclick={() => (selectedStatusFilter = selectedStatusFilter === 'stale' ? 'all' : 'stale')}
+      aria-label={`Filter to ${statusCounts.stale} stale sources`}
+      aria-pressed={selectedStatusFilter === 'stale'}
+    >
+      <span class="overview-num">{statusCounts.stale}</span>
+      <span class="overview-label">Stale</span>
+    </button>
+    <button
+      type="button"
+      class="overview-filter-btn degraded"
+      class:active={selectedStatusFilter === 'degraded'}
+      onclick={() =>
+        (selectedStatusFilter = selectedStatusFilter === 'degraded' ? 'all' : 'degraded')}
+      aria-label={`Filter to ${statusCounts.degraded} degraded sources`}
+      aria-pressed={selectedStatusFilter === 'degraded'}
+    >
+      <span class="overview-num">{statusCounts.degraded}</span>
+      <span class="overview-label">Degraded</span>
+    </button>
+    <button
+      type="button"
+      class="overview-filter-btn disabled"
+      class:active={selectedStatusFilter === 'disabled'}
+      onclick={() =>
+        (selectedStatusFilter = selectedStatusFilter === 'disabled' ? 'all' : 'disabled')}
+      aria-label={`Filter to ${statusCounts.disabled} disabled sources`}
+      aria-pressed={selectedStatusFilter === 'disabled'}
+    >
+      <span class="overview-num">{statusCounts.disabled}</span>
+      <span class="overview-label">Disabled</span>
+    </button>
+  </div>
   {#if loading}
     <div class="state-container loading-state" role="status" aria-busy="true" aria-live="polite">
       <div class="spinner" aria-hidden="true"></div>
@@ -140,6 +229,30 @@
           </div>
 
           <div class="card-body">
+            {#if source.status === 'stale' || source.status === 'degraded'}
+              <div
+                class="source-warning-banner"
+                class:stale-banner={source.status === 'stale'}
+                class:degraded-banner={source.status === 'degraded'}
+                role="region"
+                aria-label={`Source ${source.status} warning for ${source.displayName}`}
+              >
+                <span class="warning-icon" aria-hidden="true">⚠️</span>
+                <div class="warning-text-wrap">
+                  <strong class="warning-title">Freshness Alert ({source.status}):</strong>
+                  <span class="warning-text">
+                    {#if source.status === 'stale'}
+                      데이터 수집 주기가 지연(Stale)되었습니다. 최근 게시된 원문 변경사항이 아직
+                      색인되지 않았을 수 있습니다.
+                    {:else}
+                      데이터 수집 또는 정규화 파이프라인에서 오류가 발생(Degraded)하여 일부 지표가
+                      누락되었을 수 있습니다.
+                    {/if}
+                  </span>
+                </div>
+              </div>
+            {/if}
+
             <div class="info-row">
               <span class="info-label">Kind:</span>
               <span class="info-value">{source.kind}</span>
@@ -148,7 +261,9 @@
               <span class="info-label">Fresh Through:</span>
               <span class="info-value">
                 {#if source.freshThrough}
-                  <time datetime={source.freshThrough}>{source.freshThrough}</time>
+                  <time datetime={source.freshThrough}
+                    >{formatUtcDateTime(source.freshThrough)}</time
+                  >
                 {:else}
                   <span class="muted">Not collected yet</span>
                 {/if}
@@ -159,14 +274,13 @@
               <span class="info-value">
                 {#if source.lastSuccessfulCollectionAt}
                   <time datetime={source.lastSuccessfulCollectionAt}
-                    >{source.lastSuccessfulCollectionAt}</time
+                    >{formatUtcDateTime(source.lastSuccessfulCollectionAt)}</time
                   >
                 {:else}
                   <span class="muted">None</span>
                 {/if}
               </span>
             </div>
-
             {#if source.coverageNotes.length > 0}
               <div class="notes-section">
                 <span class="info-label">Coverage &amp; Rights Notes:</span>
@@ -247,7 +361,6 @@
     border-bottom: 1px solid #1e293b;
     padding-bottom: 16px;
   }
-
   .panel-title {
     margin: 0 0 4px 0;
     font-size: 18px;
@@ -260,10 +373,68 @@
     color: #94a3b8;
   }
 
+  /* Freshness and Health Summary Bar */
+  .freshness-overview-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #1e293b50;
+    border: 1px solid #334155;
+    border-radius: 8px;
+  }
+
+  .overview-filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .overview-filter-btn:hover {
+    border-color: #64748b;
+    background: #334155;
+  }
+
+  .overview-filter-btn.active {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+  }
+
+  .overview-num {
+    font-weight: 800;
+    font-size: 13px;
+  }
+
+  .overview-filter-btn.healthy .overview-num {
+    color: #34d399;
+  }
+
+  .overview-filter-btn.stale .overview-num {
+    color: #facc15;
+  }
+
+  .overview-filter-btn.degraded .overview-num {
+    color: #fb923c;
+  }
+
+  .overview-filter-btn.disabled .overview-num {
+    color: #94a3b8;
+  }
+
   .filter-box {
     display: flex;
   }
-
   .visually-hidden {
     position: absolute;
     width: 1px;
@@ -449,6 +620,48 @@
     flex-direction: column;
     gap: 8px;
     font-size: 13px;
+  }
+
+  .source-warning-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  .source-warning-banner.stale-banner {
+    background: rgba(234, 179, 8, 0.1);
+    border: 1px solid rgba(234, 179, 8, 0.35);
+    color: #fef08a;
+  }
+
+  .source-warning-banner.degraded-banner {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+  }
+
+  .warning-icon {
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+
+  .warning-text-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .warning-title {
+    font-weight: 700;
+  }
+
+  .warning-text {
+    font-size: 11px;
+    line-height: 1.4;
   }
 
   .info-row {

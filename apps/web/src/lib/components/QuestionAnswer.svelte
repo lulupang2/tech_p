@@ -55,19 +55,92 @@
     }
   }
 
+  interface MetricGroup {
+    metric: string;
+    metricLabel: string;
+    unit: string;
+    unitLabel: string;
+    items: {
+      subject: string;
+      value: number;
+      change: number | null;
+      unit: string;
+    }[];
+  }
+
+  function formatUnitName(unit: string): string {
+    const map: Record<string, string> = {
+      deduplicated_documents: 'deduplicated documents',
+      new_repositories: 'new repositories',
+      interactions: 'interactions',
+      comments: 'comments',
+      reactions: 'reactions',
+      stars: 'stars',
+      sources: 'sources',
+      releases: 'releases',
+      submissions: 'submissions',
+      models: 'models',
+      datasets: 'datasets',
+      downloads: 'downloads',
+      count: 'count',
+    };
+    return map[unit] || unit.replace(/_/g, ' ');
+  }
+
   function formatMetricName(metric: string): string {
     const map: Record<string, string> = {
       community_mentions: 'Community Mentions',
       issue_discussion: 'Issue & Discussion Activity',
       repo_attention: 'Repository Attention (Stars/New)',
       source_diversity: 'Source Diversity',
-      release_activity: 'Release Cadence',
+      release_activity: 'Release Cadence & Activity',
       paper_activity: 'Research Paper Submissions',
       model_activity: 'Model & Dataset Activity',
       package_downloads: 'Package Downloads',
     };
     return map[metric] || metric.replace(/_/g, ' ');
   }
+
+  let groupedObservations = $derived.by<MetricGroup[]>(() => {
+    if (!response || !response.observations || response.observations.length === 0) return [];
+    const groups: MetricGroup[] = [];
+    const indexMap: Record<string, number> = {};
+
+    for (const obs of response.observations) {
+      const existingIdx = indexMap[obs.metric];
+      if (existingIdx === undefined) {
+        indexMap[obs.metric] = groups.length;
+        groups.push({
+          metric: obs.metric,
+          metricLabel: formatMetricName(obs.metric),
+          unit: obs.unit,
+          unitLabel: formatUnitName(obs.unit),
+          items: [
+            {
+              subject: obs.subject,
+              value: obs.value,
+              change: obs.change,
+              unit: obs.unit,
+            },
+          ],
+        });
+      } else {
+        groups[existingIdx]?.items.push({
+          subject: obs.subject,
+          value: obs.value,
+          change: obs.change,
+          unit: obs.unit,
+        });
+      }
+    }
+    return groups;
+  });
+
+  let hasMultipleSubjects = $derived.by(() => {
+    if (!response || !response.observations || response.observations.length <= 1) return false;
+    const first = response.observations[0]?.subject;
+    return response.observations.some((o) => o.subject !== first);
+  });
 
   function formatIntentName(intent: string): string {
     const map: Record<string, string> = {
@@ -92,7 +165,6 @@
     };
     return map[source] || source;
   }
-
   function handleCitationFocus(citationId: string) {
     highlightedCitationId = citationId;
     if (typeof globalThis.document !== 'undefined') {
@@ -617,15 +689,23 @@
         </div>
       {/if}
 
-      <!-- Metric Observations Section (if present) -->
+      <!-- Metric Observations & Comparison Section -->
       {#if response.observations && response.observations.length > 0}
         <div class="section-container" aria-labelledby="obs-heading">
           <div class="section-header">
             <div>
-              <h3 id="obs-heading" class="section-title">Metric Observations</h3>
+              <div class="section-title-row">
+                <h3 id="obs-heading" class="section-title">
+                  {hasMultipleSubjects ? 'Comparative Metric Observations' : 'Metric Observations'}
+                </h3>
+                <span class="no-composite-badge" title="No composite score rule">
+                  No Composite Score (Unit-Separated)
+                </span>
+              </div>
               <p class="section-desc">
-                지표 단위 왜곡을 방지하기 위해 서로 다른 단위를 합산하지 않고 독립적인 관측치로
-                표시합니다.
+                지표 단위 왜곡을 방지하기 위해 서로 다른 단위를 합산하거나 종합 점수로 만들지 않고,
+                각 지표 및 단위별 독립적인 관측치와 기준 구간 대비 추세(Trend)를 분리하여
+                비교합니다.
               </p>
             </div>
             <span class="obs-count-badge">
@@ -634,33 +714,68 @@
             </span>
           </div>
 
-          <div class="observations-grid">
-            {#each response.observations as obs, i (obs.subject + obs.metric + String(i))}
-              <div class="obs-card">
-                <div class="obs-subject-row">
-                  <span class="obs-subject">{obs.subject}</span>
-                  <span class="obs-metric-name">{formatMetricName(obs.metric)}</span>
-                </div>
-                <div class="obs-value-row">
-                  <span class="obs-value">{obs.value.toLocaleString()}</span>
-                  <span class="obs-unit">{obs.unit}</span>
-                </div>
-                {#if obs.change !== null && obs.change !== undefined}
-                  <div class="obs-change-row">
-                    <span class="change-label">Change vs Baseline:</span>
-                    <span
-                      class="change-value"
-                      class:positive={obs.change > 0}
-                      class:negative={obs.change < 0}
-                    >
-                      {obs.change > 0 ? `+${obs.change}%` : `${obs.change}%`}
-                    </span>
+          <!-- Grouped Metric Presentation -->
+          <div class="metric-groups-container">
+            {#each groupedObservations as group (group.metric)}
+              <div class="metric-group-card">
+                <div class="group-header">
+                  <div class="group-title-box">
+                    <h4 class="group-metric-title">{group.metricLabel}</h4>
+                    <span class="unit-badge">Unit: {group.unitLabel}</span>
                   </div>
-                {:else}
-                  <div class="obs-change-row">
-                    <span class="change-muted">Baseline comparison N/A</span>
+                  <div class="group-period-badge">
+                    <span class="period-label">Period:</span>
+                    <time class="period-dates">
+                      {formatUtcDateTime(response.resolvedTimeRange.from)} → {formatUtcDateTime(
+                        response.resolvedTimeRange.to,
+                      )}
+                    </time>
                   </div>
-                {/if}
+                </div>
+
+                <div class="group-items-grid" class:comparison-layout={group.items.length > 1}>
+                  {#each group.items as item (item.subject + group.metric)}
+                    <div class="obs-card" class:highlight-comparison={group.items.length > 1}>
+                      <div class="obs-subject-row">
+                        <span class="obs-subject">{item.subject}</span>
+                        <span class="obs-metric-unit-tag">{group.unitLabel}</span>
+                      </div>
+                      <div class="obs-value-row">
+                        <span class="obs-value">{item.value.toLocaleString()}</span>
+                        <span class="obs-unit">{group.unitLabel}</span>
+                      </div>
+                      {#if item.change !== null && item.change !== undefined}
+                        <div class="obs-change-row">
+                          <span class="change-label">Trend vs Baseline:</span>
+                          <span
+                            class="change-value"
+                            class:positive={item.change > 0}
+                            class:negative={item.change < 0}
+                            class:neutral={item.change === 0}
+                            title={`Change vs previous baseline period: ${item.change > 0 ? '+' : ''}${item.change}%`}
+                          >
+                            {#if item.change > 0}
+                              <span class="trend-icon" aria-hidden="true">↑</span> +{item.change}%
+                            {:else if item.change < 0}
+                              <span class="trend-icon" aria-hidden="true">↓</span> {item.change}%
+                            {:else}
+                              <span class="trend-icon" aria-hidden="true">→</span> 0%
+                            {/if}
+                          </span>
+                        </div>
+                      {:else}
+                        <div class="obs-change-row">
+                          <span
+                            class="change-muted"
+                            title="No prior baseline observation window available"
+                          >
+                            Baseline comparison N/A
+                          </span>
+                        </div>
+                      {/if}
+                    </div>
+                  {/each}
+                </div>
               </div>
             {/each}
           </div>
@@ -787,29 +902,68 @@
       {/if}
 
       <!-- Coverage & Governance Footer -->
+      <!-- Coverage & Governance Footer with Stale / Partial Source Warnings -->
       <div class="coverage-card" aria-labelledby="coverage-heading">
-        <h4 id="coverage-heading" class="coverage-title">Data Coverage &amp; Freshness Metadata</h4>
+        <div class="coverage-header">
+          <h4 id="coverage-heading" class="coverage-title">
+            Data Coverage &amp; Freshness Metadata
+          </h4>
+          <span class="freshness-status-badge" aria-label="Freshness Status">
+            Fresh through: {formatUtcDateTime(response.coverage.dataFreshThrough)}
+          </span>
+        </div>
+
         <div class="coverage-stats-row">
           <div class="coverage-stat">
             <span class="stat-label">Data Fresh Through</span>
             <span class="stat-value">{formatUtcDateTime(response.coverage.dataFreshThrough)}</span>
           </div>
           <div class="coverage-stat">
-            <span class="stat-label">Sources Used</span>
-            <span class="stat-value">{response.coverage.sourcesUsed}</span>
+            <span class="stat-label">Sources Used in Answer</span>
+            <span class="stat-value">{response.coverage.sourcesUsed} active sources</span>
           </div>
           <div class="coverage-stat">
             <span class="stat-label">Documents Considered</span>
-            <span class="stat-value">{response.coverage.documentsConsidered}</span>
+            <span class="stat-value">{response.coverage.documentsConsidered} items</span>
           </div>
         </div>
 
         {#if response.coverage.limitations.length > 0}
-          <div class="coverage-limitations">
-            <span class="lim-heading">Coverage Limitations &amp; Caveats:</span>
+          <div
+            class="coverage-limitations"
+            role="region"
+            aria-label="Coverage and Freshness Warnings"
+          >
+            <div class="lim-header-row">
+              <span class="lim-heading">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                  class="warning-svg"
+                >
+                  <path
+                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                  ></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Coverage Limitations &amp; Freshness Warnings:
+              </span>
+              <span class="lim-badge">
+                {response.coverage.limitations.length}
+                {response.coverage.limitations.length === 1 ? 'Advisory' : 'Advisories'}
+              </span>
+            </div>
             <ul class="lim-list">
               {#each response.coverage.limitations as limitation, i (limitation + String(i))}
-                <li>{limitation}</li>
+                <li class="lim-item">
+                  <span class="lim-text">{limitation}</span>
+                </li>
               {/each}
             </ul>
           </div>
@@ -1443,7 +1597,7 @@
     color: var(--text-secondary);
   }
 
-  /* Observations Section */
+  /* Observations Section & Metric Groups */
   .section-container {
     display: flex;
     flex-direction: column;
@@ -1457,11 +1611,29 @@
     gap: 16px;
   }
 
+  .section-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+
   .section-title {
-    margin: 0 0 4px;
+    margin: 0;
     font-size: 1.15rem;
     font-weight: 700;
     color: var(--text-primary);
+  }
+
+  .no-composite-badge {
+    background-color: rgba(56, 189, 248, 0.12);
+    color: var(--accent-cyan);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 9999px;
   }
 
   .section-desc {
@@ -1481,20 +1653,97 @@
     white-space: nowrap;
   }
 
-  .observations-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  .metric-groups-container {
+    display: flex;
+    flex-direction: column;
     gap: 16px;
   }
 
-  .obs-card {
-    padding: 18px;
+  .metric-group-card {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .group-title-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .group-metric-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .unit-badge {
+    background-color: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .group-period-badge {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .period-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .period-dates {
+    color: var(--text-secondary);
+  }
+
+  .group-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .group-items-grid.comparison-layout {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  .obs-card {
+    padding: 16px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    transition: border-color 0.15s ease;
+  }
+
+  .obs-card.highlight-comparison {
+    border-color: rgba(56, 189, 248, 0.25);
+    background: linear-gradient(180deg, rgba(56, 189, 248, 0.04) 0%, rgba(15, 23, 42, 0.6) 100%);
   }
 
   .obs-subject-row {
@@ -1505,12 +1754,12 @@
   }
 
   .obs-subject {
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     color: var(--text-primary);
   }
 
-  .obs-metric-name {
+  .obs-metric-unit-tag {
     font-size: 0.75rem;
     color: var(--accent-cyan);
     background-color: rgba(56, 189, 248, 0.1);
@@ -1525,7 +1774,7 @@
   }
 
   .obs-value {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: var(--text-primary);
   }
@@ -1539,6 +1788,7 @@
     font-size: 0.8rem;
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding-top: 8px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
   }
@@ -1549,6 +1799,13 @@
 
   .change-value {
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .trend-icon {
+    font-weight: 800;
   }
 
   .change-value.positive {
@@ -1559,10 +1816,13 @@
     color: var(--status-danger);
   }
 
+  .change-value.neutral {
+    color: var(--text-secondary);
+  }
+
   .change-muted {
     color: var(--text-muted);
   }
-
   /* Citations List */
   .citations-list {
     display: flex;
@@ -1705,26 +1965,45 @@
   }
 
   /* Coverage card */
+  /* Coverage card & Freshness Warning Styling */
   .coverage-card {
-    padding: 18px 20px;
+    padding: 20px;
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
+  }
+
+  .coverage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .coverage-title {
     margin: 0;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .freshness-status-badge {
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--status-ok);
+    background-color: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    padding: 3px 8px;
+    border-radius: 9999px;
   }
 
   .coverage-stats-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
   }
 
@@ -1746,22 +2025,61 @@
   }
 
   .coverage-limitations {
-    padding-top: 10px;
-    border-top: 1px solid var(--border-color);
-    font-size: 0.8rem;
+    padding: 14px 16px;
+    background-color: rgba(234, 179, 8, 0.08);
+    border: 1px solid rgba(234, 179, 8, 0.25);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .lim-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
   }
 
   .lim-heading {
-    font-weight: 600;
+    font-weight: 700;
     color: var(--status-warn);
-    display: block;
-    margin-bottom: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+  }
+
+  .warning-svg {
+    color: var(--status-warn);
+    flex-shrink: 0;
+  }
+
+  .lim-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    background-color: rgba(234, 179, 8, 0.2);
+    color: var(--status-warn);
+    padding: 2px 6px;
+    border-radius: 4px;
   }
 
   .lim-list {
     margin: 0;
     padding-left: 20px;
     color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+  }
+
+  .lim-item {
+    line-height: 1.5;
+  }
+
+  .lim-text {
+    color: var(--text-primary);
   }
 
   @media (max-width: 640px) {

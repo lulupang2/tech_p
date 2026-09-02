@@ -198,12 +198,12 @@
 | API-002 | source/topic endpoints | API-001, COL-001, DB-005 | DONE | source freshness를 secret 없이 반환; topic search cursor/limit validation; OpenAPI contract test 통과 |
 | API-003 | synchronous answer endpoint | API-001, RAG-005, RAG-006 | DONE | resolved range, answer/insufficient status, observations, citations, coverage 반환; deadline/body cap/idempotency contract test 통과 |
 | SEC-001 | public API abuse controls | API-003, FND-005 | DONE | CORS allowlist, security headers, rate/concurrency/provider budget limit; oversized/injection/fuzz 입력에서 정보 유출·무제한 호출 없음 |
-| API-004 | protected operations endpoints 또는 CLI | PIPE-007, API-001, SEC-001 | BLOCKED | 선택 interface가 strong auth로 보호; bounded collect/replay와 idempotency; public route에서 접근 불가; audit event 생성 |
+| API-004 | protected operations endpoints 또는 CLI | PIPE-007, API-001, SEC-001 | DONE | 선택 interface가 strong auth로 보호; bounded collect/replay와 idempotency; public route에서 접근 불가; audit event 생성 |
 | SEC-002 | collector/browser hardening | COL-005, PIPE-002 | DONE | non-root/최소 capability, egress allowlist, private IP/redirect 차단, HTML output escaping, malicious fixture 회귀 통과 |
 | SEC-003 | RAG prompt-injection/egress hardening | RAG-005, SEC-001 | DONE | retrieved instruction이 tool/secret/URL을 바꾸지 못함; RAG에 arbitrary fetch/shell 없음; injection corpus success 0 |
 | WEB-001 | web shell과 typed API client | DEC-005, FND-001, CON-001, API-001 | DONE | web이 DB/provider package를 import하지 않음; server 전용 코드가 `+page.server.ts`·`+server.ts`·`$lib/server/` 경계 안에만 있고 client bundle 산출물 검사에서 secret이 발견되지 않음; loading/error/empty layout 접근성 smoke; API contract type drift test 통과 |
 | WEB-002 | 질문·답변·citation UI | WEB-001, API-003 | DONE | 질문/기간 입력, resolved range, answer, clickable citation/date/source, limitations/insufficient state 표시; keyboard/screen-reader labels 검증 |
-| WEB-003 | 비교 metric과 source freshness UI | WEB-002, API-002, RAG-006 | BLOCKED | metric별 unit/기간 분리 표시; composite score 없음; stale/partial source warning이 API coverage와 일치 |
+| WEB-003 | 비교 metric과 source freshness UI | WEB-002, API-002, RAG-006 | DONE | metric별 unit/기간 분리 표시; composite score 없음; stale/partial source warning이 API coverage와 일치 |
 | TST-002 | Playwright UI E2E suite | WEB-002, WEB-003, TST-001 | BLOCKED | seeded DB+fake model에서 summary/comparison/no-data/citation 흐름 통과; collector suite와 분리; flaky retry 없이 Chromium PR smoke 성공 |
 
 ## 8. Operations and MVP acceptance
@@ -355,6 +355,19 @@ flowchart TD
 - 접근성 및 안전성: ARIA 랜드마크, `aria-live="polite"` / `aria-busy` 로딩 상태, `role="alert"` 에러 컨테이너, 키보드 포커스 및 스크린 리더 라벨을 보장하며 원격 스크립트나 위험한 HTML을 삽입하지 않는다.
 - 검증: `apps/web` 4개 test file·31개 test 통과(import boundary, contract drift, api-client, question-answer), static 검사(svelte-check, ESLint, Prettier) 및 Vite 프로덕션 빌드 전체 통과.
 
+### WEB-003 완료 증빙 (2026-09-02)
+
+- SvelteKit 웹 클라이언트(`apps/web`)에 비교 메트릭(Metric Comparison) 및 데이터 소스 최신성(Source Freshness) UI를 구현했다.
+- 메트릭별 단위(Unit) 및 기간(Period) 분리 표시:
+  - `QuestionAnswer.svelte`에서 관측치(`observations`)를 메트릭 유형별 그룹(`groupedObservations`)으로 분류하고, 메트릭별 독립 단위 뱃지(`deduplicated documents`, `downloads`, `stars`, `releases`, `interactions` 등)와 평가 기간(`Period: from → to UTC`)을 명시하여 서로 다른 단위를 결합하지 않는다.
+  - 다중 대상(Multi-Subject) 비교 레이아웃: 동일 메트릭에 대해 복수 대상(예: Bun vs Node.js)을 나란히 비교하며 각 대상의 관측치, 단위, 기준 기간 대비 증감률(Trend vs Baseline: `↑ +35.5%`, `↓ -4.2%`, `→ 0.0%`, `Baseline N/A`)을 명확한 방향성 아이콘과 함께 렌더링한다.
+  - **무복합 점수(No Composite Score) 원칙 엄격 준수**: 서로 다른 단위의 지표를 합산하거나 임의의 종합 인기/관심 점수(Composite Interest Score)를 생성하지 않으며, "No Composite Score (Unit-Separated)" 정책을 UI에 명시했다.
+- API Coverage 연동 최신성 및 Stale/Partial 소스 경고:
+  - 질의 응답 영역(`QuestionAnswer.svelte`): `coverage.dataFreshThrough`를 UTC 타임스탬프와 최신성 상태 뱃지로 표시하고, `coverage.limitations`가 존재하거나 소스 결측/지연이 보고될 경우 `Coverage Limitations & Freshness Warnings` 경고 영역(`role="region"`, 경고 아이콘 및 어드바이저리 뱃지)으로 명확히 안내한다.
+  - 소스 목록 영역(`SourceList.svelte`): 상단에 전체/정상(Healthy)/지연(Stale)/저하(Degraded)/비활성(Disabled) 상태 요약 카운터 및 원클릭 상태 필터 바를 제공하고, `stale` 또는 `degraded` 소스 카드 내부에 데이터 수집 지연 및 메트릭 결측 가능성을 알리는 전용 경고 배너(`role="region"`)를 렌더링한다.
+- 접근성 및 안전한 렌더링: WCAG 시맨틱 마크업(`role="region"`, `aria-label`, `aria-live="polite"`, `aria-pressed`), 고대비 시각 상태, 안전한 데이터 바인딩(XSS 방지)을 보장한다.
+- 검증: `apps/web` 4개 test file·33개 test 통과(단위 분리 비교, composite score 부재, baseline change, stale/partial coverage 경고), svelte-check 0 errors, ESLint 통과, Prettier 검사 통과 및 Vite 프로덕션 빌드 성공.
+
 ### OPS-002 완료 증빙 (2026-09-02)
 
 - `@techpulse/observability` 패키지에 메트릭 수집 기본 단위(`Counter`, `Gauge`, `Histogram`), `MetricRegistry`, 대시보드 스냅샷(`createDashboardSnapshot`) 및 장애 알림 임계치 평가 엔진(`evaluateAlerts`, `DEFAULT_ALERT_RULES`, `createAlertStructuredEvent`, `createTestAlertEvent`)을 구현했다.
@@ -371,3 +384,20 @@ flowchart TD
   - `redact()`를 통해 `token`, `cookie`, `authorization`, `secret`, `payload` 등 민감 속성을 `[REDACTED]`로 마스킹하고, 원문 본문이나 자격증명 유출을 원천 차단한다.
 - 장애 알림 베이스라인: 소스 최신성 지연(24h 초과), 파이프라인 에러 버스트, 큐 지연(5m 초과), DB 쿼리 p95 지연(2s 초과), DB 풀 포화(90% 이상), LLM 지연(15s 초과) 및 에러 임계치 초과를 결정적으로 평가하는 기본 규칙을 제공하고, 상관관계가 유지되는 테스트 알림 이벤트 생성을 검증했다.
 - 검증: `packages/observability` 3개 test file·22개 test 통과, static checks(typecheck, ESLint, Prettier) 전체 통과.
+
+### API-004 완료 증빙 (2026-09-02)
+
+- **보호된 운영 인터페이스 및 Strong Auth**:
+  - `apps/api`에 운영 전용 엔드포인트(`GET /api/v1/ops/status`, `GET /api/v1/ops/collection-runs`, `GET /api/v1/ops/collection-runs/:id`, `POST /api/v1/ops/collection-runs`, `POST /api/v1/ops/pipeline-replays`, `POST /api/v1/ops/sources/:key/enable`, `POST /api/v1/ops/sources/:key/disable`, `PATCH /api/v1/ops/sources/:key`) 및 CLI 러너(`runOpsCli`, `apps/api/src/cli.ts`)를 구현했다.
+  - `crypto.timingSafeEqual` 기반의 timing-safe 토큰 검증을 강제하고, 인증 헤더 부재 시 401 `UNAUTHENTICATED`, 토큰 불일치/미설정 시 403 `FORBIDDEN`을 일관되게 반환한다.
+  - 공개 엔드포인트와 운영 엔드포인트의 라우팅을 완전 격리하여 public consumer는 ops 라우트에 접근할 수 없으며 내부 비밀정보나 스택 트레이스가 노출되지 않는다.
+- **Bounded Collect & Replay**:
+  - 수동 수집(`POST /api/v1/ops/collection-runs`): 대상 소스 유효성 및 활성화 상태 검증, 수집 상한(`1 <= limit <= 500`) 바운딩을 적용하며 비활성 소스 수집 요청은 400 `INVALID_REQUEST`로 거부한다.
+  - 파이프라인 재처리(`POST /api/v1/ops/pipeline-replays`): `run` | `raw` | `stage` 스코프, 필수 stage 파라미터 및 대상 식별자를 검증하고 domain `ReplayService`와 연동하여 불변 아티팩트의 결정적 재처리를 큐잉한다.
+- **Source Enable / Disable & Tombstone / Reindex 연동**:
+  - 소스 비활성화(`POST /sources/:key/disable`): 소스 상태를 disabled로 갱신하고 `TombstoneService`를 호출하여 관련 리비전의 검색 제외(`tombstoned`)를 적용하며 감사 이력을 남긴다.
+  - 소스 활성화(`POST /sources/:key/enable`): 소스 상태를 enabled로 복구하고 `reindex`를 호출하여 검색 가능한 상태(`searchable`)로 복원한다.
+- **Idempotency 및 Redacted Audit Logging**:
+  - 모든 변경 연산(POST/PATCH)에 `Idempotency-Key` 헤더를 강제(누락 시 400 `INVALID_REQUEST`)하고, SHA-256 canonical payload hash 기반으로 동일 키 중복 요청 시 캐시된 응답을 반환하며, 페이로드 불일치 시 409 `IDEMPOTENCY_CONFLICT`를 반환한다.
+  - 모든 운영 연산(`ops.collection_run.triggered`, `ops.pipeline_replay.requested`, `ops.source.enabled`, `ops.source.disabled`)에 대해 UTC 타임스탬프, 요청 상관관계 ID(`requestId`), 실행자(`actor`)를 포함한 감사 이벤트를 기록하며, `token`, `password`, `cookie`, `secret`, `database_url` 등 민감 정보는 `[REDACTED]`로 마스킹한다.
+- **검증**: `apps/api` 9개 test file·51개 test 전체 통과(`ops-routes.test.ts` 11개 결정적 테스트 포함), `@techpulse/domain`, `@techpulse/database`, `@techpulse/observability`, `@techpulse/worker`, `@techpulse/contracts` 패키지 단위 테스트 전체 통과.
