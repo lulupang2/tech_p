@@ -165,6 +165,14 @@ describe('OPS-004 production deployment configuration', () => {
     expect(caddy).toContain('reverse_proxy 127.0.0.1:5173');
   });
 
+  it('requires the operations API key in the api service environment', () => {
+    const compose = readRootFile('compose.production.yaml').replace(/\r\n/gu, '\n');
+    const apiService = compose.match(/^( {2})api:\n.*?(?=^ {2}worker:)/ms)?.[0];
+
+    expect(apiService).toBeDefined();
+    expect(apiService).toContain('OPS_API_KEY: ${OPS_API_KEY:?OPS_API_KEY must be set}');
+  });
+
   it('defines approval, pinned SSH host verification, migration, health, rollback, and concurrency', () => {
     const workflow = readRootFile('.github/workflows/deploy-production.yml');
     const script = readRootFile('.github/scripts/deploy-production.sh');
