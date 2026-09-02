@@ -23,8 +23,8 @@
     --bg-card: #fff;
     --border-color: #e3e8e1;
     --text-primary: #10251e;
-    --text-secondary: #66756f;
-    --text-muted: #93a09a;
+    --text-secondary: #4f6059;
+    --text-muted: #687871;
     --accent-blue: #9ceb65;
     --accent-cyan: #70db36;
     --accent-deep: #0d3a2c;
@@ -149,6 +149,39 @@
     border-color: #d7e4d3 !important;
     background: #f8fbf7 !important;
     border-radius: 9px !important;
+  }
+  :global(.info-label),
+  :global(.form-help),
+  :global(.char-counter),
+  :global(.example-label),
+  :global(.control-label),
+  :global(.last-checked),
+  :global(.detail-guidance),
+  :global(.card-meta),
+  :global(.coverage-text),
+  :global(.observation-meta) {
+    color: #5c6d66 !important;
+  }
+  :global(.info-value),
+  :global(.meta-val),
+  :global(.health-name),
+  :global(.details-list),
+  :global(.notes-list),
+  :global(.answer-text),
+  :global(.citation-title) {
+    color: #263d35 !important;
+  }
+  :global(.muted),
+  :global(.source-key),
+  :global(.topic-key) {
+    color: #687871 !important;
+  }
+  :global(.footer-meta) {
+    color: #5c6d66 !important;
+  }
+  :global(.source-card footer),
+  :global(.topic-card footer) {
+    border-color: #d9e0d7 !important;
   }
   @media (max-width: 820px) {
     .app-layout {
