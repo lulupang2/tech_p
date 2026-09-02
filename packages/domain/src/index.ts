@@ -41,6 +41,7 @@ export type {
   CollectionRunRecord,
   CreateCollectionRunInput,
   UpdateCollectionRunInput,
+  CollectionRunFilter,
   CollectionRunRepositoryPort,
   RawItemRecord,
   UpsertRawItemInput,

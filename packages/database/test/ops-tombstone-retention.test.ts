@@ -52,7 +52,7 @@ describe('Database Tombstone and Search Exclusion Contract', () => {
         },
       },
       select: () => ({
-        from: (_table: unknown) => ({
+        from: () => ({
           where: () => rawItemsState.map((r) => ({ id: r.id })),
         }),
       }),
@@ -63,7 +63,7 @@ describe('Database Tombstone and Search Exclusion Contract', () => {
               findFirst: async () => sourceState,
             },
           },
-          update: (_table: unknown) => ({
+          update: () => ({
             set: (vals: { enabled?: boolean; status?: string }) => ({
               where: () => {
                 if (vals.enabled !== undefined) {
@@ -134,16 +134,12 @@ describe('Database Tombstone and Search Exclusion Contract', () => {
 
 describe('Database Retention Target & Confirmation Protections', () => {
   it('counts retention candidates and enforces irreversible confirmation guard', async () => {
-    const mockRawItems = [
-      { id: 'raw-1', sourceId: 'src-1', collectedAt: new Date('2026-01-01T00:00:00.000Z') }, // old -> candidate
-      { id: 'raw-2', sourceId: 'src-1', collectedAt: new Date('2026-08-30T00:00:00.000Z') }, // recent -> keep
-    ];
+    // Mock raw items state
 
     const mockDb = {
       select: () => {
         const chain: unknown = {
-          from: (table: unknown) => {
-            // If called without where or for sources
+          from: () => {
             const inner: unknown = {
               where: () => [{ count: 1 }],
               [Symbol.iterator]: function* () {

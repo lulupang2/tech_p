@@ -46,6 +46,14 @@ export interface UpdateCollectionRunInput {
   readonly counts?: Record<string, number>;
   readonly errorSummary?: string | null;
 }
+export interface CollectionRunFilter {
+  readonly sourceId?: string | undefined;
+  readonly status?: CollectionRunStatus | undefined;
+  readonly from?: Date | undefined;
+  readonly to?: Date | undefined;
+  readonly limit?: number | undefined;
+  readonly cursor?: string | undefined;
+}
 
 export interface CollectionRunRepositoryPort {
   readonly findById: (id: string) => Promise<CollectionRunRecord | null>;
@@ -55,6 +63,7 @@ export interface CollectionRunRepositoryPort {
     sourceId: string,
     scheduledAt: Date,
   ) => Promise<CollectionRunRecord | null>;
+  readonly list?: (filter?: CollectionRunFilter) => Promise<readonly CollectionRunRecord[]>;
 }
 
 export interface RawItemRecord {
@@ -437,4 +446,6 @@ export interface MetricObservationRepositoryPort {
 export interface SourceRepositoryPort {
   readonly findByKey: (key: string) => Promise<SourceRecord | null>;
   readonly listEnabled: () => Promise<readonly SourceRecord[]>;
+  readonly updateEnabled?: (key: string, enabled: boolean) => Promise<SourceRecord | null>;
+  readonly listAll?: () => Promise<readonly SourceRecord[]>;
 }

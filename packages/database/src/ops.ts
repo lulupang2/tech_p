@@ -22,7 +22,9 @@ import {
 } from './schema/index.js';
 import { migrateDatabase } from './migrate.js';
 
-export function createDatabaseRetentionTarget(db: NeonDatabase<typeof schema>): RetentionTargetPort {
+export function createDatabaseRetentionTarget(
+  db: NeonDatabase<typeof schema>,
+): RetentionTargetPort {
   return {
     async countCandidates(cutoffs): Promise<RetentionCountSummary> {
       const rawItemsBySource: Record<string, number> = {};
@@ -70,7 +72,8 @@ export function createDatabaseRetentionTarget(db: NeonDatabase<typeof schema>): 
         const allSources = await tx.select({ id: sources.id, key: sources.key }).from(sources);
 
         for (const src of allSources) {
-          const cutoff = cutoffs.rawCutoffsBySource[src.key] ?? cutoffs.rawCutoffsBySource['default'];
+          const cutoff =
+            cutoffs.rawCutoffsBySource[src.key] ?? cutoffs.rawCutoffsBySource['default'];
           if (cutoff) {
             const deleted = await tx
               .delete(rawItems)
@@ -108,7 +111,9 @@ export function createDatabaseRetentionTarget(db: NeonDatabase<typeof schema>): 
   };
 }
 
-export function createDatabaseTombstoneTarget(db: NeonDatabase<typeof schema>): TombstoneTargetPort {
+export function createDatabaseTombstoneTarget(
+  db: NeonDatabase<typeof schema>,
+): TombstoneTargetPort {
   return {
     async exists(scope: TombstoneScope, targetKey: string): Promise<boolean> {
       switch (scope) {
@@ -333,8 +338,8 @@ export function createDatabaseRestoreEnvironment(
         // In-memory or pre-connected mock test
         return { appliedMigrationCount: 1 };
       }
-      const result = await migrateDatabase({ databaseUrl });
-      return { appliedMigrationCount: result.appliedFiles.length };
+      const result = await migrateDatabase(db);
+      return { appliedMigrationCount: result.applied ? 1 : 0 };
     },
 
     async restoreTables(manifest: BackupManifest): Promise<{

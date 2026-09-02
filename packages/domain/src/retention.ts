@@ -50,7 +50,9 @@ export class InvalidRetentionRequestError extends Error {
  */
 export function computeRetentionCutoff(retentionDays: number, referenceDate = new Date()): Date {
   if (!Number.isFinite(retentionDays) || retentionDays < 0) {
-    throw new InvalidRetentionRequestError(`Retention days must be a non-negative number: ${retentionDays}`);
+    throw new InvalidRetentionRequestError(
+      `Retention days must be a non-negative number: ${retentionDays}`,
+    );
   }
   const refTime = referenceDate.getTime();
   if (!Number.isFinite(refTime)) {
@@ -156,7 +158,9 @@ export function createRetentionService(options: {
     async evaluateAndExecute(planOptions: RetentionPlanOptions = {}): Promise<RetentionPlanResult> {
       const referenceDate = planOptions.referenceDate ?? new Date();
       if (!Number.isFinite(referenceDate.getTime())) {
-        throw new InvalidRetentionRequestError('Invalid referenceDate provided to retention service');
+        throw new InvalidRetentionRequestError(
+          'Invalid referenceDate provided to retention service',
+        );
       }
 
       const dryRun = planOptions.dryRun ?? true;
@@ -176,7 +180,10 @@ export function createRetentionService(options: {
         rawCutoffsIsoBySource[key] = cutoff.toISOString();
       }
 
-      const pipelineEventsCutoff = computeRetentionCutoff(PIPELINE_EVENTS_RETENTION_DAYS, referenceDate);
+      const pipelineEventsCutoff = computeRetentionCutoff(
+        PIPELINE_EVENTS_RETENTION_DAYS,
+        referenceDate,
+      );
       const queryRunsCutoff = computeRetentionCutoff(QUERY_RUNS_RETENTION_DAYS, referenceDate);
 
       // 2. Count candidates deterministically (safe dry-run / observation)
@@ -198,7 +205,9 @@ export function createRetentionService(options: {
         }
 
         if (!options.targets.purgeExpired) {
-          throw new IrreversibleActionRefusalError('Purge capability is not configured on target adapter');
+          throw new IrreversibleActionRefusalError(
+            'Purge capability is not configured on target adapter',
+          );
         }
 
         const purged = await options.targets.purgeExpired({
@@ -213,7 +222,7 @@ export function createRetentionService(options: {
           totalCandidates,
           dryRun: false,
           purgedCounts: purged,
-          actor: planOptions.actor,
+          ...(planOptions.actor !== undefined ? { actor: planOptions.actor } : {}),
           occurredAt: new Date(),
         });
 
@@ -243,7 +252,7 @@ export function createRetentionService(options: {
         referenceDate,
         totalCandidates,
         dryRun: true,
-        actor: planOptions.actor,
+        ...(planOptions.actor !== undefined ? { actor: planOptions.actor } : {}),
         occurredAt: new Date(),
       });
 

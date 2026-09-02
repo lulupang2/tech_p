@@ -1,8 +1,9 @@
-import { eq, and, desc, count, sql } from 'drizzle-orm';
+import { eq, and, desc, count, sql, gte, lte } from 'drizzle-orm';
 import type { NeonDatabase } from 'drizzle-orm/neon-serverless';
 import type {
   DocumentRepositoryPort,
   SourceRepositoryPort,
+  CollectionRunFilter,
   CollectionRunRepositoryPort,
   RawItemRepositoryPort,
   PipelineEventRepositoryPort,
@@ -719,6 +720,44 @@ export function createSourceRepository(db: NeonDatabase<typeof schema>): SourceR
         updatedAt: r.updatedAt,
       }));
     },
+
+    async updateEnabled(key: string, enabled: boolean): Promise<SourceRecord | null> {
+      const [updated] = await db
+        .update(sources)
+        .set({ enabled, updatedAt: new Date() })
+        .where(eq(sources.key, key))
+        .returning();
+      if (!updated) return null;
+      return {
+        id: updated.id,
+        key: updated.key,
+        name: updated.name,
+        kind: updated.kind,
+        baseUrl: updated.baseUrl,
+        enabled: updated.enabled,
+        scheduleConfig: updated.scheduleConfig,
+        policyReviewedAt: updated.policyReviewedAt,
+        createdAt: updated.createdAt,
+        updatedAt: updated.updatedAt,
+      };
+    },
+
+    async listAll(): Promise<readonly SourceRecord[]> {
+      const rows = await db.select().from(sources).orderBy(sources.key);
+
+      return rows.map((r) => ({
+        id: r.id,
+        key: r.key,
+        name: r.name,
+        kind: r.kind,
+        baseUrl: r.baseUrl,
+        enabled: r.enabled,
+        scheduleConfig: r.scheduleConfig,
+        policyReviewedAt: r.policyReviewedAt,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+      }));
+    },
   };
 }
 
@@ -830,6 +869,37 @@ export function createCollectionRunRepository(
         errorSummary: row.errorSummary,
         createdAt: row.createdAt,
       };
+    },
+
+    async list(filter?: CollectionRunFilter): Promise<readonly CollectionRunRecord[]> {
+      const conditions = [];
+      if (filter?.sourceId) conditions.push(eq(collectionRuns.sourceId, filter.sourceId));
+      if (filter?.status) conditions.push(eq(collectionRuns.status, filter.status));
+      if (filter?.from) conditions.push(gte(collectionRuns.scheduledAt, filter.from));
+      if (filter?.to) conditions.push(lte(collectionRuns.scheduledAt, filter.to));
+
+      const limit = Math.min(Math.max(filter?.limit ?? 20, 1), 100);
+      const query = db
+        .select()
+        .from(collectionRuns)
+        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .orderBy(desc(collectionRuns.scheduledAt))
+        .limit(limit);
+
+      const rows = await query;
+      return rows.map((row) => ({
+        id: row.id,
+        sourceId: row.sourceId,
+        scheduledAt: row.scheduledAt,
+        startedAt: row.startedAt,
+        endedAt: row.endedAt,
+        status: row.status as CollectionRunStatus,
+        cursorBefore: row.cursorBefore,
+        cursorAfter: row.cursorAfter,
+        counts: row.counts ?? {},
+        errorSummary: row.errorSummary,
+        createdAt: row.createdAt,
+      }));
     },
   };
 }

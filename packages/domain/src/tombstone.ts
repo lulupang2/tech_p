@@ -62,7 +62,9 @@ export interface TombstoneTargetPort {
    * - If scope === 'document_revision': transitions revision to 'tombstoned'
    * Returns count of revisions transitioned to 'tombstoned'.
    */
-  readonly applyTombstone: (input: CreateTombstoneInput) => Promise<{ affectedRevisionCount: number }>;
+  readonly applyTombstone: (
+    input: CreateTombstoneInput,
+  ) => Promise<{ affectedRevisionCount: number }>;
   /**
    * Reindexes / restores searchable status for non-deleted target items:
    * - If scope === 'source': enables source and transitions revisions with valid chunks back to 'searchable'
@@ -91,7 +93,11 @@ export interface TombstoneAuditPort {
 
 export interface TombstoneServicePort {
   readonly createTombstone: (input: CreateTombstoneInput) => Promise<TombstoneResult>;
-  readonly reindex: (scope: TombstoneScope, targetKey: string, requestedBy?: string) => Promise<ReindexResult>;
+  readonly reindex: (
+    scope: TombstoneScope,
+    targetKey: string,
+    requestedBy?: string,
+  ) => Promise<ReindexResult>;
 }
 
 export function createTombstoneService(options: {
@@ -112,7 +118,9 @@ export function createTombstoneService(options: {
 
       const exists = await options.targets.exists(input.scope, input.targetKey);
       if (!exists) {
-        throw new TombstoneTargetNotFoundError(`Tombstone target not found: [${input.scope}] ${input.targetKey}`);
+        throw new TombstoneTargetNotFoundError(
+          `Tombstone target not found: [${input.scope}] ${input.targetKey}`,
+        );
       }
 
       const effectiveAt = input.effectiveAt ?? new Date();

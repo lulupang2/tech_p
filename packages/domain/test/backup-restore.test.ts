@@ -4,7 +4,6 @@ import {
   createBackupRestoreService,
   CONFIRM_RESTORE_OVERWRITE_TOKEN,
   UnsafeRestoreRefusalError,
-  InvalidBackupManifestError,
   type BackupManifest,
   type RestoreAuditEvent,
 } from '../src/backup-restore.js';

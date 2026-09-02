@@ -3,8 +3,16 @@ import {
   type DatabaseClient,
   createSourceRepository,
   createTopicRepository,
+  createCollectionRunRepository,
 } from '@techpulse/database';
-import { type SourceRepositoryPort, type TopicRepositoryPort } from '@techpulse/domain';
+import {
+  type SourceRepositoryPort,
+  type TopicRepositoryPort,
+  type CollectionRunRepositoryPort,
+  type ReplayRequest,
+  type ReplayResult,
+  type TombstoneServicePort,
+} from '@techpulse/domain';
 import { type AnswerServicePort } from '@techpulse/rag';
 import { node } from '@elysiajs/node';
 import { Elysia } from 'elysia';
@@ -14,7 +22,7 @@ import { resolveRequestCorrelation } from './correlation.js';
 import { ApiHttpError, formatErrorToEnvelope } from './errors.js';
 import { createAnswerRoutes } from './routes/answers.js';
 import { createHealthRoutes, type DatabaseHealthCheck } from './routes/health.js';
-import { createOpsRoutes } from './routes/ops.js';
+import { createOpsRoutes, type IdempotencyStore, type OpsAuditEvent } from './routes/ops.js';
 import { createSourceRoutes } from './routes/sources.js';
 import { createTopicRoutes } from './routes/topics.js';
 
@@ -24,12 +32,18 @@ export interface AppOptions {
   readonly logger?: StructuredLogger | undefined;
   readonly sourceRepository?: SourceRepositoryPort | undefined;
   readonly topicRepository?: TopicRepositoryPort | undefined;
+  readonly collectionRunRepository?: CollectionRunRepositoryPort | undefined;
   readonly answerService?: AnswerServicePort | undefined;
+  readonly replayService?:
+    { readonly replay: (request: ReplayRequest) => Promise<ReplayResult> } | undefined;
+  readonly tombstoneService?: TombstoneServicePort | undefined;
   readonly corsAllowedOrigins?: readonly string[] | undefined;
   readonly rateLimiter?: MemoryRateLimiter | undefined;
   readonly concurrencyLimiter?: ConcurrencyLimiter | undefined;
   readonly budgetTracker?: DailyBudgetTracker | undefined;
   readonly opsApiKey?: string | undefined;
+  readonly idempotencyStore?: IdempotencyStore | undefined;
+  readonly auditSink?: ((event: OpsAuditEvent) => void | Promise<void>) | undefined;
 }
 export function createApp(options: AppOptions = {}) {
   const logger = options.logger ?? createStructuredLogger({ service: 'api' });
@@ -42,7 +56,9 @@ export function createApp(options: AppOptions = {}) {
   const topicRepository =
     options.topicRepository ??
     (options.databaseClient ? createTopicRepository(options.databaseClient.db) : undefined);
-
+  const collectionRunRepository =
+    options.collectionRunRepository ??
+    (options.databaseClient ? createCollectionRunRepository(options.databaseClient.db) : undefined);
   const corsAllowedOrigins = options.corsAllowedOrigins ?? [
     'http://localhost:5173',
     'http://localhost:3000',
@@ -129,6 +145,11 @@ export function createApp(options: AppOptions = {}) {
     .group('/api/v1', (v1) =>
       v1
         .onBeforeHandle(({ request, set }) => {
+          const urlPath = new URL(request.url).pathname;
+          if (urlPath.startsWith('/api/v1/ops') || urlPath.startsWith('/ops')) {
+            return;
+          }
+
           // Apply rate limiting across public API v1 endpoints
           const clientIp =
             request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -162,6 +183,17 @@ export function createApp(options: AppOptions = {}) {
             budgetTracker,
           }),
         )
-        .use(createOpsRoutes({ opsApiKey: options.opsApiKey })),
+        .use(
+          createOpsRoutes({
+            opsApiKey: options.opsApiKey,
+            sourceRepository,
+            collectionRunRepository,
+            replayService: options.replayService,
+            tombstoneService: options.tombstoneService,
+            logger,
+            auditSink: options.auditSink,
+            idempotencyStore: options.idempotencyStore,
+          }),
+        ),
     );
 }

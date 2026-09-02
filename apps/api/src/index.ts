@@ -18,6 +18,14 @@ import { loadApiConfig, type Environment } from './config.js';
 import { createApp, type AppOptions } from './app.js';
 
 export { createApp, type AppOptions };
+export {
+  createOpsRoutes,
+  MemoryIdempotencyStore,
+  type OpsRouteOptions,
+  type IdempotencyStore,
+  type OpsAuditEvent,
+} from './routes/ops.js';
+export { runOpsCli, type OpsCliOptions, type CliExecutionResult } from './cli.js';
 
 export const apiLogger = createStructuredLogger({ service: 'api' });
 

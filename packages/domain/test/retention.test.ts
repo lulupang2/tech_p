@@ -37,7 +37,9 @@ describe('Retention Policy and Dry-run Calculations', () => {
 
   it('rejects invalid retention days or invalid reference dates', () => {
     expect(() => computeRetentionCutoff(-5, refDate)).toThrow(InvalidRetentionRequestError);
-    expect(() => computeRetentionCutoff(30, new Date('invalid'))).toThrow(InvalidRetentionRequestError);
+    expect(() => computeRetentionCutoff(30, new Date('invalid'))).toThrow(
+      InvalidRetentionRequestError,
+    );
   });
 
   it('evaluates retention candidate boundary conditions correctly', () => {

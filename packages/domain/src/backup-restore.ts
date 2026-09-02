@@ -110,7 +110,9 @@ export function validateBackupManifest(manifest: unknown): BackupValidationResul
 
   const totalRows = typeof m['totalRows'] === 'number' ? m['totalRows'] : calculatedRows;
   if (totalRows !== calculatedRows && !issues.some((i) => i.includes('rowCount'))) {
-    issues.push(`Manifest totalRows (${totalRows}) does not match sum of table rowCounts (${calculatedRows})`);
+    issues.push(
+      `Manifest totalRows (${totalRows}) does not match sum of table rowCounts (${calculatedRows})`,
+    );
   }
 
   return {
@@ -147,7 +149,10 @@ export interface RestoreEnvironmentPort {
   /**
    * Runs integrity verification checks (foreign key sanity, vector search sanity, tombstone exclusion verification).
    */
-  readonly verifyIntegrity: () => Promise<{ readonly pass: boolean; readonly details: Record<string, unknown> }>;
+  readonly verifyIntegrity: () => Promise<{
+    readonly pass: boolean;
+    readonly details: Record<string, unknown>;
+  }>;
 }
 
 export interface RestoreAuditEvent {
@@ -229,7 +234,7 @@ export function createBackupRestoreService(options: {
           action: 'restore_drill_dry_run',
           backupId: drillOptions.manifest.backupId,
           targetClean: isClean,
-          actor: drillOptions.actor,
+          ...(drillOptions.actor !== undefined ? { actor: drillOptions.actor } : {}),
           occurredAt: new Date(),
         });
 
@@ -257,7 +262,7 @@ export function createBackupRestoreService(options: {
         targetClean: isClean,
         restoredRowCount: restoreRes.restoredRowCount,
         integrityPassed: integrityRes.pass,
-        actor: drillOptions.actor,
+        ...(drillOptions.actor !== undefined ? { actor: drillOptions.actor } : {}),
         occurredAt: new Date(),
       });
 
