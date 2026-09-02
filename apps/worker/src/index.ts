@@ -118,6 +118,17 @@ export function start(env: Environment = process.env): WorkerConfig {
   return config;
 }
 
+function runWorkerProcess(env: Environment = process.env): void {
+  start(env);
+  const keepAlive = setInterval(() => undefined, 60_000);
+  const shutdown = () => {
+    clearInterval(keepAlive);
+    process.exitCode = 0;
+  };
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  start();
+  runWorkerProcess();
 }

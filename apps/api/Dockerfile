@@ -26,6 +26,8 @@ RUN pnpm install --frozen-lockfile
 COPY tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/api ./apps/api
+RUN pnpm install --frozen-lockfile
+
 
 RUN pnpm --filter @techpulse/api build
 
@@ -39,6 +41,7 @@ COPY --chown=node:node --from=builder /app/package.json /app/pnpm-lock.yaml /app
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/packages ./packages
 COPY --chown=node:node --from=builder /app/apps/api ./apps/api
+COPY --chown=node:node --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -48,5 +51,4 @@ STOPSIGNAL SIGTERM
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=5 \
   CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/health/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
-
-CMD ["node", "--import=tsx/esm", "apps/api/src/index.ts"]
+CMD ["node", "--import=./node_modules/.pnpm/tsx@4.23.13/node_modules/tsx/dist/loader.mjs", "apps/api/src/index.ts"]

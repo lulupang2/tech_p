@@ -26,6 +26,8 @@ RUN pnpm install --frozen-lockfile
 COPY tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/worker ./apps/worker
+RUN pnpm install --frozen-lockfile
+
 
 RUN pnpm --filter @techpulse/worker build
 
@@ -39,6 +41,7 @@ COPY --chown=node:node --from=builder /app/package.json /app/pnpm-lock.yaml /app
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/packages ./packages
 COPY --chown=node:node --from=builder /app/apps/worker ./apps/worker
+COPY --chown=node:node --from=builder /app/apps/worker/node_modules ./apps/worker/node_modules
 
 ENV NODE_ENV=production
 
@@ -46,5 +49,4 @@ STOPSIGNAL SIGTERM
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=5 \
   CMD node -e "process.exit(0)"
-
-CMD ["node", "--import=tsx/esm", "apps/worker/src/index.ts"]
+CMD ["node", "--import=./node_modules/.pnpm/tsx@4.23.13/node_modules/tsx/dist/loader.mjs", "apps/worker/src/index.ts"]

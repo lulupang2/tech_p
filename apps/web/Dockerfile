@@ -26,6 +26,8 @@ RUN pnpm install --frozen-lockfile
 COPY tsconfig.base.json ./
 COPY packages ./packages
 COPY apps/web ./apps/web
+RUN pnpm install --frozen-lockfile
+
 
 RUN pnpm --filter @techpulse/web build
 
@@ -39,6 +41,8 @@ COPY --chown=node:node --from=builder /app/package.json /app/pnpm-lock.yaml /app
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/packages ./packages
 COPY --chown=node:node --from=builder /app/apps/web ./apps/web
+WORKDIR /app/apps/web
+
 
 ENV NODE_ENV=production
 ENV PORT=5173
@@ -49,4 +53,4 @@ STOPSIGNAL SIGTERM
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=5 \
   CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 5173) + '/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-CMD ["node", "./apps/web/node_modules/vite/bin/vite.js", "preview", "--config", "apps/web/vite.config.ts", "--host", "0.0.0.0", "--port", "5173"]
+CMD ["node", "./node_modules/vite/bin/vite.js", "preview", "--config", "vite.config.ts", "--host", "0.0.0.0", "--port", "5173"]
