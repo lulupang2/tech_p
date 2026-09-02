@@ -100,6 +100,8 @@ export function redactSecrets(message: string): string {
       '[REDACTED]',
     )
     .replace(/sk-[-a-zA-Z0-9_]+/giu, '[REDACTED]')
+    .replace(/ghp_[a-zA-Z0-9]+/giu, '[REDACTED]')
+    .replace(/github_pat_[-a-zA-Z0-9_]+/giu, '[REDACTED]')
     .replace(/postgres(?:ql)?:\/\/[^\s]+/giu, '[REDACTED]');
 }
 

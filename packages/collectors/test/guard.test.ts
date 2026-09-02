@@ -7,6 +7,9 @@ import {
   encodeOpaqueCursor,
   decodeOpaqueCursor,
   BaseCollector,
+  createHardenedFetch,
+  SsrfViolationError,
+  ResponseSizeExceededError,
 } from '../src/index.js';
 import type { CollectionContext, CollectionResult } from '@techpulse/domain';
 
@@ -50,11 +53,202 @@ describe('COL-001 Collector Port & Source Policy Guard', () => {
         );
       }
     });
+    test('rejects hex, octal, and decimal IP formats, IPv6, and metadata hostnames (SEC-002)', () => {
+      const maliciousSsrfs = [
+        'https://2130706433/admin', // 127.0.0.1 as decimal integer
+        'https://2852039166/latest/meta-data/', // 169.254.169.254 as decimal integer
+        'https://0x7f000001/status', // 127.0.0.1 as hex
+        'https://0177.0.0.1/config', // 127.0.0.1 with octal prefix
+        'https://[::1]/debug', // IPv6 loopback
+        'https://[fe80::1]/secrets', // IPv6 link-local
+        'https://[fc00::1]/internal', // IPv6 unique local
+        'https://[::ffff:127.0.0.1]/admin', // IPv4-mapped IPv6
+        'https://[::ffff:169.254.169.254]/meta-data', // IPv4-mapped AWS metadata
+        'https://100.64.0.1/router', // Carrier-grade NAT
+        'https://100.100.100.200/latest', // Alibaba Cloud metadata
+        'https://metadata.google.internal/computeMetadata/v1/', // GCP metadata
+        'https://instance-data/latest/meta-data/', // AWS instance-data
+        'https://0.0.0.0/sensitive', // Zero network
+        'https://240.0.0.1/reserved', // Reserved IP
+      ];
+
+      for (const url of maliciousSsrfs) {
+        const res = validateUrl(url, ghPolicy);
+        assert.equal(res.valid, false, `Expected SSRF target ${url} to be blocked`);
+        assert(res.reason !== undefined);
+      }
+    });
+
+    test('rejects malicious URI schemes (file, gopher, data, javascript) (SEC-002)', () => {
+      const maliciousSchemes = [
+        'file:///etc/passwd',
+        'gopher://127.0.0.1:6379/_flushall',
+        'data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==',
+        'javascript:alert(document.cookie)',
+        'ftp://api.github.com/dump',
+        'ldap://localhost:389/o=root',
+      ];
+
+      for (const url of maliciousSchemes) {
+        const res = validateUrl(url, ghPolicy);
+        assert.equal(res.valid, false, `Expected scheme in ${url} to be rejected`);
+        assert(res.reason?.includes('not permitted'));
+      }
+    });
+
+    test('rejects domain suffix confusion and subdomain spoofing (SEC-002)', () => {
+      const spoofedUrls = [
+        'https://api.github.com.attacker.com/releases',
+        'https://fakeapi.github.com/releases',
+        'https://evil-api.github.com/releases',
+        'https://api.github.com-spoof.org/releases',
+      ];
+
+      for (const url of spoofedUrls) {
+        const res = validateUrl(url, ghPolicy);
+        assert.equal(res.valid, false, `Expected spoofed host ${url} to be rejected`);
+        assert(res.reason?.includes('not in the allowed hosts list'));
+      }
+    });
 
     test('rejects unlisted external host', () => {
       const res = validateUrl('https://malicious-site.com/exploit', ghPolicy);
       assert.equal(res.valid, false);
       assert(res.reason?.includes('not in the allowed hosts list'));
+    });
+  });
+
+  describe('Hardened Fetch Client & Redirect Re-Validation (THR-001 & SEC-002)', () => {
+    const ghPolicy = SOURCE_POLICIES['github_releases'];
+
+    test('blocks initial request if target URL violates SSRF policy', async () => {
+      const hardenedFetch = createHardenedFetch({ policy: ghPolicy });
+      await assert.rejects(
+        async () => {
+          await hardenedFetch('https://127.0.0.1/admin');
+        },
+        (err: Error) => {
+          return err instanceof SsrfViolationError && err.message.includes('SSRF policy violation');
+        },
+      );
+    });
+
+    test('re-validates every redirect hop and blocks redirect to private IP', async () => {
+      const mockFetch: typeof fetch = async (input) => {
+        const url = input.toString();
+        if (url === 'https://api.github.com/initial-endpoint') {
+          return new Response(null, {
+            status: 302,
+            headers: {
+              location: 'https://169.254.169.254/latest/meta-data/',
+            },
+          });
+        }
+        return new Response('ok', { status: 200 });
+      };
+
+      const hardenedFetch = createHardenedFetch({ policy: ghPolicy, baseFetch: mockFetch });
+
+      await assert.rejects(
+        async () => {
+          await hardenedFetch('https://api.github.com/initial-endpoint');
+        },
+        (err: Error) => {
+          return (
+            err instanceof SsrfViolationError &&
+            err.message.includes('Redirect target violates SSRF policy')
+          );
+        },
+      );
+    });
+
+    test('re-validates redirect to unallowed external host', async () => {
+      const mockFetch: typeof fetch = async (input) => {
+        const url = input.toString();
+        if (url === 'https://api.github.com/redirect') {
+          return new Response(null, {
+            status: 301,
+            headers: {
+              location: 'https://attacker.com/evil',
+            },
+          });
+        }
+        return new Response('ok', { status: 200 });
+      };
+
+      const hardenedFetch = createHardenedFetch({ policy: ghPolicy, baseFetch: mockFetch });
+
+      await assert.rejects(
+        async () => {
+          await hardenedFetch('https://api.github.com/redirect');
+        },
+        (err: Error) => {
+          return (
+            err instanceof SsrfViolationError &&
+            err.message.includes('Redirect target violates SSRF policy')
+          );
+        },
+      );
+    });
+
+    test('allows safe redirects within allowed host and enforces max redirects', async () => {
+      let hopCount = 0;
+      const mockFetch: typeof fetch = async () => {
+        hopCount++;
+        return new Response(null, {
+          status: 302,
+          headers: {
+            location: `https://api.github.com/hop-${hopCount}`,
+          },
+        });
+      };
+
+      const hardenedFetch = createHardenedFetch({
+        policy: ghPolicy,
+        maxRedirects: 2,
+        baseFetch: mockFetch,
+      });
+
+      await assert.rejects(
+        async () => {
+          await hardenedFetch('https://api.github.com/hop-0');
+        },
+        (err: Error) => {
+          return (
+            err instanceof SsrfViolationError &&
+            err.message.includes('Maximum redirect limit (2) exceeded')
+          );
+        },
+      );
+    });
+
+    test('rejects response declaring oversized Content-Length', async () => {
+      const mockFetch: typeof fetch = async () => {
+        return new Response('big payload', {
+          status: 200,
+          headers: {
+            'content-length': '20971520', // 20MB
+          },
+        });
+      };
+
+      const hardenedFetch = createHardenedFetch({
+        policy: ghPolicy,
+        maxSizeBytes: 5 * 1024 * 1024, // 5MB limit
+        baseFetch: mockFetch,
+      });
+
+      await assert.rejects(
+        async () => {
+          await hardenedFetch('https://api.github.com/large-release');
+        },
+        (err: Error) => {
+          return (
+            err instanceof ResponseSizeExceededError &&
+            err.message.includes('exceeded maximum allowed size')
+          );
+        },
+      );
     });
   });
 

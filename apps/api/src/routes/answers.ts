@@ -2,12 +2,14 @@ import { type AnswerResponse } from '@techpulse/contracts';
 import { type AnswerServicePort } from '@techpulse/rag';
 import { Elysia, t } from 'elysia';
 
+import { type ConcurrencyLimiter, type DailyBudgetTracker } from '../abuse-controls.js';
 import { ApiHttpError } from '../errors.js';
 
 export interface AnswerRouteOptions {
   readonly answerService?: AnswerServicePort | undefined;
+  readonly concurrencyLimiter?: ConcurrencyLimiter | undefined;
+  readonly budgetTracker?: DailyBudgetTracker | undefined;
 }
-
 export function createAnswerRoutes(options: AnswerRouteOptions = {}) {
   return new Elysia().post(
     '/answers',
@@ -23,7 +25,6 @@ export function createAnswerRoutes(options: AnswerRouteOptions = {}) {
           message: 'Answer service is currently unavailable or unconfigured',
         });
       }
-
       const trimmedQuestion = body.question.trim();
       if (trimmedQuestion.length === 0) {
         throw new ApiHttpError({
@@ -34,16 +35,40 @@ export function createAnswerRoutes(options: AnswerRouteOptions = {}) {
         });
       }
 
-      const result = await options.answerService.generateAnswer({
-        question: trimmedQuestion,
-        requestId,
-        ...(body.timeRange ? { timeRange: body.timeRange } : {}),
-        ...(body.timezone ? { timezone: body.timezone } : {}),
-        ...(body.language ? { language: body.language } : {}),
-      });
+      // Check daily provider budget limit
+      if (options.budgetTracker && !options.budgetTracker.tryConsume(1)) {
+        throw new ApiHttpError({
+          code: 'RATE_LIMITED',
+          status: 429,
+          message: 'Daily AI provider budget limit reached',
+          retryable: false,
+        });
+      }
 
-      set.headers['x-request-id'] = requestId;
-      return result;
+      // Acquire concurrency slot
+      if (options.concurrencyLimiter && !options.concurrencyLimiter.tryAcquire()) {
+        throw new ApiHttpError({
+          code: 'RATE_LIMITED',
+          status: 429,
+          message: 'Too many concurrent answer requests. Please retry shortly.',
+          retryable: true,
+        });
+      }
+
+      try {
+        const result = await options.answerService.generateAnswer({
+          question: trimmedQuestion,
+          requestId,
+          ...(body.timeRange ? { timeRange: body.timeRange } : {}),
+          ...(body.timezone ? { timezone: body.timezone } : {}),
+          ...(body.language ? { language: body.language } : {}),
+        });
+
+        set.headers['x-request-id'] = requestId;
+        return result;
+      } finally {
+        options.concurrencyLimiter?.release();
+      }
     },
     {
       body: t.Object(

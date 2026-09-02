@@ -197,10 +197,10 @@
 | API-001 | API shell, error model, health/readiness | DEC-002, CON-001, DB-005, FND-005, OBS-001 | DONE | versioned JSON/error contract와 request ID; liveness는 dependency와 무관, readiness는 DB 상태 반영; stack/provider error 비노출 |
 | API-002 | source/topic endpoints | API-001, COL-001, DB-005 | DONE | source freshness를 secret 없이 반환; topic search cursor/limit validation; OpenAPI contract test 통과 |
 | API-003 | synchronous answer endpoint | API-001, RAG-005, RAG-006 | DONE | resolved range, answer/insufficient status, observations, citations, coverage 반환; deadline/body cap/idempotency contract test 통과 |
-| SEC-001 | public API abuse controls | API-003, FND-005 | BLOCKED | CORS allowlist, security headers, rate/concurrency/provider budget limit; oversized/injection/fuzz 입력에서 정보 유출·무제한 호출 없음 |
+| SEC-001 | public API abuse controls | API-003, FND-005 | DONE | CORS allowlist, security headers, rate/concurrency/provider budget limit; oversized/injection/fuzz 입력에서 정보 유출·무제한 호출 없음 |
 | API-004 | protected operations endpoints 또는 CLI | PIPE-007, API-001, SEC-001 | BLOCKED | 선택 interface가 strong auth로 보호; bounded collect/replay와 idempotency; public route에서 접근 불가; audit event 생성 |
-| SEC-002 | collector/browser hardening | COL-005, PIPE-002 | BLOCKED | non-root/최소 capability, egress allowlist, private IP/redirect 차단, HTML output escaping, malicious fixture 회귀 통과 |
-| SEC-003 | RAG prompt-injection/egress hardening | RAG-005, SEC-001 | BLOCKED | retrieved instruction이 tool/secret/URL을 바꾸지 못함; RAG에 arbitrary fetch/shell 없음; injection corpus success 0 |
+| SEC-002 | collector/browser hardening | COL-005, PIPE-002 | DONE | non-root/최소 capability, egress allowlist, private IP/redirect 차단, HTML output escaping, malicious fixture 회귀 통과 |
+| SEC-003 | RAG prompt-injection/egress hardening | RAG-005, SEC-001 | DONE | retrieved instruction이 tool/secret/URL을 바꾸지 못함; RAG에 arbitrary fetch/shell 없음; injection corpus success 0 |
 | WEB-001 | web shell과 typed API client | DEC-005, FND-001, CON-001, API-001 | DONE | web이 DB/provider package를 import하지 않음; server 전용 코드가 `+page.server.ts`·`+server.ts`·`$lib/server/` 경계 안에만 있고 client bundle 산출물 검사에서 secret이 발견되지 않음; loading/error/empty layout 접근성 smoke; API contract type drift test 통과 |
 | WEB-002 | 질문·답변·citation UI | WEB-001, API-003 | DONE | 질문/기간 입력, resolved range, answer, clickable citation/date/source, limitations/insufficient state 표시; keyboard/screen-reader labels 검증 |
 | WEB-003 | 비교 metric과 source freshness UI | WEB-002, API-002, RAG-006 | BLOCKED | metric별 unit/기간 분리 표시; composite score 없음; stale/partial source warning이 API coverage와 일치 |

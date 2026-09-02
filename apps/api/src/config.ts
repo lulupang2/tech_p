@@ -6,6 +6,12 @@ const DATABASE_PROTOCOLS: Record<string, true> = {
 export interface ApiConfig {
   readonly databaseUrl: string;
   readonly port: number;
+  readonly corsAllowedOrigins?: readonly string[] | undefined;
+  readonly rateLimitWindowMs?: number | undefined;
+  readonly rateLimitMaxRequests?: number | undefined;
+  readonly maxConcurrentAnswers?: number | undefined;
+  readonly maxDailyAnswerBudget?: number | undefined;
+  readonly opsApiKey?: string | undefined;
   readonly aiChatApiKey?: string | undefined;
   readonly aiChatBaseUrl?: string | undefined;
   readonly aiChatModel?: string | undefined;
@@ -81,10 +87,45 @@ export function loadApiConfig(env: Environment = process.env): ApiConfig {
     env['AI_EMBEDDING_DIMENSIONS'] && /^\d+$/u.test(env['AI_EMBEDDING_DIMENSIONS'])
       ? Number(env['AI_EMBEDDING_DIMENSIONS'])
       : undefined;
+  const corsRaw = env['CORS_ALLOWED_ORIGINS'] || env['API_CORS_ALLOWED_ORIGINS'];
+  const corsAllowedOrigins = corsRaw
+    ? corsRaw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0)
+    : undefined;
+
+  const rateLimitWindowMs =
+    env['API_RATE_LIMIT_WINDOW_MS'] && /^\d+$/u.test(env['API_RATE_LIMIT_WINDOW_MS'])
+      ? Number(env['API_RATE_LIMIT_WINDOW_MS'])
+      : undefined;
+
+  const rateLimitMaxRequests =
+    env['API_RATE_LIMIT_MAX_REQUESTS'] && /^\d+$/u.test(env['API_RATE_LIMIT_MAX_REQUESTS'])
+      ? Number(env['API_RATE_LIMIT_MAX_REQUESTS'])
+      : undefined;
+
+  const maxConcurrentAnswers =
+    env['API_MAX_CONCURRENT_ANSWERS'] && /^\d+$/u.test(env['API_MAX_CONCURRENT_ANSWERS'])
+      ? Number(env['API_MAX_CONCURRENT_ANSWERS'])
+      : undefined;
+
+  const maxDailyAnswerBudget =
+    env['API_MAX_DAILY_ANSWER_BUDGET'] && /^\d+$/u.test(env['API_MAX_DAILY_ANSWER_BUDGET'])
+      ? Number(env['API_MAX_DAILY_ANSWER_BUDGET'])
+      : undefined;
+
+  const opsApiKey = env['OPS_API_KEY'];
 
   return {
     databaseUrl: databaseUrl as string,
     port,
+    ...(corsAllowedOrigins ? { corsAllowedOrigins } : {}),
+    ...(rateLimitWindowMs !== undefined ? { rateLimitWindowMs } : {}),
+    ...(rateLimitMaxRequests !== undefined ? { rateLimitMaxRequests } : {}),
+    ...(maxConcurrentAnswers !== undefined ? { maxConcurrentAnswers } : {}),
+    ...(maxDailyAnswerBudget !== undefined ? { maxDailyAnswerBudget } : {}),
+    ...(opsApiKey ? { opsApiKey } : {}),
     ...(aiChatApiKey ? { aiChatApiKey } : {}),
     ...(aiChatBaseUrl ? { aiChatBaseUrl } : {}),
     ...(aiChatModel ? { aiChatModel } : {}),

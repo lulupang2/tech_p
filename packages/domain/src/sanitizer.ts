@@ -505,6 +505,14 @@ export function sanitizeText(text: string | null | undefined): string {
     cleaned = cleaned.replace(injectionTagPattern, '');
   }
 
+  // 2.1 Strip special LLM injection tokens and bracketed role overrides
+  cleaned = cleaned.replace(
+    /<\|(?:im_start|im_end|endoftext|system|user|assistant|fim_prefix|fim_suffix|fim_middle)\|>/giu,
+    ' ',
+  );
+  cleaned = cleaned.replace(/<<(?:SYS|\/SYS)>>/giu, ' ');
+  cleaned = cleaned.replace(/\[\/?(?:SYSTEM|INSTRUCTION|ADMIN|OVERRIDE|SYSTEM_PROMPT)\]/giu, ' ');
+
   // 3. Decode HTML entities (e.g. &amp; -> &, &lt; -> <, &#39; -> ', etc.)
   cleaned = decodeHtmlEntities(cleaned);
 
