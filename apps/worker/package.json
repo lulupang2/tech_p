@@ -13,7 +13,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@techpulse/collectors": "workspace:*",
     "@techpulse/contracts": "workspace:*",
+    "@techpulse/database": "workspace:*",
     "@techpulse/domain": "workspace:*",
     "@techpulse/observability": "workspace:*",
     "bullmq": "^6.3.3",

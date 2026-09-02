@@ -63,6 +63,21 @@ export {
   type DeduplicationExecutionResult,
   type DeduplicationOperation,
 } from './deduplication.js';
+import {
+  createDatabaseClient,
+  createRawItemRepository,
+  createSourceRepository,
+  createCollectionRunRepository,
+} from '@techpulse/database';
+import {
+  GitHubReleasesCollector,
+  GitHubSearchCollector,
+  StackExchangeCollector,
+} from '@techpulse/collectors';
+import { createRawIngestionService } from '@techpulse/domain';
+import { Redis } from 'ioredis';
+import { createCollectionWorker } from './scheduler.js';
+import { createIngestionJobHandler } from './ingestion.js';
 import { loadWorkerConfig, type Environment, type WorkerConfig } from './config.js';
 import {
   createStructuredLogger,
@@ -111,22 +126,44 @@ export function logJobFinished(job: unknown): StructuredEvent {
  * Worker process entrypoint. Job registration starts after QUE-001.
  */
 export const workerEntrypoint = '@techpulse/worker';
-
 export function start(env: Environment = process.env): WorkerConfig {
   const config = loadWorkerConfig(env);
   workerLogger.info('worker.starting');
   return config;
 }
 
-function runWorkerProcess(env: Environment = process.env): void {
-  start(env);
-  const keepAlive = setInterval(() => undefined, 60_000);
-  const shutdown = () => {
-    clearInterval(keepAlive);
-    process.exitCode = 0;
+async function runWorkerProcess(env: Environment = process.env): Promise<void> {
+  const config = start(env);
+  const databaseClient = createDatabaseClient(config.databaseUrl);
+  const sourceRepository = createSourceRepository(databaseClient.db);
+  const collectionRunRepository = createCollectionRunRepository(databaseClient.db);
+  const rawItemRepository = createRawItemRepository(databaseClient.db);
+  const collectors = {
+    github_releases: new GitHubReleasesCollector({ owner: 'microsoft', repo: 'playwright' }),
+    github_search: new GitHubSearchCollector({ query: 'topic:typescript stars:>500' }),
+    stack_exchange: new StackExchangeCollector({}),
   };
-  process.once('SIGTERM', shutdown);
-  process.once('SIGINT', shutdown);
+  const ingestionService = createRawIngestionService({
+    sourceRepository,
+    collectionRunRepository,
+    rawItemRepository,
+    collectorResolver: (sourceKey) => collectors[sourceKey as keyof typeof collectors],
+    logger: workerLogger,
+  });
+  const redis = new Redis(config.redisUrl, { maxRetriesPerRequest: null });
+  const worker = createCollectionWorker({
+    connection: redis,
+    concurrency: config.concurrency,
+    handle: createIngestionJobHandler(ingestionService),
+  });
+  const shutdown = async () => {
+    await worker.close();
+    await redis.quit();
+    await databaseClient.close();
+  };
+  process.once('SIGTERM', () => void shutdown());
+  process.once('SIGINT', () => void shutdown());
+  await new Promise<void>(() => undefined);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

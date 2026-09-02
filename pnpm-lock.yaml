@@ -100,9 +100,15 @@ importers:
 
   apps/worker:
     dependencies:
+      '@techpulse/collectors':
+        specifier: workspace:*
+        version: link:../../packages/collectors
       '@techpulse/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@techpulse/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@techpulse/domain':
         specifier: workspace:*
         version: link:../../packages/domain
