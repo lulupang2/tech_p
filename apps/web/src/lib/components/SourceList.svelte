@@ -33,6 +33,25 @@
     }
   }
 
+  function formatSourceKind(kind: string): string {
+    if (currentLocale === 'en') {
+      return kind.replaceAll('_', ' ');
+    }
+
+    const labels: Record<string, string> = {
+      releases: '릴리스',
+      qa: '질의응답',
+      forum: '포럼',
+      papers: '논문',
+      article: '아티클',
+      documentation: '문서',
+      package_registry: '패키지 레지스트리',
+      metrics: '지표',
+      api: 'API',
+    };
+    return labels[kind] ?? kind;
+  }
+
   let statusCounts = $derived.by(() => {
     let healthy = 0;
     let stale = 0;
@@ -261,7 +280,7 @@
 
             <div class="info-row">
               <span class="info-label">유형</span>
-              <span class="info-value">{source.kind}</span>
+              <span class="info-value">{formatSourceKind(source.kind)}</span>
             </div>
             <div class="info-row">
               <span class="info-label">최신 데이터</span>
@@ -324,7 +343,7 @@
               </p>
               <p class="detail-line">
                 <strong>{currentLocale === 'ko' ? '데이터 유형:' : 'Data Category:'}</strong>
-                {source.kind}
+                {formatSourceKind(source.kind)}
               </p>
               <p class="detail-line">
                 <strong
