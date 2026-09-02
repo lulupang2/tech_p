@@ -64,21 +64,27 @@ export {
   type DeduplicationOperation,
 } from './deduplication.js';
 import {
+  createChunkRepository,
+  createCollectionRunRepository,
   createDatabaseClient,
   createDocumentRepository,
   createMetricObservationRepository,
   createPipelineEventRepository,
   createRawItemRepository,
   createSourceRepository,
-  createCollectionRunRepository,
+  createTopicRepository,
 } from '@techpulse/database';
 import {
   GitHubReleasesCollector,
   GitHubSearchCollector,
   StackExchangeCollector,
 } from '@techpulse/collectors';
-import { createNormalizationService, createRawIngestionService } from '@techpulse/domain';
-import { Queue, Worker } from 'bullmq';
+import {
+  createEnrichmentService,
+  createNormalizationService,
+  createRawIngestionService,
+} from '@techpulse/domain';
+import { Queue, Worker, type Job } from 'bullmq';
 import { Redis } from 'ioredis';
 import { createCollectionWorker } from './scheduler.js';
 import { createIngestionJobHandler } from './ingestion.js';
@@ -147,6 +153,9 @@ async function runWorkerProcess(env: Environment = process.env): Promise<void> {
   const documentRepository = createDocumentRepository(databaseClient.db);
   const metricObservationRepository = createMetricObservationRepository(databaseClient.db);
   const pipelineEventRepository = createPipelineEventRepository(databaseClient.db);
+  const topicRepository = createTopicRepository(databaseClient.db);
+  const chunkRepository = createChunkRepository(databaseClient.db);
+  const enrichmentService = createEnrichmentService({ topicRepository, chunkRepository });
   const normalizationService = createNormalizationService();
   const collectors = {
     github_releases: new GitHubReleasesCollector({ owner: 'microsoft', repo: 'playwright' }),
@@ -162,10 +171,11 @@ async function runWorkerProcess(env: Environment = process.env): Promise<void> {
     metricObservationRepository,
     pipelineEventRepository,
     sourceRepository,
+    enrichmentService,
   });
   const normalizationWorker = new Worker(
     'techpulse-normalization',
-    async (job) => normalizationHandler(parseNormalizationJobData(job.data)),
+    async (job: Job<unknown>) => normalizationHandler(parseNormalizationJobData(job.data)),
     { connection: redis, concurrency: config.concurrency },
   );
   const ingestionService = createRawIngestionService({
