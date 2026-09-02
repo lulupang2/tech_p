@@ -72,7 +72,12 @@ export function start(env: Environment = process.env) {
     });
   }
 
-  const serverApp = createApp({ databaseClient, answerService, logger: apiLogger });
+  const serverApp = createApp({
+    databaseClient,
+    answerService,
+    logger: apiLogger,
+    ...(config.corsAllowedOrigins ? { corsAllowedOrigins: config.corsAllowedOrigins } : {}),
+  });
   logApiStartup(config.port);
   return serverApp.listen(config.port);
 }

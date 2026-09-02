@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { env } from '$env/dynamic/public';
   import { createApiClient } from '$lib/api-client.js';
   import Header from '$lib/components/Header.svelte';
   import StatusBanner from '$lib/components/StatusBanner.svelte';
@@ -9,7 +10,9 @@
 
   type TabId = 'sources' | 'topics' | 'status' | 'qa';
 
-  const client = createApiClient();
+  const client = createApiClient(
+    env['PUBLIC_API_BASE_URL'] ? { baseUrl: env['PUBLIC_API_BASE_URL'] } : {},
+  );
   let activeTab = $state<TabId>('sources');
 
   function handleTabChange(tab: TabId) {
