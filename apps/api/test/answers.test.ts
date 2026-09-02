@@ -246,6 +246,35 @@ describe('API-003 answers endpoint (POST /api/v1/answers)', () => {
     assert.equal(errorEnv.error.code, 'DEPENDENCY_UNAVAILABLE');
   });
 
+  test('POST /api/v1/answers returns 503 DEPENDENCY_UNAVAILABLE on database retrieval failure (distinct from 502 MODEL_PROVIDER_ERROR)', async () => {
+    const searchService: SearchServicePort = {
+      searchFts: async () => {
+        throw new Error('Database connection lost');
+      },
+      searchExactVector: async () => [],
+    };
+    const chatPort = createDeterministicChatPort({ response: '답변 [C1]' });
+    const answerService = createAnswerService({ chatPort, searchService, now: nowFn });
+    const app = createApp({ answerService });
+
+    const response = await app.handle(
+      new Request('http://localhost/api/v1/answers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: 'Playwright 질문',
+        }),
+      }),
+    );
+
+    assert.equal(response.status, 503);
+    const body = await response.json();
+    const errorEnv = parseErrorEnvelope(body);
+    assert.equal(errorEnv.error.code, 'DEPENDENCY_UNAVAILABLE');
+    assert.equal(errorEnv.error.retryable, true);
+    assert.notEqual(errorEnv.error.code, 'MODEL_PROVIDER_ERROR');
+  });
+
   test('answers endpoint never leaks secrets or internal connection strings in response or errors', async () => {
     const secretKey = 'sk-super-secret-production-key-999';
     const chatPort = {

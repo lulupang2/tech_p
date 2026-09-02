@@ -13,6 +13,7 @@ import {
   resolveTimeRange,
   InvalidTimeRangeError,
   ModelProviderError,
+  DatabaseRetrievalError,
   AnswerTimeoutError,
 } from '../src/index.js';
 
@@ -323,5 +324,179 @@ describe('RAG Answer Service (API-003)', () => {
     expect(response.status).toBe('answered');
     expect(response.citations).toHaveLength(1);
     expect(embeddingPort.calls).toHaveLength(1);
+  });
+
+  test("regression: natural-language question '최근 Playwright 릴리스의 주요 변경점을 알려줘.' finds Playwright chunk via fallback", async () => {
+    const playwrightChunk: SearchHit = {
+      chunkId: 'chunk-playwright-1',
+      documentId: 'doc-playwright-1',
+      documentRevisionId: 'rev-playwright-1',
+      title: 'Playwright v1.62.1 Release Notes',
+      content: 'Playwright v1.62.1 introduces new assertions and enhanced locator timeouts.',
+      headingPath: ['Releases', 'v1.62.1'],
+      score: 0.95,
+      publishedAt: new Date('2026-08-25T10:00:00.000Z'),
+    };
+
+    const queriesExecuted: string[] = [];
+    const searchService: SearchServicePort = {
+      searchFts: async (params) => {
+        queriesExecuted.push(params.query);
+        // Strict exact match on the full Korean question fails (0 hits)
+        if (params.query === '최근 Playwright 릴리스의 주요 변경점을 알려줘.') {
+          return [];
+        }
+        // Fallback with normalized query or tech keyword 'Playwright' matches
+        if (params.query.includes('Playwright')) {
+          return [playwrightChunk];
+        }
+        return [];
+      },
+      searchExactVector: async () => [],
+    };
+
+    const chatPort = createDeterministicChatPort({
+      response: 'Playwright v1.62.1의 주요 변경점은 새 어설션과 로케이터 타임아웃 개선입니다 [C1].',
+    });
+
+    const service = createAnswerService({
+      chatPort,
+      searchService,
+      now: nowFn,
+    });
+
+    const response = await service.generateAnswer({
+      question: '최근 Playwright 릴리스의 주요 변경점을 알려줘.',
+      requestId: 'req_playwright_regression',
+    });
+
+    expect(response.status).toBe('answered');
+    expect(response.answer).toContain('[C1]');
+    expect(response.citations).toHaveLength(1);
+    expect(response.citations[0]?.documentRevisionId).toBe('rev-playwright-1');
+    expect(response.coverage.documentsConsidered).toBe(1);
+    expect(queriesExecuted.length).toBeGreaterThan(1);
+    expect(queriesExecuted[0]).toBe('최근 Playwright 릴리스의 주요 변경점을 알려줘.');
+  });
+
+  test('regression: unrelated natural-language query returns insufficient_evidence with zero documents considered', async () => {
+    const queriesExecuted: string[] = [];
+    const searchService: SearchServicePort = {
+      searchFts: async (params) => {
+        queriesExecuted.push(params.query);
+        // Unrelated query matches nothing in technical corpus
+        return [];
+      },
+      searchExactVector: async () => [],
+    };
+
+    const chatPort = createDeterministicChatPort({
+      response: '응답 [C1]',
+    });
+
+    const service = createAnswerService({
+      chatPort,
+      searchService,
+      now: nowFn,
+    });
+
+    const response = await service.generateAnswer({
+      question: '오늘 서울 날씨 어때?',
+      requestId: 'req_unrelated_weather',
+    });
+
+    expect(response.status).toBe('insufficient_evidence');
+    expect(response.answer).toBeNull();
+    expect(response.citations).toHaveLength(0);
+    expect(response.coverage.documentsConsidered).toBe(0);
+  });
+
+  test('regression: preserves publishedAt and status filters during natural query fallback retrieval', async () => {
+    const filterSnapshots: Array<Record<string, unknown>> = [];
+    const searchService: SearchServicePort = {
+      searchFts: async (params) => {
+        filterSnapshots.push({
+          query: params.query,
+          status: params.filter?.status,
+          publishedAfter: params.filter?.publishedAfter?.toISOString(),
+          publishedBefore: params.filter?.publishedBefore?.toISOString(),
+        });
+        if (
+          params.query.includes('Playwright') &&
+          params.query !== '최근 Playwright 릴리스의 주요 변경점을 알려줘.'
+        ) {
+          return [
+            {
+              chunkId: 'chunk-p1',
+              documentId: 'doc-p1',
+              documentRevisionId: 'rev-p1',
+              title: 'Playwright Release',
+              content: 'Playwright features',
+              headingPath: [],
+              score: 0.9,
+              publishedAt: new Date('2026-08-25T00:00:00.000Z'),
+            },
+          ];
+        }
+        return [];
+      },
+      searchExactVector: async () => [],
+    };
+
+    const chatPort = createDeterministicChatPort({
+      response: 'Playwright 내용입니다 [C1].',
+    });
+
+    const service = createAnswerService({
+      chatPort,
+      searchService,
+      now: nowFn,
+    });
+
+    await service.generateAnswer({
+      question: '최근 Playwright 릴리스의 주요 변경점을 알려줘.',
+      timeRange: { from: '2026-08-01T00:00:00.000Z', to: '2026-08-31T00:00:00.000Z' },
+    });
+
+    expect(filterSnapshots.length).toBeGreaterThan(1);
+    for (const snap of filterSnapshots) {
+      expect(snap['status']).toBe('searchable');
+      expect(snap['publishedAfter']).toBe('2026-08-01T00:00:00.000Z');
+      expect(snap['publishedBefore']).toBe('2026-08-31T00:00:00.000Z');
+    }
+  });
+
+  test('regression: maps database search failure to DatabaseRetrievalError (distinct from ModelProviderError)', async () => {
+    const searchService: SearchServicePort = {
+      searchFts: async () => {
+        throw new Error('Database connection pool exhausted');
+      },
+      searchExactVector: async () => [],
+    };
+
+    const chatPort = createDeterministicChatPort({
+      response: '답변 [C1]',
+    });
+
+    const service = createAnswerService({
+      chatPort,
+      searchService,
+      now: nowFn,
+    });
+
+    let caughtError: unknown;
+    try {
+      await service.generateAnswer({
+        question: 'Playwright 변경점',
+        requestId: 'req_db_err',
+      });
+    } catch (err) {
+      caughtError = err;
+    }
+
+    expect(caughtError).toBeInstanceOf(DatabaseRetrievalError);
+    expect(caughtError).not.toBeInstanceOf(ModelProviderError);
+    expect((caughtError as DatabaseRetrievalError).code).toBe('DATABASE_RETRIEVAL_ERROR');
+    expect((caughtError as DatabaseRetrievalError).retryable).toBe(true);
   });
 });

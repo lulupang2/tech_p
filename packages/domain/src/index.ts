@@ -87,6 +87,7 @@ export type {
   ExactVectorQueryParams,
   SearchServicePort,
 } from './search.js';
+export { extractSearchKeywords } from './search.js';
 export type {
   SourceKey,
   CollectedRawItem,

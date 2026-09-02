@@ -135,6 +135,21 @@ export function formatErrorToEnvelope(error: unknown, requestId: string): Saniti
         ),
       };
     }
+    if (
+      errObj['name'] === 'DatabaseRetrievalError' ||
+      errObj['code'] === 'DATABASE_RETRIEVAL_ERROR'
+    ) {
+      return {
+        status: 503,
+        envelope: createErrorEnvelope(
+          requestId,
+          'DEPENDENCY_UNAVAILABLE',
+          'Database retrieval service is unavailable',
+          [],
+          true,
+        ),
+      };
+    }
   }
 
   const candidate = (typeof error === 'object' && error !== null ? error : {}) as UnknownError;

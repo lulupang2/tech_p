@@ -3,6 +3,7 @@ export * from './evaluation.js';
 export {
   InvalidTimeRangeError,
   ModelProviderError,
+  DatabaseRetrievalError,
   AnswerTimeoutError,
   detectIntent,
   resolveTimeRange,

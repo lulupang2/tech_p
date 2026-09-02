@@ -20,6 +20,7 @@ import {
   type SearchHit,
   type SearchServicePort,
   type SourceRepositoryPort,
+  extractSearchKeywords,
 } from '@techpulse/domain';
 import { createStructuredLogger, type StructuredLogger } from '@techpulse/observability';
 import { randomUUID } from 'node:crypto';
@@ -39,6 +40,16 @@ export class ModelProviderError extends Error {
   constructor(message = 'Upstream AI provider error occurred', cause?: unknown) {
     super(message);
     this.name = 'ModelProviderError';
+    if (cause !== undefined) this.cause = cause;
+  }
+}
+
+export class DatabaseRetrievalError extends Error {
+  readonly code = 'DATABASE_RETRIEVAL_ERROR' as const;
+  readonly retryable = true as const;
+  constructor(message = 'Database search retrieval failed', cause?: unknown) {
+    super(message);
+    this.name = 'DatabaseRetrievalError';
     if (cause !== undefined) this.cause = cause;
   }
 }
@@ -238,7 +249,7 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
       // 2. Search retrieval via search ports
       let searchHits: readonly SearchHit[] = [];
       try {
-        const ftsHits = await options.searchService.searchFts({
+        let ftsHits = await options.searchService.searchFts({
           query: input.question,
           filter: {
             status: 'searchable',
@@ -248,8 +259,60 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
           limit: 10,
         });
 
-        searchHits = ftsHits;
+        // Conservative fallback for natural-language questions
+        if (ftsHits.length === 0) {
+          const normalizedKeywords = extractSearchKeywords(input.question);
+          if (normalizedKeywords.length > 0) {
+            const combinedQuery = normalizedKeywords.join(' ');
+            if (combinedQuery !== input.question.trim()) {
+              ftsHits = await options.searchService.searchFts({
+                query: combinedQuery,
+                filter: {
+                  status: 'searchable',
+                  publishedAfter,
+                  publishedBefore,
+                },
+                limit: 10,
+              });
+            }
 
+            if (ftsHits.length === 0) {
+              const techKeywords = normalizedKeywords.filter((k) =>
+                /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(k),
+              );
+              if (techKeywords.length > 0) {
+                const techQuery = techKeywords.join(' ');
+                if (techQuery !== combinedQuery && techQuery !== input.question.trim()) {
+                  ftsHits = await options.searchService.searchFts({
+                    query: techQuery,
+                    filter: {
+                      status: 'searchable',
+                      publishedAfter,
+                      publishedBefore,
+                    },
+                    limit: 10,
+                  });
+                }
+                if (ftsHits.length === 0 && techKeywords.length > 1) {
+                  for (const tk of techKeywords) {
+                    ftsHits = await options.searchService.searchFts({
+                      query: tk,
+                      filter: {
+                        status: 'searchable',
+                        publishedAfter,
+                        publishedBefore,
+                      },
+                      limit: 10,
+                    });
+                    if (ftsHits.length > 0) break;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        searchHits = ftsHits;
         if (options.embeddingPort) {
           try {
             const embedResult = await options.embeddingPort.embed({
@@ -292,7 +355,7 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
         reqLogger.error('rag.search.failed', {
           error: redactSecrets(rawMsg),
         });
-        throw new ModelProviderError('Search retrieval failed', searchError);
+        throw new DatabaseRetrievalError('Database search retrieval failed', searchError);
       }
 
       // Filter hits by publishedAt range if present
