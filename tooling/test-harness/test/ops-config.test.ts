@@ -140,3 +140,35 @@ describe('OPS-001 Docker and Compose Configuration', () => {
     });
   });
 });
+
+describe('OPS-004 production deployment configuration', () => {
+  it('defines SHA-tagged GHCR images and TLS reverse proxy routing', () => {
+    const compose = readRootFile('compose.production.yaml');
+    const caddy = readRootFile('Caddyfile');
+
+    expect(compose).toContain('image: ${IMAGE_PREFIX}/api:${IMAGE_TAG}');
+    expect(compose).toContain('image: ${IMAGE_PREFIX}/web:${IMAGE_TAG}');
+    expect(compose).toContain('image: ${IMAGE_PREFIX}/worker:${IMAGE_TAG}');
+    expect(compose).toContain("'443:443'");
+    expect(compose).toContain('condition: service_healthy');
+    expect(caddy).toContain('signal.jisung.lol');
+    expect(caddy).toContain('reverse_proxy api:3000');
+    expect(caddy).toContain('reverse_proxy web:5173');
+  });
+
+  it('defines approval, pinned SSH host verification, migration, health, rollback, and concurrency', () => {
+    const workflow = readRootFile('.github/workflows/deploy-production.yml');
+    const script = readRootFile('.github/scripts/deploy-production.sh');
+
+    expect(workflow).toContain('name: production');
+    expect(workflow).toContain('PRODUCTION_KNOWN_HOSTS');
+    expect(workflow).toContain('StrictHostKeyChecking=yes');
+    expect(workflow).toContain('concurrency:');
+    expect(workflow).toContain('docker/build-push-action@v6');
+    expect(workflow).toContain('sha-${{ github.sha }}');
+    expect(script).toContain('DATABASE_URL_DIRECT');
+    expect(script).toContain('db:migrate');
+    expect(script).toContain('https://signal.jisung.lol/health/live');
+    expect(script).toContain('previous_tag');
+  });
+});

@@ -1,0 +1,90 @@
+name: signal-archive-production
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    image: ${IMAGE_PREFIX}/api:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
+      PORT: 3000
+      API_RATE_LIMIT_WINDOW_MS: ${API_RATE_LIMIT_WINDOW_MS:-60000}
+      API_RATE_LIMIT_MAX_REQUESTS: ${API_RATE_LIMIT_MAX_REQUESTS:-100}
+      API_MAX_CONCURRENT_ANSWERS: ${API_MAX_CONCURRENT_ANSWERS:-10}
+      AI_CHAT_BASE_URL: ${OPENAI_BASE_URL:?OPENAI_BASE_URL must be set}
+      AI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:?OPENAI_CHAT_MODEL must be set}
+      AI_CHAT_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY must be set}
+      AI_EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:?EMBEDDING_BASE_URL must be set}
+      AI_EMBEDDING_MODEL: ${EMBEDDING_MODEL:?EMBEDDING_MODEL must be set}
+      AI_EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:?EMBEDDING_DIMENSIONS must be set}
+      AI_EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:?EMBEDDING_API_KEY must be set}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://signal.jisung.lol}
+    depends_on:
+      redis:
+        condition: service_healthy
+    expose: ['3000']
+
+  worker:
+    image: ${IMAGE_PREFIX}/worker:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
+      REDIS_URL: redis://redis:6379
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      GITHUB_PAT: ${GITHUB_PAT:-}
+      STACK_EXCHANGE_KEY: ${STACK_EXCHANGE_KEY:-}
+      HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:?OPENAI_BASE_URL must be set}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:?OPENAI_CHAT_MODEL must be set}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?OPENAI_API_KEY must be set}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:?EMBEDDING_BASE_URL must be set}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:?EMBEDDING_MODEL must be set}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:?EMBEDDING_DIMENSIONS must be set}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:?EMBEDDING_API_KEY must be set}
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  web:
+    image: ${IMAGE_PREFIX}/web:${IMAGE_TAG}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5173
+      ORIGIN: https://signal.jisung.lol
+      PUBLIC_API_BASE_URL: https://signal.jisung.lol
+    expose: ['5173']
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api:
+        condition: service_started
+      web:
+        condition: service_started
+
+volumes:
+  redis-data:
+  caddy-data:
+  caddy-config:

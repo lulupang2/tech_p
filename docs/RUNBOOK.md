@@ -162,6 +162,16 @@ Per **ADR-0001**, **ADR-0004**, and **SSOT §3**:
 
 ## 6. Operational Procedures
 
+### 6.0 Production deployment (`signal.jisung.lol`)
+
+Production uses [ADR-0012](./adr/0012-production-deployment.md): GHCR images, Docker Compose, SSH, and Caddy. A push to `main` starts the workflow, but the GitHub `production` Environment approval is required before the deploy job can run.
+
+Required GitHub Environment secrets are `PRODUCTION_HOST`, `PRODUCTION_USER`, `PRODUCTION_SSH_KEY`, `PRODUCTION_KNOWN_HOSTS`, and `GHCR_READ_TOKEN`. The server must already contain `/opt/signal-archive/.env` with `DATABASE_URL`, `DATABASE_URL_DIRECT`, and the validated runtime/provider settings. No real `.env` is copied from CI.
+
+The server must have Docker Compose v2, outbound GHCR access, inbound TCP 80/443, and a deployment user able to run Docker. The workflow copies only `compose.production.yaml`, `Caddyfile`, and the deployment script. It pulls `sha-<commit>` images, runs `DATABASE_URL_DIRECT` migrations before `docker compose up -d --wait`, and checks `https://signal.jisung.lol/health/live` over TLS. The previous successful SHA is recorded in `/opt/signal-archive/current-tag`; a failed health check attempts an application-image rollback. Forward-only migrations are never automatically reversed.
+
+DNS and certificate status are observational checks only. Before approving the first deployment, verify that `signal.jisung.lol` resolves to the production host and that Caddy can obtain a publicly trusted certificate; do not change DNS, certificates, or server configuration from this repository.
+
 ### 6.1 Starting the Stack
 ```bash
 # Start all services in background with health validation
