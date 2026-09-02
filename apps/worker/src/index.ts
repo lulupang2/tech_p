@@ -65,6 +65,9 @@ export {
 } from './deduplication.js';
 import {
   createDatabaseClient,
+  createDocumentRepository,
+  createMetricObservationRepository,
+  createPipelineEventRepository,
   createRawItemRepository,
   createSourceRepository,
   createCollectionRunRepository,
@@ -74,10 +77,13 @@ import {
   GitHubSearchCollector,
   StackExchangeCollector,
 } from '@techpulse/collectors';
-import { createRawIngestionService } from '@techpulse/domain';
+import { createNormalizationService, createRawIngestionService } from '@techpulse/domain';
+import { Queue, Worker } from 'bullmq';
 import { Redis } from 'ioredis';
 import { createCollectionWorker } from './scheduler.js';
 import { createIngestionJobHandler } from './ingestion.js';
+import { createNormalizationJobHandler } from './normalization.js';
+import { createNormalizationJobData, parseNormalizationJobData } from './jobs.js';
 import { loadWorkerConfig, type Environment, type WorkerConfig } from './config.js';
 import {
   createStructuredLogger,
@@ -138,19 +144,52 @@ async function runWorkerProcess(env: Environment = process.env): Promise<void> {
   const sourceRepository = createSourceRepository(databaseClient.db);
   const collectionRunRepository = createCollectionRunRepository(databaseClient.db);
   const rawItemRepository = createRawItemRepository(databaseClient.db);
+  const documentRepository = createDocumentRepository(databaseClient.db);
+  const metricObservationRepository = createMetricObservationRepository(databaseClient.db);
+  const pipelineEventRepository = createPipelineEventRepository(databaseClient.db);
+  const normalizationService = createNormalizationService();
   const collectors = {
     github_releases: new GitHubReleasesCollector({ owner: 'microsoft', repo: 'playwright' }),
     github_search: new GitHubSearchCollector({ query: 'topic:typescript stars:>500' }),
     stack_exchange: new StackExchangeCollector({}),
   };
+  const redis = new Redis(config.redisUrl, { maxRetriesPerRequest: null });
+  const normalizationQueue = new Queue('techpulse-normalization', { connection: redis });
+  const normalizationHandler = createNormalizationJobHandler({
+    normalizationService,
+    rawItemRepository,
+    documentRepository,
+    metricObservationRepository,
+    pipelineEventRepository,
+    sourceRepository,
+  });
+  const normalizationWorker = new Worker(
+    'techpulse-normalization',
+    async (job) => normalizationHandler(parseNormalizationJobData(job.data)),
+    { connection: redis, concurrency: config.concurrency },
+  );
   const ingestionService = createRawIngestionService({
     sourceRepository,
     collectionRunRepository,
     rawItemRepository,
     collectorResolver: (sourceKey) => collectors[sourceKey as keyof typeof collectors],
+    stageJobPublisher: {
+      publishStageJob: async (payload) => {
+        const data = createNormalizationJobData({
+          rawItemId: payload.rawItemId,
+          sourceKey: payload.sourceKey,
+          runId: payload.runId,
+          externalId: payload.externalId,
+          payloadHash: payload.payloadHash,
+        });
+        await normalizationQueue.add('normalization', data, {
+          jobId: `normalization|${payload.rawItemId}`,
+          removeOnComplete: true,
+        });
+      },
+    },
     logger: workerLogger,
   });
-  const redis = new Redis(config.redisUrl, { maxRetriesPerRequest: null });
   const worker = createCollectionWorker({
     connection: redis,
     concurrency: config.concurrency,
@@ -158,6 +197,8 @@ async function runWorkerProcess(env: Environment = process.env): Promise<void> {
   });
   const shutdown = async () => {
     await worker.close();
+    await normalizationWorker.close();
+    await normalizationQueue.close();
     await redis.quit();
     await databaseClient.close();
   };
