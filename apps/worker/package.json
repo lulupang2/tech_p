@@ -19,6 +19,7 @@
     "@techpulse/domain": "workspace:*",
     "@techpulse/observability": "workspace:*",
     "bullmq": "^6.3.3",
+    "drizzle-orm": "^0.45.2",
     "ioredis": "^6.0.0"
   },
   "devDependencies": {

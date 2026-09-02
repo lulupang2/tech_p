@@ -73,6 +73,8 @@ import {
   createRawItemRepository,
   createSourceRepository,
   createTopicRepository,
+  embeddings,
+  documentRevisions,
 } from '@techpulse/database';
 import {
   GitHubReleasesCollector,
@@ -82,8 +84,11 @@ import {
 import {
   createEnrichmentService,
   createNormalizationService,
+  createOpenAiCompatibleEmbeddingPort,
   createRawIngestionService,
 } from '@techpulse/domain';
+import { eq } from 'drizzle-orm';
+import { createHash } from 'node:crypto';
 import { Queue, Worker, type Job } from 'bullmq';
 import { Redis } from 'ioredis';
 import { createCollectionWorker } from './scheduler.js';
@@ -157,6 +162,41 @@ async function runWorkerProcess(env: Environment = process.env): Promise<void> {
   const chunkRepository = createChunkRepository(databaseClient.db);
   const enrichmentService = createEnrichmentService({ topicRepository, chunkRepository });
   const normalizationService = createNormalizationService();
+  const embeddingPort =
+    env['EMBEDDING_API_KEY'] && env['EMBEDDING_API_KEY'].trim().length > 0
+      ? createOpenAiCompatibleEmbeddingPort({
+          apiKey: env['EMBEDDING_API_KEY'],
+          ...(env['EMBEDDING_BASE_URL'] ? { baseUrl: env['EMBEDDING_BASE_URL'] } : {}),
+          ...(env['EMBEDDING_MODEL'] ? { model: env['EMBEDDING_MODEL'] } : {}),
+          ...(env['EMBEDDING_DIMENSIONS']
+            ? { dimensions: Number(env['EMBEDDING_DIMENSIONS']) }
+            : {}),
+        })
+      : undefined;
+  const embedRevision = embeddingPort
+    ? async (revisionId: string): Promise<void> => {
+        const chunks = await chunkRepository.listByRevision(revisionId);
+        for (const chunk of chunks) {
+          const inputHash = createHash('sha256').update(chunk.content, 'utf8').digest('hex');
+          const result = await embeddingPort.embed({ input: chunk.content, timeoutMs: 15_000 });
+          await databaseClient.db
+            .insert(embeddings)
+            .values({
+              chunkId: chunk.id,
+              provider: 'openrouter',
+              model: result.metadata.model,
+              dimensions: result.metadata.dimensions,
+              embedding: [...result.vector],
+              inputHash,
+            })
+            .onConflictDoNothing();
+        }
+        await databaseClient.db
+          .update(documentRevisions)
+          .set({ status: 'searchable', searchableAt: new Date() })
+          .where(eq(documentRevisions.id, revisionId));
+      }
+    : undefined;
   const collectors = {
     github_releases: new GitHubReleasesCollector({ owner: 'microsoft', repo: 'playwright' }),
     github_search: new GitHubSearchCollector({ query: 'topic:typescript stars:>500' }),
@@ -172,6 +212,7 @@ async function runWorkerProcess(env: Environment = process.env): Promise<void> {
     pipelineEventRepository,
     sourceRepository,
     enrichmentService,
+    ...(embedRevision ? { embedRevision } : {}),
   });
   const normalizationWorker = new Worker(
     'techpulse-normalization',
