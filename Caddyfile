@@ -1,15 +1,17 @@
+# Host-owned Caddy snippet. The systemd Caddy service imports this file; the
+# Compose stack deliberately does not own ports 80/443 or the discord route.
 signal.jisung.lol {
   encode gzip
 
   handle /api/* {
-    reverse_proxy api:3000
+    reverse_proxy 127.0.0.1:3000
   }
 
   handle /health/* {
-    reverse_proxy api:3000
+    reverse_proxy 127.0.0.1:3000
   }
 
   handle {
-    reverse_proxy web:5173
+    reverse_proxy 127.0.0.1:5173
   }
 }

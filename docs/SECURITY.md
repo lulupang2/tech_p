@@ -87,8 +87,8 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 ## 6. API 보안
 
 - production은 TLS를 강제하고 trusted proxy 설정을 명시한다.
-- production 배포는 [ADR-0012](./adr/0012-production-deployment.md)의 GitHub `production` Environment 승인 뒤에만 실행한다. GHCR 이미지는 commit SHA로 고정하고, SSH는 저장소에 커밋하지 않은 private key와 pinned `PRODUCTION_KNOWN_HOSTS`를 사용한다.
-- Caddy는 `signal.jisung.lol`에서 TLS를 종료하며 `/api/*`와 `/health/*`만 API로 전달하고 나머지는 web으로 전달한다. DNS·인증서·서버 변경은 이 저장소나 workflow가 수행하지 않는다.
+- production 배포는 [ADR-0013](./adr/0013-production-deployment.md)의 GitHub `production` Environment 승인 뒤에만 실행한다. GHCR 이미지는 commit SHA로 고정하고, SSH는 저장소에 커밋하지 않은 private key와 pinned `PRODUCTION_KNOWN_HOSTS`를 사용한다.
+- server-owned systemd Caddy는 `signal.jisung.lol` snippet을 설치하기 전에 전체 설정을 validate하고 reload한다. `/api/*`와 `/health/*`만 API로 전달하고 나머지는 web으로 전달하며, Compose는 API/web을 loopback에만 publish해 기존 Discord routing을 보존한다.
 - CORS는 실제 web origin allowlist만 허용한다.
 - public answer API는 인증이 없더라도 rate limit과 abuse monitoring을 적용한다.
 - operations endpoint는 public routing에서 분리하는 것을 우선 추천한다.
