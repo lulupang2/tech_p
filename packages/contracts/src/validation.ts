@@ -1,5 +1,4 @@
 import { type TSchema } from '@sinclair/typebox';
-import { TypeCompiler, type TypeCheck } from '@sinclair/typebox/compiler';
 import { Value } from '@sinclair/typebox/value';
 
 import {
@@ -61,22 +60,22 @@ type SchemaValidationError = {
   readonly type?: unknown;
 };
 
-type CompiledSchema = TypeCheck<TSchema>;
+type SchemaValidator = TSchema;
 
-const answerRequestValidator = TypeCompiler.Compile(AnswerRequestSchema);
-const answerResponseValidator = TypeCompiler.Compile(AnswerResponseSchema);
-const collectionJobPayloadValidator = TypeCompiler.Compile(CollectionJobPayloadSchema);
-const replayJobPayloadValidator = TypeCompiler.Compile(ReplayJobPayloadSchema);
-const errorEnvelopeValidator = TypeCompiler.Compile(ErrorEnvelopeSchema);
-const healthLiveResponseValidator = TypeCompiler.Compile(HealthLiveResponseSchema);
-const healthReadyResponseValidator = TypeCompiler.Compile(HealthReadyResponseSchema);
-const sourceSummaryValidator = TypeCompiler.Compile(SourceSummarySchema);
-const sourceListResponseValidator = TypeCompiler.Compile(SourceListResponseSchema);
-const sourceDetailResponseValidator = TypeCompiler.Compile(SourceDetailResponseSchema);
-const topicSummaryValidator = TypeCompiler.Compile(TopicSummarySchema);
-const topicListResponseValidator = TypeCompiler.Compile(TopicListResponseSchema);
-const topicSearchQueryValidator = TypeCompiler.Compile(TopicSearchQuerySchema);
-const sourceListQueryValidator = TypeCompiler.Compile(SourceListQuerySchema);
+const answerRequestValidator = AnswerRequestSchema;
+const answerResponseValidator = AnswerResponseSchema;
+const collectionJobPayloadValidator = CollectionJobPayloadSchema;
+const replayJobPayloadValidator = ReplayJobPayloadSchema;
+const errorEnvelopeValidator = ErrorEnvelopeSchema;
+const healthLiveResponseValidator = HealthLiveResponseSchema;
+const healthReadyResponseValidator = HealthReadyResponseSchema;
+const sourceSummaryValidator = SourceSummarySchema;
+const sourceListResponseValidator = SourceListResponseSchema;
+const sourceDetailResponseValidator = SourceDetailResponseSchema;
+const topicSummaryValidator = TopicSummarySchema;
+const topicListResponseValidator = TopicListResponseSchema;
+const topicSearchQueryValidator = TopicSearchQuerySchema;
+const sourceListQueryValidator = SourceListQuerySchema;
 
 function pathFromPointer(pointer: string | undefined): string {
   if (!pointer) return '';
@@ -107,15 +106,15 @@ function issuesFromErrors(
     }));
 }
 
-function parseSchema<T>(validator: CompiledSchema, value: unknown): T {
-  if (!validator.Check(value)) {
-    throw new ContractValidationError(issuesFromErrors([...validator.Errors(value)]));
+function parseSchema<T>(validator: SchemaValidator, value: unknown): T {
+  if (!Value.Check(validator, value)) {
+    throw new ContractValidationError(issuesFromErrors([...Value.Errors(validator, value)]));
   }
 
   return value as T;
 }
 
-function safeParseSchema<T>(validator: CompiledSchema, value: unknown): SafeParseResult<T> {
+function safeParseSchema<T>(validator: SchemaValidator, value: unknown): SafeParseResult<T> {
   try {
     return { success: true, data: parseSchema<T>(validator, value) };
   } catch (error) {
