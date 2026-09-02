@@ -146,7 +146,13 @@ importers:
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@neondatabase/serverless@1.1.0)(@types/pg@8.23.1)(pg@8.23.0)
+      pg:
+        specifier: ^8.23.0
+        version: 8.23.0
     devDependencies:
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
@@ -2654,7 +2660,6 @@ snapshots:
       '@types/node': 24.13.3
       pg-protocol: 1.16.0
       pg-types: 2.2.0
-    optional: true
 
   '@typescript-eslint/eslint-plugin@8.69.0(@typescript-eslint/parser@8.69.0(eslint@9.39.5)(typescript@5.9.3))(eslint@9.39.5)(typescript@5.9.3)':
     dependencies:
@@ -3342,19 +3347,15 @@ snapshots:
   pg-cloudflare@1.4.0:
     optional: true
 
-  pg-connection-string@2.14.0:
-    optional: true
+  pg-connection-string@2.14.0: {}
 
-  pg-int8@1.0.1:
-    optional: true
+  pg-int8@1.0.1: {}
 
   pg-pool@3.14.0(pg@8.23.0):
     dependencies:
       pg: 8.23.0
-    optional: true
 
-  pg-protocol@1.16.0:
-    optional: true
+  pg-protocol@1.16.0: {}
 
   pg-types@2.2.0:
     dependencies:
@@ -3363,7 +3364,6 @@ snapshots:
       postgres-bytea: 1.0.1
       postgres-date: 1.0.7
       postgres-interval: 1.2.0
-    optional: true
 
   pg@8.23.0:
     dependencies:
@@ -3374,12 +3374,10 @@ snapshots:
       pgpass: 1.0.5
     optionalDependencies:
       pg-cloudflare: 1.4.0
-    optional: true
 
   pgpass@1.0.5:
     dependencies:
       split2: 4.2.0
-    optional: true
 
   picocolors@1.1.1: {}
 
@@ -3411,19 +3409,15 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postgres-array@2.0.0:
-    optional: true
+  postgres-array@2.0.0: {}
 
-  postgres-bytea@1.0.1:
-    optional: true
+  postgres-bytea@1.0.1: {}
 
-  postgres-date@1.0.7:
-    optional: true
+  postgres-date@1.0.7: {}
 
   postgres-interval@1.2.0:
     dependencies:
       xtend: 4.0.2
-    optional: true
 
   prelude-ls@1.2.1: {}
 
@@ -3507,8 +3501,7 @@ snapshots:
 
   source-map@0.6.1: {}
 
-  split2@4.2.0:
-    optional: true
+  split2@4.2.0: {}
 
   srvx@0.11.22: {}
 
@@ -3738,8 +3731,7 @@ snapshots:
 
   word-wrap@1.2.5: {}
 
-  xtend@4.0.2:
-    optional: true
+  xtend@4.0.2: {}
 
   yaml@1.10.3: {}
 

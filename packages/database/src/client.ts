@@ -1,5 +1,7 @@
-import { Pool } from '@neondatabase/serverless';
-import { drizzle, type NeonDatabase } from 'drizzle-orm/neon-serverless';
+import { Pool as NeonPool } from '@neondatabase/serverless';
+import { drizzle as neonDrizzle, type NeonDatabase } from 'drizzle-orm/neon-serverless';
+import { Pool as NodePool } from 'pg';
+import { drizzle as nodeDrizzle } from 'drizzle-orm/node-postgres';
 import { schema } from './schema/index.js';
 import { type DatabaseConfig, validateDatabaseConfig } from './config.js';
 import {
@@ -12,7 +14,7 @@ import {
 
 export interface DatabaseClient {
   readonly db: NeonDatabase<typeof schema>;
-  readonly pool: Pool;
+  readonly pool: NeonPool | NodePool;
   readonly isConnected: boolean;
   readonly connect: () => Promise<void>;
   readonly checkHealth: () => Promise<boolean>;
@@ -39,19 +41,37 @@ function sanitizeErrorMessage(message: string): string {
 export function createDatabaseClient(input: DatabaseConfig | string): DatabaseClient {
   const normalizedConfig = typeof input === 'string' ? { databaseUrl: input } : input;
   const config = validateDatabaseConfig(normalizedConfig);
+  const isLocalDatabase = /@(?:localhost|127\.0\.0\.1|postgres)(?::\d+)?\//u.test(
+    config.databaseUrl,
+  );
 
-  const pool = new Pool({
-    connectionString: config.databaseUrl,
-    ...(config.maxConnections !== undefined ? { max: config.maxConnections } : {}),
-    ...(config.idleTimeoutMillis !== undefined
-      ? { idleTimeoutMillis: config.idleTimeoutMillis }
-      : {}),
-    ...(config.connectionTimeoutMillis !== undefined
-      ? { connectionTimeoutMillis: config.connectionTimeoutMillis }
-      : {}),
-  });
+  const pool = (isLocalDatabase
+    ? new NodePool({
+        connectionString: config.databaseUrl,
+        ...(config.maxConnections !== undefined ? { max: config.maxConnections } : {}),
+        ...(config.idleTimeoutMillis !== undefined
+          ? { idleTimeoutMillis: config.idleTimeoutMillis }
+          : {}),
+        ...(config.connectionTimeoutMillis !== undefined
+          ? { connectionTimeoutMillis: config.connectionTimeoutMillis }
+          : {}),
+      })
+    : new NeonPool({
+        connectionString: config.databaseUrl,
+        ...(config.maxConnections !== undefined ? { max: config.maxConnections } : {}),
+        ...(config.idleTimeoutMillis !== undefined
+          ? { idleTimeoutMillis: config.idleTimeoutMillis }
+          : {}),
+        ...(config.connectionTimeoutMillis !== undefined
+          ? { connectionTimeoutMillis: config.connectionTimeoutMillis }
+          : {}),
+      })) as unknown as NeonPool;
 
-  const db = drizzle(pool, { schema });
+  const db = (isLocalDatabase
+    ? nodeDrizzle(pool as unknown as NodePool, { schema })
+    : neonDrizzle(pool as unknown as NeonPool, { schema })) as unknown as NeonDatabase<
+    typeof schema
+  >;
   let connected = false;
 
   return {
