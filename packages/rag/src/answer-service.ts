@@ -148,6 +148,8 @@ export function detectIntent(question: string): string {
   return 'trend_summary';
 }
 
+export const UNBOUNDED_START = '1970-01-01T00:00:00.000Z';
+
 export function resolveTimeRange(
   requestTimeRange?: { readonly from?: string; readonly to?: string },
   requestTimezone?: string,
@@ -176,7 +178,7 @@ export function resolveTimeRange(
 
   const now = nowFn();
   const to = now.toISOString();
-  const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const from = UNBOUNDED_START;
 
   return {
     from,
@@ -241,21 +243,24 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
       });
 
       // 1. Resolve deterministic time window & intent
+      const hasExplicitTimeRange = Boolean(input.timeRange?.from && input.timeRange?.to);
       const resolvedTimeRange = resolveTimeRange(input.timeRange, input.timezone, nowFn);
       const intent = detectIntent(input.question);
-      const publishedAfter = new Date(resolvedTimeRange.from);
-      const publishedBefore = new Date(resolvedTimeRange.to);
+      const publishedAfter = hasExplicitTimeRange ? new Date(resolvedTimeRange.from) : undefined;
+      const publishedBefore = hasExplicitTimeRange ? new Date(resolvedTimeRange.to) : undefined;
 
       // 2. Search retrieval via search ports
       let searchHits: readonly SearchHit[] = [];
       try {
+        const searchFilter = {
+          status: 'searchable',
+          ...(publishedAfter ? { publishedAfter } : {}),
+          ...(publishedBefore ? { publishedBefore } : {}),
+        };
+
         let ftsHits = await options.searchService.searchFts({
           query: input.question,
-          filter: {
-            status: 'searchable',
-            publishedAfter,
-            publishedBefore,
-          },
+          filter: searchFilter,
           limit: 10,
         });
 
@@ -267,11 +272,7 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
             if (combinedQuery !== input.question.trim()) {
               ftsHits = await options.searchService.searchFts({
                 query: combinedQuery,
-                filter: {
-                  status: 'searchable',
-                  publishedAfter,
-                  publishedBefore,
-                },
+                filter: searchFilter,
                 limit: 10,
               });
             }
@@ -285,24 +286,14 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
                 if (techQuery !== combinedQuery && techQuery !== input.question.trim()) {
                   ftsHits = await options.searchService.searchFts({
                     query: techQuery,
-                    filter: {
-                      status: 'searchable',
-                      publishedAfter,
-                      publishedBefore,
-                    },
-                    limit: 10,
+                    filter: searchFilter,
                   });
                 }
                 if (ftsHits.length === 0 && techKeywords.length > 1) {
                   for (const tk of techKeywords) {
                     ftsHits = await options.searchService.searchFts({
                       query: tk,
-                      filter: {
-                        status: 'searchable',
-                        publishedAfter,
-                        publishedBefore,
-                      },
-                      limit: 10,
+                      filter: searchFilter,
                     });
                     if (ftsHits.length > 0) break;
                   }
@@ -324,12 +315,7 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
               dimensions: embedResult.metadata.dimensions,
               provider: 'openai',
               model: embedResult.metadata.model,
-              filter: {
-                status: 'searchable',
-                publishedAfter,
-                publishedBefore,
-              },
-              limit: 10,
+              filter: searchFilter,
             });
 
             // Merge & deduplicate by chunkId
@@ -358,12 +344,15 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
         throw new DatabaseRetrievalError('Database search retrieval failed', searchError);
       }
 
-      // Filter hits by publishedAt range if present
-      const validHits = searchHits.filter((hit) => {
-        if (!hit.publishedAt) return true;
-        const time = hit.publishedAt.getTime();
-        return time >= publishedAfter.getTime() && time < publishedBefore.getTime();
-      });
+      // Filter hits by publishedAt range strictly when explicit timeRange is provided
+      const validHits =
+        hasExplicitTimeRange && publishedAfter && publishedBefore
+          ? searchHits.filter((hit) => {
+              if (!hit.publishedAt) return false;
+              const time = hit.publishedAt.getTime();
+              return time >= publishedAfter.getTime() && time < publishedBefore.getTime();
+            })
+          : searchHits;
 
       // 3. Check for insufficient evidence
       if (validHits.length === 0) {

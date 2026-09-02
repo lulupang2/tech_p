@@ -9,7 +9,7 @@ import {
   type SearchHit,
   type SearchServicePort,
 } from '@techpulse/domain';
-import { createAnswerService } from '@techpulse/rag';
+import { createAnswerService, UNBOUNDED_START } from '@techpulse/rag';
 
 function createFakeSearchService(hits: readonly SearchHit[]): SearchServicePort {
   return {
@@ -302,5 +302,109 @@ describe('API-003 answers endpoint (POST /api/v1/answers)', () => {
       !rawText.includes('postgres:'),
       'Response must not contain postgres connection string',
     );
+  });
+
+  test('POST /api/v1/answers retrieves hit older than old 30-day window when timeRange is omitted', async () => {
+    const olderHits: SearchHit[] = [
+      {
+        chunkId: 'chunk-ancient-api-1',
+        documentId: 'doc-ancient-api-1',
+        documentRevisionId: 'rev-ancient-api-1',
+        title: 'Legacy Framework in Early 2026',
+        content: 'Legacy framework details from January 2026.',
+        headingPath: ['History'],
+        score: 0.95,
+        publishedAt: new Date('2026-01-15T00:00:00.000Z'),
+      },
+    ];
+
+    const chatPort = createDeterministicChatPort({
+      response: 'Legacy framework 내용입니다 [C1].',
+    });
+    const searchService = createFakeSearchService(olderHits);
+    const answerService = createAnswerService({
+      chatPort,
+      searchService,
+      now: nowFn,
+    });
+    const app = createApp({ answerService });
+
+    const response = await app.handle(
+      new Request('http://localhost/api/v1/answers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-request-id': 'req_answers_ancient_1',
+        },
+        body: JSON.stringify({
+          question: 'Legacy framework의 변경사항은?',
+        }),
+      }),
+    );
+
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    const parsed = parseAnswerResponse(body);
+
+    assert.equal(parsed.status, 'answered');
+    assert.equal(parsed.citations.length, 1);
+    assert.equal(parsed.citations[0]!.documentRevisionId, 'rev-ancient-api-1');
+    assert.equal(parsed.citations[0]!.publishedAt, '2026-01-15T00:00:00.000Z');
+    assert.equal(parsed.resolvedTimeRange.from, UNBOUNDED_START);
+    assert.equal(parsed.resolvedTimeRange.to, '2026-09-01T12:00:00.000Z');
+    assert.equal(parsed.coverage.dataFreshThrough, '2026-01-15T00:00:00.000Z');
+    assert.equal(parsed.coverage.documentsConsidered, 1);
+  });
+
+  test('POST /api/v1/answers strictly excludes hits outside explicit timeRange', async () => {
+    const olderHits: SearchHit[] = [
+      {
+        chunkId: 'chunk-ancient-api-2',
+        documentId: 'doc-ancient-api-2',
+        documentRevisionId: 'rev-ancient-api-2',
+        title: 'Legacy Framework in Early 2026',
+        content: 'Legacy framework details.',
+        headingPath: ['History'],
+        score: 0.95,
+        publishedAt: new Date('2026-01-15T00:00:00.000Z'),
+      },
+    ];
+
+    const chatPort = createDeterministicChatPort({
+      response: '답변 [C1]',
+    });
+    const searchService = createFakeSearchService(olderHits);
+    const answerService = createAnswerService({
+      chatPort,
+      searchService,
+      now: nowFn,
+    });
+    const app = createApp({ answerService });
+
+    const response = await app.handle(
+      new Request('http://localhost/api/v1/answers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-request-id': 'req_answers_strict_exclusion',
+        },
+        body: JSON.stringify({
+          question: '2026년 8월 변경사항은?',
+          timeRange: {
+            from: '2026-08-01T00:00:00.000Z',
+            to: '2026-08-31T00:00:00.000Z',
+          },
+        }),
+      }),
+    );
+
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    const parsed = parseAnswerResponse(body);
+
+    assert.equal(parsed.status, 'insufficient_evidence');
+    assert.equal(parsed.answer, null);
+    assert.equal(parsed.citations.length, 0);
+    assert.equal(parsed.coverage.documentsConsidered, 0);
   });
 });

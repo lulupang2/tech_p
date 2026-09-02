@@ -1,6 +1,7 @@
 export * from './golden-set/index.js';
 export * from './evaluation.js';
 export {
+  UNBOUNDED_START,
   InvalidTimeRangeError,
   ModelProviderError,
   DatabaseRetrievalError,

@@ -37,8 +37,8 @@ export function createSearchService(db: NeonDatabase<typeof schema>): SearchServ
           FROM chunks c
           JOIN document_revisions dr ON c.document_revision_id = dr.id
           WHERE dr.status = ${status}
-            ${publishedAfter ? sql` AND (dr.published_at IS NULL OR dr.published_at >= ${publishedAfter})` : sql``}
-            ${publishedBefore ? sql` AND (dr.published_at IS NULL OR dr.published_at < ${publishedBefore})` : sql``}
+            ${publishedAfter ? sql` AND (dr.published_at IS NOT NULL AND dr.published_at >= ${publishedAfter})` : sql``}
+            ${publishedBefore ? sql` AND (dr.published_at IS NOT NULL AND dr.published_at < ${publishedBefore})` : sql``}
             AND to_tsvector('simple', COALESCE(dr.title, '') || ' ' || COALESCE(c.content, '')) @@ plainto_tsquery('simple', ${queryText})
           ORDER BY score DESC, dr.published_at DESC NULLS LAST
           LIMIT ${limit};
@@ -119,7 +119,8 @@ export function createSearchService(db: NeonDatabase<typeof schema>): SearchServ
       const limit = Math.max(1, Math.min(params.limit ?? 10, 50));
       const status = params.filter?.status ?? 'searchable';
       const vectorLiteral = `[${params.vector.join(',')}]`;
-
+      const publishedAfter = params.filter?.publishedAfter;
+      const publishedBefore = params.filter?.publishedBefore;
       const querySql = sql`
         SELECT
           c.id AS chunk_id,
@@ -134,6 +135,8 @@ export function createSearchService(db: NeonDatabase<typeof schema>): SearchServ
         JOIN chunks c ON e.chunk_id = c.id
         JOIN document_revisions dr ON c.document_revision_id = dr.id
         WHERE dr.status = ${status}
+          ${publishedAfter ? sql` AND (dr.published_at IS NOT NULL AND dr.published_at >= ${publishedAfter})` : sql``}
+          ${publishedBefore ? sql` AND (dr.published_at IS NOT NULL AND dr.published_at < ${publishedBefore})` : sql``}
           AND e.provider = ${params.provider}
           AND e.model = ${params.model}
           AND e.dimensions = ${params.dimensions}

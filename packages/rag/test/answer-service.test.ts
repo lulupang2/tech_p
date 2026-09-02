@@ -8,6 +8,7 @@ import {
   type SearchServicePort,
 } from '@techpulse/domain';
 import {
+  UNBOUNDED_START,
   createAnswerService,
   detectIntent,
   resolveTimeRange,
@@ -35,7 +36,7 @@ describe('RAG Answer Service (API-003)', () => {
     expect(detectIntent('TypeScript 백엔드 트렌드 요약')).toBe('trend_summary');
   });
 
-  test('resolves time range with valid custom bounds and default 30-day window', () => {
+  test('resolves time range with valid custom bounds and unbounded/latest fallback when omitted', () => {
     const custom = resolveTimeRange(
       { from: '2026-08-01T00:00:00.000Z', to: '2026-08-15T00:00:00.000Z' },
       'Asia/Seoul',
@@ -50,9 +51,7 @@ describe('RAG Answer Service (API-003)', () => {
     const fallback = resolveTimeRange(undefined, undefined, nowFn);
     expect(fallback.timezone).toBe('UTC');
     expect(fallback.to).toBe('2026-09-01T12:00:00.000Z');
-    expect(fallback.from).toBe(
-      new Date(fixedNow.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-    );
+    expect(fallback.from).toBe(UNBOUNDED_START);
   });
 
   test('rejects invalid timeRange where to <= from', () => {
@@ -498,5 +497,170 @@ describe('RAG Answer Service (API-003)', () => {
     expect(caughtError).not.toBeInstanceOf(ModelProviderError);
     expect((caughtError as DatabaseRetrievalError).code).toBe('DATABASE_RETRIEVAL_ERROR');
     expect((caughtError as DatabaseRetrievalError).retryable).toBe(true);
+  });
+
+  test('policy: omitted timeRange retrieves latest searchable data even if older than old 30-day default window', async () => {
+    // Hit published on 2026-01-15, which is ~7.5 months before fixedNow (2026-09-01).
+    // Under the old 30-day default window, this hit would have been excluded.
+    const olderHit: SearchHit = {
+      chunkId: 'chunk-ancient-1',
+      documentId: 'doc-ancient-1',
+      documentRevisionId: 'rev-ancient-1',
+      title: 'Legacy Framework Architecture in Early 2026',
+      content: 'Legacy framework achieved initial stable release with unified runtime support.',
+      headingPath: ['Architecture', 'Release'],
+      score: 0.92,
+      publishedAt: new Date('2026-01-15T00:00:00.000Z'),
+    };
+
+    let receivedFilter: Record<string, unknown> | undefined;
+    const searchService: SearchServicePort = {
+      searchFts: async (params) => {
+        receivedFilter = params.filter as Record<string, unknown> | undefined;
+        return [olderHit];
+      },
+      searchExactVector: async () => [],
+    };
+
+    const chatPort = createDeterministicChatPort({
+      response:
+        'Legacy framework는 통합 런타임 지원과 함께 초기 안정화 릴리스를 달성했습니다 [C1].',
+    });
+
+    const service = createAnswerService({
+      chatPort,
+      searchService,
+      now: nowFn,
+    });
+
+    const response = await service.generateAnswer({
+      question: 'Legacy framework의 초기 릴리스 내용',
+      requestId: 'req_test_ancient_hit',
+      // Note: timeRange is omitted
+    });
+
+    // Must be answered using the older hit without an implicit recent-date filter
+    expect(response.status).toBe('answered');
+    expect(response.citations).toHaveLength(1);
+    expect(response.citations[0]?.documentRevisionId).toBe('rev-ancient-1');
+    expect(response.citations[0]?.publishedAt).toBe('2026-01-15T00:00:00.000Z');
+
+    // Search filter must NOT have publishedAfter or publishedBefore
+    expect(receivedFilter).toBeDefined();
+    expect(receivedFilter?.['status']).toBe('searchable');
+    expect(receivedFilter?.['publishedAfter']).toBeUndefined();
+    expect(receivedFilter?.['publishedBefore']).toBeUndefined();
+
+    // resolvedTimeRange clearly represents unbounded/latest mode
+    expect(response.resolvedTimeRange.from).toBe(UNBOUNDED_START);
+    expect(response.resolvedTimeRange.to).toBe('2026-09-01T12:00:00.000Z');
+    expect(response.resolvedTimeRange.timezone).toBe('UTC');
+
+    // coverage reflects actual considered data freshness
+    expect(response.coverage.dataFreshThrough).toBe('2026-01-15T00:00:00.000Z');
+    expect(response.coverage.documentsConsidered).toBe(1);
+    expect(response.coverage.sourcesUsed).toBe(1);
+  });
+
+  test('policy: explicit timeRange strictly excludes hits published outside the specified bounds', async () => {
+    const olderHit: SearchHit = {
+      chunkId: 'chunk-ancient-2',
+      documentId: 'doc-ancient-2',
+      documentRevisionId: 'rev-ancient-2',
+      title: 'Legacy Framework Architecture in Early 2026',
+      content: 'Early 2026 details.',
+      headingPath: ['History'],
+      score: 0.9,
+      publishedAt: new Date('2026-01-15T00:00:00.000Z'),
+    };
+
+    const inRangeHit: SearchHit = {
+      chunkId: 'chunk-inrange-1',
+      documentId: 'doc-inrange-1',
+      documentRevisionId: 'rev-inrange-1',
+      title: 'Framework August 2026 Update',
+      content: 'August 2026 introduces compiler optimizations.',
+      headingPath: ['August', 'Optimizations'],
+      score: 0.88,
+      publishedAt: new Date('2026-08-10T00:00:00.000Z'),
+    };
+
+    // Search port returns both hits (simulating partial database filter or hybrid union)
+    const searchService: SearchServicePort = {
+      searchFts: async () => [olderHit, inRangeHit],
+      searchExactVector: async () => [],
+    };
+
+    const chatPort = createDeterministicChatPort({
+      response: '8월 업데이트에서 컴파일러 최적화가 도입되었습니다 [C1].',
+    });
+
+    const service = createAnswerService({
+      chatPort,
+      searchService,
+      now: nowFn,
+    });
+
+    // Explicit timeRange: 2026-08-01 to 2026-08-31 strictly excludes 2026-01-15
+    const response = await service.generateAnswer({
+      question: '8월 업데이트 내용',
+      requestId: 'req_test_strict_range',
+      timeRange: {
+        from: '2026-08-01T00:00:00.000Z',
+        to: '2026-08-31T00:00:00.000Z',
+      },
+      timezone: 'Asia/Seoul',
+    });
+
+    expect(response.status).toBe('answered');
+    expect(response.resolvedTimeRange.from).toBe('2026-08-01T00:00:00.000Z');
+    expect(response.resolvedTimeRange.to).toBe('2026-08-31T00:00:00.000Z');
+    expect(response.resolvedTimeRange.timezone).toBe('Asia/Seoul');
+
+    // Only inRangeHit should be considered (documentsConsidered = 1)
+    expect(response.coverage.documentsConsidered).toBe(1);
+    expect(response.citations).toHaveLength(1);
+    expect(response.citations[0]?.documentRevisionId).toBe('rev-inrange-1');
+    expect(response.citations[0]?.publishedAt).toBe('2026-08-10T00:00:00.000Z');
+  });
+
+  test('policy: explicit timeRange returns insufficient_evidence when all hits are outside bounds', async () => {
+    const olderHit: SearchHit = {
+      chunkId: 'chunk-ancient-3',
+      documentId: 'doc-ancient-3',
+      documentRevisionId: 'rev-ancient-3',
+      title: 'Legacy Framework in Early 2026',
+      content: 'Early 2026 details only.',
+      headingPath: ['History'],
+      score: 0.9,
+      publishedAt: new Date('2026-01-15T00:00:00.000Z'),
+    };
+
+    const searchService: SearchServicePort = {
+      searchFts: async () => [olderHit],
+      searchExactVector: async () => [],
+    };
+
+    const chatPort = createDeterministicChatPort();
+    const service = createAnswerService({
+      chatPort,
+      searchService,
+      now: nowFn,
+    });
+
+    const response = await service.generateAnswer({
+      question: '2026년 8월 변경사항',
+      requestId: 'req_test_strict_empty',
+      timeRange: {
+        from: '2026-08-01T00:00:00.000Z',
+        to: '2026-08-31T00:00:00.000Z',
+      },
+    });
+
+    // All hits were strictly outside explicit range -> insufficient_evidence
+    expect(response.status).toBe('insufficient_evidence');
+    expect(response.answer).toBeNull();
+    expect(response.citations).toHaveLength(0);
+    expect(response.coverage.documentsConsidered).toBe(0);
   });
 });
