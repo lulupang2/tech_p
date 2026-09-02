@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'vitest';
-import QuestionAnswer from '../src/lib/components/QuestionAnswer.svelte';
+import { render } from 'svelte/server';
+import QuestionAnswer, {
+  isUnboundedStart,
+  buildAnswerRequestPayload,
+} from '../src/lib/components/QuestionAnswer.svelte';
 import { ApiClient } from '../src/lib/api-client.js';
 import type { AnswerRequest, AnswerResponse } from '@techpulse/contracts';
 
@@ -10,7 +14,7 @@ describe('QuestionAnswer Component & QA Flow', () => {
     assert.equal(typeof QuestionAnswer, 'function');
   });
 
-  it('constructs well-formed AnswerRequest payload for rolling 30d window', async () => {
+  it('constructs well-formed AnswerRequest payload with omitted timeRange by default (latest unbounded)', async () => {
     let capturedRequest: AnswerRequest | null = null;
     const mockClient = new ApiClient({
       fetch: async (_url, init) => {
@@ -372,5 +376,209 @@ describe('QuestionAnswer Component & QA Flow', () => {
     assert.equal(res.coverage.limitations.length, 2);
     assert.ok(res.coverage.limitations[0]?.includes('stale'));
     assert.ok(res.coverage.limitations[1]?.includes('unavailable'));
+  });
+
+  describe('Date filter request payload construction & unbounded default policy', () => {
+    const fixedNow = new Date('2026-09-03T12:00:00.000Z');
+
+    it('omits timeRange in payload when timePreset is auto (no date filter / latest data)', () => {
+      const payload = buildAnswerRequestPayload({
+        question: 'Bun과 Node.js 비교',
+        timePreset: 'auto',
+        timezone: 'Asia/Seoul',
+        language: 'ko',
+        now: () => fixedNow,
+      });
+
+      assert.equal(payload.question, 'Bun과 Node.js 비교');
+      assert.equal(payload.timezone, 'Asia/Seoul');
+      assert.equal(payload.language, 'ko');
+      assert.equal(payload.timeRange, undefined);
+      assert.equal('timeRange' in payload, false);
+    });
+
+    it('constructs explicit rolling 30d timeRange when 30d preset is chosen', () => {
+      const payload = buildAnswerRequestPayload({
+        question: '최근 30일간 릴리스 동향',
+        timePreset: '30d',
+        now: () => fixedNow,
+      });
+
+      assert.ok(payload.timeRange);
+      assert.equal(payload.timeRange.to, '2026-09-03T12:00:00.000Z');
+      assert.equal(payload.timeRange.from, '2026-08-04T12:00:00.000Z');
+    });
+
+    it('constructs explicit rolling 7d timeRange when 7d preset is chosen', () => {
+      const payload = buildAnswerRequestPayload({
+        question: '최근 7일간 릴리스 동향',
+        timePreset: '7d',
+        now: () => fixedNow,
+      });
+
+      assert.ok(payload.timeRange);
+      assert.equal(payload.timeRange.to, '2026-09-03T12:00:00.000Z');
+      assert.equal(payload.timeRange.from, '2026-08-27T12:00:00.000Z');
+    });
+
+    it('constructs explicit custom timeRange when valid custom dates are provided', () => {
+      const payload = buildAnswerRequestPayload({
+        question: '직접 지정 기간',
+        timePreset: 'custom',
+        customFrom: '2026-06-01T00:00:00.000Z',
+        customTo: '2026-07-01T00:00:00.000Z',
+      });
+
+      assert.ok(payload.timeRange);
+      assert.equal(payload.timeRange.from, '2026-06-01T00:00:00.000Z');
+      assert.equal(payload.timeRange.to, '2026-07-01T00:00:00.000Z');
+    });
+
+    it('rejects invalid custom dates where to <= from or missing dates', () => {
+      assert.throws(
+        () =>
+          buildAnswerRequestPayload({
+            question: '역전된 기간',
+            timePreset: 'custom',
+            customFrom: '2026-08-01T00:00:00.000Z',
+            customTo: '2026-07-01T00:00:00.000Z',
+          }),
+        /End date \(to\) must be after start date \(from\)/,
+      );
+
+      assert.throws(
+        () =>
+          buildAnswerRequestPayload({
+            question: '누락된 기간',
+            timePreset: 'custom',
+            customFrom: '',
+            customTo: '2026-07-01T00:00:00.000Z',
+          }),
+        /Please specify both start/,
+      );
+    });
+
+    it('isUnboundedStart helper identifies UNBOUNDED_START (1970 epoch) vs bounded dates', () => {
+      assert.equal(isUnboundedStart('1970-01-01T00:00:00.000Z'), true);
+      assert.equal(isUnboundedStart('1970-01-01T00:00:00Z'), true);
+      assert.equal(isUnboundedStart('2026-08-01T00:00:00.000Z'), false);
+      assert.equal(isUnboundedStart(undefined), false);
+      assert.equal(isUnboundedStart(null), false);
+    });
+  });
+
+  describe('Rendered UI state for date filter & response labeling', () => {
+    const dummyClient = new ApiClient({ fetch: async () => new Response('{}') });
+
+    it('renders time range dropdown with default no-filter / latest data label while preserving explicit 30d option', () => {
+      const { html } = render(QuestionAnswer, {
+        props: { client: dummyClient },
+      });
+
+      // Must present default as '기간 필터 없음 / 최신 데이터'
+      assert.ok(html.includes('기본값 (기간 필터 없음 / 최신 데이터)'));
+      // Must NOT present the old misleading '기본값 (최근 30일)'
+      assert.equal(html.includes('기본값 (최근 30일)'), false);
+      // Must preserve the explicit '최근 30일' option
+      assert.ok(html.includes('최근 30일'));
+      assert.ok(html.includes('value="30d"'));
+      assert.ok(html.includes('최근 7일'));
+      assert.ok(html.includes('직접 기간 설정'));
+    });
+
+    it('renders response with clear latest/unbounded labeling when resolvedTimeRange is unbounded', () => {
+      const unboundedResponse: AnswerResponse = {
+        requestId: 'req_unbounded_render',
+        answerId: 'ans_unbounded_render',
+        status: 'answered',
+        intent: 'compare_interest',
+        resolvedTimeRange: {
+          from: '1970-01-01T00:00:00.000Z',
+          to: '2026-09-03T12:00:00.000Z',
+          timezone: 'Asia/Seoul',
+        },
+        answer: 'Unbounded latest answer text [C1].',
+        observations: [
+          {
+            subject: 'Bun',
+            metric: 'community_mentions',
+            value: 99,
+            unit: 'count',
+            change: null,
+          },
+        ],
+        citations: [
+          {
+            id: 'C1',
+            documentRevisionId: 'rev_1',
+            title: 'Doc Title',
+            source: 'github_releases',
+            url: 'https://example.com',
+            publishedAt: '2026-08-10T00:00:00.000Z',
+            excerpt: 'Excerpt',
+            excerptIsVerbatim: true,
+          },
+        ],
+        coverage: {
+          dataFreshThrough: '2026-09-03T12:00:00.000Z',
+          sourcesUsed: 1,
+          documentsConsidered: 1,
+          limitations: [],
+        },
+      };
+
+      const { html } = render(QuestionAnswer, {
+        props: {
+          client: dummyClient,
+          initialResponse: unboundedResponse,
+        },
+      });
+
+      // Must render clear unbounded / latest labeling
+      assert.ok(html.includes('unbounded-tag'));
+      assert.ok(html.includes('전체 기간 (최신 데이터)'));
+      // Must NOT display raw 1970 epoch date string to the user
+      assert.equal(html.includes('1970-01-01 00:00:00 UTC'), false);
+      // Must display the end date and timezone
+      assert.ok(html.includes('2026-09-03 12:00:00 UTC'));
+      assert.ok(html.includes('Asia/Seoul'));
+    });
+
+    it('renders response with explicit date range when resolvedTimeRange has bounded dates', () => {
+      const boundedResponse: AnswerResponse = {
+        requestId: 'req_bounded_render',
+        answerId: 'ans_bounded_render',
+        status: 'answered',
+        intent: 'trend_summary',
+        resolvedTimeRange: {
+          from: '2026-08-01T00:00:00.000Z',
+          to: '2026-09-01T00:00:00.000Z',
+          timezone: 'UTC',
+        },
+        answer: 'Bounded answer text [C1].',
+        observations: [],
+        citations: [],
+        coverage: {
+          dataFreshThrough: '2026-09-01T00:00:00.000Z',
+          sourcesUsed: 0,
+          documentsConsidered: 0,
+          limitations: [],
+        },
+      };
+
+      const { html } = render(QuestionAnswer, {
+        props: {
+          client: dummyClient,
+          initialResponse: boundedResponse,
+        },
+      });
+
+      // Bounded dates should be rendered directly
+      assert.ok(html.includes('2026-08-01 00:00:00 UTC'));
+      assert.ok(html.includes('2026-09-01 00:00:00 UTC'));
+      // Must NOT render unbounded-tag for bounded range
+      assert.equal(html.includes('unbounded-tag'), false);
+      assert.equal(html.includes('전체 기간 (최신 데이터)'), false);
+    });
   });
 });

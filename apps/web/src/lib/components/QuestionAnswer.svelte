@@ -1,19 +1,100 @@
+<script module lang="ts">
+  import type { AnswerRequest } from '@techpulse/contracts';
+
+  export function isUnboundedStart(isoString: string | null | undefined): boolean {
+    if (!isoString) return false;
+    try {
+      const d = new Date(isoString);
+      return !Number.isNaN(d.getTime()) && (d.getUTCFullYear() <= 1970 || d.getTime() <= 0);
+    } catch {
+      return isoString.startsWith('1970-01-01');
+    }
+  }
+
+  export interface BuildAnswerRequestOptions {
+    question: string;
+    timePreset: 'auto' | '7d' | '30d' | '90d' | 'custom';
+    customFrom?: string;
+    customTo?: string;
+    timezone?: string;
+    language?: 'auto' | 'ko' | 'en';
+    now?: () => Date;
+  }
+
+  export function buildAnswerRequestPayload(options: BuildAnswerRequestOptions): AnswerRequest {
+    const payload: AnswerRequest = {
+      question: options.question.trim(),
+    };
+
+    if (options.timezone && options.timezone.trim().length > 0) {
+      payload.timezone = options.timezone.trim();
+    }
+
+    if (options.language && options.language !== 'auto') {
+      payload.language = options.language;
+    }
+
+    if (options.timePreset === 'custom') {
+      if (!options.customFrom || !options.customTo) {
+        throw new Error('Please specify both start (from) and end (to) dates for custom range.');
+      }
+      const fromDate = new Date(options.customFrom);
+      const toDate = new Date(options.customTo);
+      if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+        throw new Error('Invalid custom date format.');
+      }
+      if (toDate <= fromDate) {
+        throw new Error('End date (to) must be after start date (from).');
+      }
+      payload.timeRange = {
+        from: fromDate.toISOString(),
+        to: toDate.toISOString(),
+      };
+    } else if (
+      options.timePreset === '7d' ||
+      options.timePreset === '30d' ||
+      options.timePreset === '90d'
+    ) {
+      const days = options.timePreset === '7d' ? 7 : options.timePreset === '30d' ? 30 : 90;
+      const now = options.now ? options.now() : new Date();
+      const past = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      payload.timeRange = {
+        from: past.toISOString(),
+        to: now.toISOString(),
+      };
+    }
+    // Note: When options.timePreset === 'auto', payload.timeRange is intentionally omitted (undefined) -> unbounded latest retrieval
+
+    return payload;
+  }
+</script>
+
 <script lang="ts">
   import { locale, type Locale } from '$lib/i18n.js';
   import { ApiClient, ApiClientError } from '../api-client.js';
-  import type { AnswerRequest, AnswerResponse, ValidationIssue } from '@techpulse/contracts';
+  import type { AnswerResponse, ValidationIssue } from '@techpulse/contracts';
 
   interface Props {
     client: ApiClient;
+    initialResponse?: AnswerResponse | null;
+    initialTimePreset?: 'auto' | '7d' | '30d' | '90d' | 'custom';
+    initialQuestion?: string;
   }
 
-  let { client }: Props = $props();
+  let {
+    client,
+    initialResponse = null,
+    initialTimePreset = 'auto',
+    initialQuestion = '',
+  }: Props = $props();
   let currentLocale = $state<Locale>('ko');
   locale.subscribe((value) => (currentLocale = value));
 
   // Form states
-  let question = $state('');
-  let timePreset = $state<'auto' | '7d' | '30d' | '90d' | 'custom'>('auto');
+  // svelte-ignore state_referenced_locally
+  let question = $state(initialQuestion);
+  // svelte-ignore state_referenced_locally
+  let timePreset = $state<'auto' | '7d' | '30d' | '90d' | 'custom'>(initialTimePreset);
   let customFrom = $state('');
   let customTo = $state('');
   let selectedTimezone = $state('Asia/Seoul');
@@ -21,7 +102,8 @@
 
   // Execution states
   let submitting = $state(false);
-  let response = $state<AnswerResponse | null>(null);
+  // svelte-ignore state_referenced_locally
+  let response = $state<AnswerResponse | null>(initialResponse);
   let errorMessage = $state<string | null>(null);
   let errorCode = $state<string | null>(null);
   let errorDetails = $state<readonly ValidationIssue[]>([]);
@@ -210,44 +292,14 @@
     response = null;
 
     try {
-      const payload: AnswerRequest = {
-        question: question.trim(),
-      };
-
-      if (selectedTimezone.trim().length > 0) {
-        payload.timezone = selectedTimezone.trim();
-      }
-
-      if (selectedLanguage !== 'auto') {
-        payload.language = selectedLanguage;
-      }
-
-      if (timePreset === 'custom') {
-        if (!customFrom || !customTo) {
-          throw new Error('Please specify both start (from) and end (to) dates for custom range.');
-        }
-        const fromDate = new Date(customFrom);
-        const toDate = new Date(customTo);
-        if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
-          throw new Error('Invalid custom date format.');
-        }
-        if (toDate <= fromDate) {
-          throw new Error('End date (to) must be after start date (from).');
-        }
-        payload.timeRange = {
-          from: fromDate.toISOString(),
-          to: toDate.toISOString(),
-        };
-      } else if (timePreset === '7d' || timePreset === '30d' || timePreset === '90d') {
-        const days = timePreset === '7d' ? 7 : timePreset === '30d' ? 30 : 90;
-        const now = new Date();
-        const past = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-        payload.timeRange = {
-          from: past.toISOString(),
-          to: now.toISOString(),
-        };
-      }
-
+      const payload = buildAnswerRequestPayload({
+        question,
+        timePreset,
+        customFrom,
+        customTo,
+        timezone: selectedTimezone,
+        language: selectedLanguage,
+      });
       const res = await client.createAnswer(payload);
       response = res;
       requestId = res.requestId;
@@ -372,8 +424,8 @@
           >
             <option value="auto"
               >{currentLocale === 'ko'
-                ? '기본값 (최근 30일)'
-                : 'Default (Server Rolling 30 Days)'}</option
+                ? '기본값 (기간 필터 없음 / 최신 데이터)'
+                : 'Default (No Date Filter / Latest Data)'}</option
             >
             <option value="7d">{currentLocale === 'ko' ? '최근 7일' : 'Past 7 Days'}</option>
             <option value="30d">{currentLocale === 'ko' ? '최근 30일' : 'Past 30 Days'}</option>
@@ -633,10 +685,21 @@
               >{currentLocale === 'ko' ? '근거 조회 기간:' : 'Resolved Evidence Range:'}</span
             >
             <span class="range-value">
-              <strong>{formatUtcDateTime(response.resolvedTimeRange.from)}</strong>
-              &nbsp;→&nbsp;
-              <strong>{formatUtcDateTime(response.resolvedTimeRange.to)}</strong>
-              &nbsp;({response.resolvedTimeRange.timezone})
+              {#if isUnboundedStart(response.resolvedTimeRange.from)}
+                <span class="unbounded-tag"
+                  >{currentLocale === 'ko'
+                    ? '전체 기간 (최신 데이터)'
+                    : 'All Time (Latest Data)'}</span
+                >
+                &nbsp;·&nbsp;
+                <strong>~ {formatUtcDateTime(response.resolvedTimeRange.to)}</strong>
+                &nbsp;({response.resolvedTimeRange.timezone})
+              {:else}
+                <strong>{formatUtcDateTime(response.resolvedTimeRange.from)}</strong>
+                &nbsp;→&nbsp;
+                <strong>{formatUtcDateTime(response.resolvedTimeRange.to)}</strong>
+                &nbsp;({response.resolvedTimeRange.timezone})
+              {/if}
             </span>
           </div>
         </div>
@@ -804,9 +867,17 @@
                   <div class="group-period-badge">
                     <span class="period-label">Period:</span>
                     <time class="period-dates">
-                      {formatUtcDateTime(response.resolvedTimeRange.from)} → {formatUtcDateTime(
-                        response.resolvedTimeRange.to,
-                      )}
+                      {#if isUnboundedStart(response.resolvedTimeRange.from)}
+                        {currentLocale === 'ko'
+                          ? '전체 기간 (최신 데이터)'
+                          : 'All Time (Latest Data)'} → {formatUtcDateTime(
+                          response.resolvedTimeRange.to,
+                        )}
+                      {:else}
+                        {formatUtcDateTime(response.resolvedTimeRange.from)} → {formatUtcDateTime(
+                          response.resolvedTimeRange.to,
+                        )}
+                      {/if}
                     </time>
                   </div>
                 </div>
@@ -1536,6 +1607,18 @@
 
   .range-value strong {
     color: var(--text-primary);
+  }
+
+  .unbounded-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: rgba(56, 189, 248, 0.15);
+    color: var(--accent-cyan);
+    font-weight: 600;
+    font-size: 0.8rem;
+    border: 1px solid rgba(56, 189, 248, 0.3);
   }
 
   /* Answer Card */
