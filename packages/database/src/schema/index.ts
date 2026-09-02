@@ -27,7 +27,7 @@ export const sources = pgTable(
     kind: text('kind').notNull(),
     baseUrl: text('base_url').notNull(),
     enabled: boolean('enabled').notNull().default(true),
-    scheduleConfig: jsonb('schedule_config').$type<Record<string, unknown>>().notNull(),
+    scheduleConfig: jsonb('schedule_config').$type<Record<string, unknown>>().notNull().default({}),
     policyReviewedAt: timestamp('policy_reviewed_at', { withTimezone: true, mode: 'date' }),
     createdAt: utcTimestamp('created_at'),
     updatedAt: utcTimestamp('updated_at'),

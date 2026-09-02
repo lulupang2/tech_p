@@ -1098,6 +1098,20 @@ export function createMetricObservationRepository(
     async upsert(input: InsertMetricObservationInput): Promise<MetricObservationRecord> {
       validateMetricObservation(input);
       const row = await db.transaction(async (tx) => {
+        if (!input.rawItemId) {
+          const existing = await tx.query.metricObservations.findFirst({
+            where: and(
+              eq(metricObservations.sourceId, input.sourceId),
+              eq(metricObservations.subjectKey, input.subjectKey),
+              eq(metricObservations.metricType, input.metricType),
+              eq(metricObservations.windowStart, input.windowStart),
+              eq(metricObservations.windowEnd, input.windowEnd),
+              sql`${metricObservations.rawItemId} IS NULL`,
+            ),
+          });
+          if (existing) return existing;
+        }
+
         const [inserted] = await tx
           .insert(metricObservations)
           .values({

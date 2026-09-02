@@ -43,6 +43,13 @@
       "when": 1788297279498,
       "tag": "0005_gray_domino",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788311036906,
+      "tag": "0006_perpetual_namorita",
+      "breakpoints": true
     }
   ]
 }

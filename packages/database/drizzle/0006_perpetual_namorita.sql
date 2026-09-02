@@ -1,0 +1,1 @@
+ALTER TABLE "sources" ALTER COLUMN "schedule_config" SET DEFAULT '{}'::jsonb;
