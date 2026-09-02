@@ -20,8 +20,9 @@ export interface NormalizationJobHandlerOptions {
   readonly sourceRepository?: SourceRepositoryPort;
   /** Optional PIPE-005 stage; absent keeps normalization fakes/backward compatibility intact. */
   readonly enrichmentService?: EnrichmentServicePort;
+  /** Optional embedding hook executed after chunks are persisted. */
+  readonly embedRevision?: (revisionId: string) => Promise<void>;
 }
-
 export interface NormalizationExecutionResult {
   readonly rawItemId: string;
   readonly sourceKey: string;
@@ -51,6 +52,7 @@ export function createNormalizationJobHandler(
     pipelineEventRepository,
     sourceRepository,
     enrichmentService,
+    embedRevision,
   } = options;
 
   return async (jobData: NormalizationJobData): Promise<NormalizationExecutionResult> => {
@@ -125,6 +127,9 @@ export function createNormalizationJobHandler(
             bodyText: doc.bodyText,
             sourceKey,
           });
+        }
+        if (embedRevision) {
+          await embedRevision(savedDocument.revision.id);
         }
         documentsSaved++;
       }
