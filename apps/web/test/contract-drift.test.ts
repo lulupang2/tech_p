@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'vitest';
 import {
+  parseAnswerResponse,
   parseHealthLiveResponse,
   parseHealthReadyResponse,
   parseSourceDetailResponse,
   parseSourceListResponse,
   parseTopicListResponse,
+  type AnswerResponse,
   type HealthLiveResponse,
   type HealthReadyResponse,
   type SourceDetailResponse,
@@ -180,5 +182,143 @@ describe('API Contract Drift Validation', () => {
 
     const result = await client.listTopics();
     assert.deepEqual(result, validTopics);
+  });
+
+  it('validates AnswerResponse contract alignment and handles answered response', async () => {
+    const validAnswer: AnswerResponse = {
+      requestId: 'req_ans_drift_1',
+      answerId: 'ans_drift_1',
+      status: 'answered',
+      intent: 'compare_interest',
+      resolvedTimeRange: {
+        from: '2026-08-01T00:00:00Z',
+        to: '2026-09-01T00:00:00Z',
+        timezone: 'Asia/Seoul',
+      },
+      answer: 'Bun showed rapid adoption and release cadence compared to Node.js [C1].',
+      observations: [
+        {
+          subject: 'Bun',
+          metric: 'community_mentions',
+          value: 128,
+          unit: 'deduplicated_documents',
+          change: 22.5,
+        },
+      ],
+      citations: [
+        {
+          id: 'C1',
+          documentRevisionId: 'rev_bun_1',
+          title: 'Bun 1.1 Announcement',
+          source: 'github_releases',
+          url: 'https://github.com/oven-sh/bun/releases',
+          publishedAt: '2026-08-15T00:00:00Z',
+          excerpt: 'Bun 1.1 brings Windows support and Node compatibility.',
+          excerptIsVerbatim: true,
+          license: {
+            id: 'mit',
+            name: 'MIT',
+            url: 'https://opensource.org/licenses/MIT',
+            attribution: 'Oven Authors',
+          },
+        },
+      ],
+      coverage: {
+        dataFreshThrough: '2026-09-01T00:00:00Z',
+        sourcesUsed: 1,
+        documentsConsidered: 5,
+        limitations: [],
+      },
+    };
+
+    assert.doesNotThrow(() => parseAnswerResponse(validAnswer));
+
+    const client = new ApiClient({
+      fetch: async () =>
+        new Response(JSON.stringify(validAnswer), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    });
+
+    const result = await client.createAnswer({ question: 'Bun vs Node.js comparison' });
+    assert.deepEqual(result, validAnswer);
+  });
+
+  it('validates AnswerResponse contract alignment for insufficient_evidence', async () => {
+    const insufficientAnswer: AnswerResponse = {
+      requestId: 'req_ans_drift_2',
+      answerId: 'ans_drift_2',
+      status: 'insufficient_evidence',
+      intent: 'trend_summary',
+      resolvedTimeRange: {
+        from: '2026-08-01T00:00:00Z',
+        to: '2026-09-01T00:00:00Z',
+        timezone: 'UTC',
+      },
+      answer: null,
+      observations: [],
+      citations: [],
+      coverage: {
+        dataFreshThrough: '2026-09-01T00:00:00Z',
+        sourcesUsed: 0,
+        documentsConsidered: 0,
+        limitations: ['요청 기간의 근거가 충분하지 않습니다.'],
+      },
+    };
+
+    assert.doesNotThrow(() => parseAnswerResponse(insufficientAnswer));
+
+    const client = new ApiClient({
+      fetch: async () =>
+        new Response(JSON.stringify(insufficientAnswer), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    });
+
+    const result = await client.createAnswer({ question: 'Unindexed library' });
+    assert.deepEqual(result, insufficientAnswer);
+  });
+
+  it('rejects AnswerResponse with schema drift or extra fields', async () => {
+    const driftedAnswer = {
+      requestId: 'req_ans_drift_3',
+      answerId: 'ans_drift_3',
+      status: 'answered',
+      intent: 'compare_interest',
+      resolvedTimeRange: {
+        from: '2026-08-01T00:00:00Z',
+        to: '2026-09-01T00:00:00Z',
+        timezone: 'UTC',
+      },
+      answer: 'Valid text',
+      observations: [],
+      citations: [],
+      coverage: {
+        dataFreshThrough: '2026-09-01T00:00:00Z',
+        sourcesUsed: 0,
+        documentsConsidered: 0,
+        limitations: [],
+      },
+      hallucinatedField: 'drift_value',
+    };
+
+    const client = new ApiClient({
+      fetch: async () =>
+        new Response(JSON.stringify(driftedAnswer), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    });
+
+    await assert.rejects(
+      () => client.createAnswer({ question: 'test' }),
+      (err: unknown) => {
+        assert.ok(err instanceof ApiClientError);
+        assert.equal(err.code, 'INVALID_RESPONSE');
+        return true;
+      },
+    );
   });
 });

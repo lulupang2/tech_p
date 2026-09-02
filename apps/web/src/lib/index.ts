@@ -13,5 +13,6 @@ export { default as Header } from './components/Header.svelte';
 export { default as StatusBanner } from './components/StatusBanner.svelte';
 export { default as SourceList } from './components/SourceList.svelte';
 export { default as TopicSearch } from './components/TopicSearch.svelte';
+export { default as QuestionAnswer } from './components/QuestionAnswer.svelte';
 export { default as AnswerNotice } from './components/AnswerNotice.svelte';
 export { default as Footer } from './components/Footer.svelte';

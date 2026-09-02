@@ -4,7 +4,7 @@
   import StatusBanner from '$lib/components/StatusBanner.svelte';
   import SourceList from '$lib/components/SourceList.svelte';
   import TopicSearch from '$lib/components/TopicSearch.svelte';
-  import AnswerNotice from '$lib/components/AnswerNotice.svelte';
+  import QuestionAnswer from '$lib/components/QuestionAnswer.svelte';
   import Footer from '$lib/components/Footer.svelte';
 
   type TabId = 'sources' | 'topics' | 'status' | 'qa';
@@ -39,7 +39,7 @@
       </div>
     {:else if activeTab === 'qa'}
       <div id="panel-qa" role="tabpanel" aria-labelledby="tab-qa" tabindex="0">
-        <AnswerNotice {client} />
+        <QuestionAnswer {client} />
       </div>
     {/if}
   </div>

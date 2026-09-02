@@ -202,7 +202,7 @@
 | SEC-002 | collector/browser hardening | COL-005, PIPE-002 | BLOCKED | non-root/최소 capability, egress allowlist, private IP/redirect 차단, HTML output escaping, malicious fixture 회귀 통과 |
 | SEC-003 | RAG prompt-injection/egress hardening | RAG-005, SEC-001 | BLOCKED | retrieved instruction이 tool/secret/URL을 바꾸지 못함; RAG에 arbitrary fetch/shell 없음; injection corpus success 0 |
 | WEB-001 | web shell과 typed API client | DEC-005, FND-001, CON-001, API-001 | DONE | web이 DB/provider package를 import하지 않음; server 전용 코드가 `+page.server.ts`·`+server.ts`·`$lib/server/` 경계 안에만 있고 client bundle 산출물 검사에서 secret이 발견되지 않음; loading/error/empty layout 접근성 smoke; API contract type drift test 통과 |
-| WEB-002 | 질문·답변·citation UI | WEB-001, API-003 | BLOCKED | 질문/기간 입력, resolved range, answer, clickable citation/date/source, limitations/insufficient state 표시; keyboard/screen-reader labels 검증 |
+| WEB-002 | 질문·답변·citation UI | WEB-001, API-003 | DONE | 질문/기간 입력, resolved range, answer, clickable citation/date/source, limitations/insufficient state 표시; keyboard/screen-reader labels 검증 |
 | WEB-003 | 비교 metric과 source freshness UI | WEB-002, API-002, RAG-006 | BLOCKED | metric별 unit/기간 분리 표시; composite score 없음; stale/partial source warning이 API coverage와 일치 |
 | TST-002 | Playwright UI E2E suite | WEB-002, WEB-003, TST-001 | BLOCKED | seeded DB+fake model에서 summary/comparison/no-data/citation 흐름 통과; collector suite와 분리; flaky retry 없이 Chromium PR smoke 성공 |
 
@@ -338,3 +338,19 @@ flowchart TD
 - 검색 및 근거 검증: 기존 `SearchServicePort`(FTS 및 ExactVector hybrid)를 통해 검색된 불변 청크 레코드만을 컨텍스트로 구성하고, 모델 출력이 인용한 식별자(`[C1]`, `[C2]`)를 검색 결과와 대조 검증했다. 허위/누락 인용 시 답변을 보류하고 `insufficient_evidence`로 안전하게 폴백한다.
 - 에러 및 타임아웃 매핑: AI 공급자 타임아웃은 504 `ANSWER_TIMEOUT`, 공급자 장애는 502 `MODEL_PROVIDER_ERROR`, 서비스 미설정은 503 `DEPENDENCY_UNAVAILABLE`로 매핑하고, API 키 및 자격증명은 에러 응답 및 구조화 로그에서 완전히 마스킹(`[REDACTED]`)했다.
 - 검증: `packages/domain` 11개 test file·94개 test 통과, `packages/rag` 3개 test file·20개 test 통과, `apps/api` 7개 test file·34개 test 통과, `packages/contracts` 2개 test file·22개 test 통과.
+
+### WEB-002 완료 증빙 (2026-09-02)
+
+- SvelteKit 웹 클라이언트(`apps/web`)에 자연어 질의응답 및 인용 인터페이스 `QuestionAnswer.svelte`(`POST /api/v1/answers` 연동)를 구현했다.
+- `ApiClient`에 `POST /api/v1/answers` 호출 및 TypeBox 계약 기반 응답 파싱(`parseAnswerResponse`), 에러 매핑(`ApiClientError`), `createAnswer` 메서드를 추가하고, API-003 연동에 맞춰 엔드포인트 가용 상태(`getAnswerEndpointStatus`)를 operational로 업데이트했다.
+- 질문 입력 및 기간 제어: 자연어 질의(1~2,000자 유효성 검사, 글자수 카운터), 기간 프리셋(자동 30일 롤링 윈도우, 7일, 30일, 90일, 커스텀 날짜 범위), 타임존 및 언어 선택기, 예시 질문 칩을 제공한다.
+- 상태별 안전한 UI 렌더링:
+  - `answered`: 서버 계산 `resolvedTimeRange` 및 의도(intent) 뱃지, XSS 방지를 위한 안전한 텍스트 렌더링, 인용 점프 앵커를 제공한다.
+  - `insufficient_evidence`: 데이터 및 근거 부족 상태를 안내하고, `coverage.limitations` 목록과 검색 확장 가이드를 명확히 표시하며 허위 데이터(Hallucination)를 일체 생성하지 않는다.
+  - `unsupported_intent`: 지원되지 않는 질문 의도에 대한 안내 카드를 표시한다.
+- 검증된 Citation 및 Metric 관측치 렌더링:
+  - `citations`: 불변 리비전 식별자, 원문 외부 링크(`rel="external noopener noreferrer"`), 출처 뱃지, 발행일, 발췌문(`excerptIsVerbatim` 태그), 라이선스 및 필수 귀속(attribution) 정보를 완전하게 렌더링한다.
+  - `observations`: 단위 왜곡 방지를 위해 각 지표(Subject, Metric, Unit, Change)를 합산하지 않고 독립 카드로 표시한다.
+  - `coverage`: 데이터 최신성(`dataFreshThrough`), 사용 소스 수, 검토 문서 수 및 제한사항을 표시한다.
+- 접근성 및 안전성: ARIA 랜드마크, `aria-live="polite"` / `aria-busy` 로딩 상태, `role="alert"` 에러 컨테이너, 키보드 포커스 및 스크린 리더 라벨을 보장하며 원격 스크립트나 위험한 HTML을 삽입하지 않는다.
+- 검증: `apps/web` 4개 test file·31개 test 통과(import boundary, contract drift, api-client, question-answer), static 검사(svelte-check, ESLint, Prettier) 및 Vite 프로덕션 빌드 전체 통과.

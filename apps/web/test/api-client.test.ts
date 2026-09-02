@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'vitest';
 import { ApiClient, ApiClientError, createApiClient } from '../src/lib/api-client.js';
 import type {
+  AnswerRequest,
+  AnswerResponse,
   HealthLiveResponse,
   HealthReadyResponse,
   SourceDetailResponse,
@@ -332,12 +334,191 @@ describe('ApiClient', () => {
     });
   });
 
+  describe('createAnswer', () => {
+    const validAnswerResponse: AnswerResponse = {
+      requestId: 'req_test123',
+      answerId: 'ans_test456',
+      status: 'answered',
+      intent: 'compare_interest',
+      resolvedTimeRange: {
+        from: '2026-08-01T00:00:00Z',
+        to: '2026-09-01T00:00:00Z',
+        timezone: 'Asia/Seoul',
+      },
+      answer: 'Bun adoption has increased across deduplicated releases and mentions [C1].',
+      observations: [
+        {
+          subject: 'Bun',
+          metric: 'community_mentions',
+          value: 42,
+          unit: 'deduplicated_documents',
+          change: 15,
+        },
+      ],
+      citations: [
+        {
+          id: 'C1',
+          documentRevisionId: 'rev_123',
+          title: 'Bun v1.1 Release Notes',
+          source: 'github_releases',
+          url: 'https://github.com/oven-sh/bun/releases/tag/bun-v1.1.0',
+          publishedAt: '2026-08-15T12:00:00Z',
+          excerpt: 'Bun 1.1 includes major speed improvements.',
+          excerptIsVerbatim: true,
+          license: {
+            id: 'mit',
+            name: 'MIT License',
+            url: 'https://opensource.org/licenses/MIT',
+            attribution: 'Oven Authors',
+          },
+        },
+      ],
+      coverage: {
+        dataFreshThrough: '2026-09-01T00:00:00Z',
+        sourcesUsed: 1,
+        documentsConsidered: 10,
+        limitations: [],
+      },
+    };
+
+    it('posts answer request and returns parsed AnswerResponse on success', async () => {
+      let capturedUrl = '';
+      let capturedMethod = '';
+      let capturedHeaders: Record<string, string> = {};
+      let capturedBody = '';
+
+      const mockFetch: typeof fetch = async (input, init) => {
+        capturedUrl = String(input);
+        capturedMethod = init?.method ?? 'GET';
+        capturedHeaders = (init?.headers as Record<string, string>) ?? {};
+        capturedBody = String(init?.body ?? '');
+        return new Response(JSON.stringify(validAnswerResponse), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'X-Request-Id': 'req_test123' },
+        });
+      };
+
+      const client = new ApiClient({ baseUrl: 'https://api.techpulse.dev', fetch: mockFetch });
+      const request: AnswerRequest = {
+        question: 'Compare Bun and Node.js interest',
+        timeRange: {
+          from: '2026-08-01T00:00:00Z',
+          to: '2026-09-01T00:00:00Z',
+        },
+        timezone: 'Asia/Seoul',
+        language: 'ko',
+      };
+
+      const result = await client.createAnswer(request);
+
+      assert.equal(capturedUrl, 'https://api.techpulse.dev/api/v1/answers');
+      assert.equal(capturedMethod, 'POST');
+      assert.equal(capturedHeaders['Content-Type'], 'application/json');
+      assert.deepEqual(JSON.parse(capturedBody), request);
+      assert.deepEqual(result, validAnswerResponse);
+    });
+
+    it('handles insufficient_evidence answer response', async () => {
+      const insufficientResponse: AnswerResponse = {
+        requestId: 'req_test789',
+        answerId: 'ans_insufficient',
+        status: 'insufficient_evidence',
+        intent: 'trend_summary',
+        resolvedTimeRange: {
+          from: '2026-08-01T00:00:00Z',
+          to: '2026-09-01T00:00:00Z',
+          timezone: 'UTC',
+        },
+        answer: null,
+        observations: [],
+        citations: [],
+        coverage: {
+          dataFreshThrough: '2026-09-01T00:00:00Z',
+          sourcesUsed: 0,
+          documentsConsidered: 0,
+          limitations: ['요청 기간의 근거가 충분하지 않습니다.'],
+        },
+      };
+
+      const mockFetch: typeof fetch = async () => {
+        return new Response(JSON.stringify(insufficientResponse), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      };
+
+      const client = new ApiClient({ fetch: mockFetch });
+      const result = await client.createAnswer({ question: 'Unknown niche topic query' });
+
+      assert.equal(result.status, 'insufficient_evidence');
+      assert.equal(result.answer, null);
+      assert.equal(result.citations.length, 0);
+      assert.deepEqual(result.coverage.limitations, ['요청 기간의 근거가 충분하지 않습니다.']);
+    });
+
+    it('throws ContractValidationError wrapped in ApiClientError on schema violation', async () => {
+      const invalidResponse = {
+        requestId: 'req_invalid',
+        status: 'answered',
+        // missing answerId, resolvedTimeRange, coverage, citations, etc.
+      };
+
+      const mockFetch: typeof fetch = async () => {
+        return new Response(JSON.stringify(invalidResponse), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      };
+
+      const client = new ApiClient({ fetch: mockFetch });
+      await assert.rejects(
+        () => client.createAnswer({ question: 'Test question' }),
+        (err: unknown) => {
+          assert.ok(err instanceof ApiClientError);
+          assert.equal(err.code, 'INVALID_RESPONSE');
+          assert.ok(err.message.includes('AnswerResponse'));
+          return true;
+        },
+      );
+    });
+
+    it('throws ApiClientError with ErrorEnvelope details when server returns 400', async () => {
+      const errorEnvelope = {
+        requestId: 'req_err400',
+        error: {
+          code: 'INVALID_REQUEST' as const,
+          message: 'Question must not be empty',
+          details: [{ path: 'question', reason: 'minLength' }],
+          retryable: false,
+        },
+      };
+
+      const mockFetch: typeof fetch = async () => {
+        return new Response(JSON.stringify(errorEnvelope), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      };
+
+      const client = new ApiClient({ fetch: mockFetch });
+      await assert.rejects(
+        () => client.createAnswer({ question: '' }),
+        (err: unknown) => {
+          assert.ok(err instanceof ApiClientError);
+          assert.equal(err.code, 'INVALID_REQUEST');
+          assert.equal(err.status, 400);
+          assert.equal(err.details[0]?.path, 'question');
+          return true;
+        },
+      );
+    });
+  });
+
   describe('getAnswerEndpointStatus', () => {
-    it('reports answer endpoint as blocked/unavailable per API-003', () => {
+    it('reports answer endpoint as operational following API-003 integration', () => {
       const client = createApiClient();
       const status = client.getAnswerEndpointStatus();
-      assert.equal(status.available, false);
-      assert.equal(status.blockedTicket, 'API-003');
+      assert.equal(status.available, true);
       assert.ok(status.reason.length > 0);
     });
   });

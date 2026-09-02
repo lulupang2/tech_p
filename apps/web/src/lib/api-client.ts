@@ -1,11 +1,14 @@
 import {
   ContractValidationError,
+  parseAnswerResponse,
   parseHealthLiveResponse,
   parseHealthReadyResponse,
   parseSourceDetailResponse,
   parseSourceListResponse,
   parseTopicListResponse,
   safeParseErrorEnvelope,
+  type AnswerRequest,
+  type AnswerResponse,
   type ErrorCode,
   type ErrorEnvelope,
   type HealthLiveResponse,
@@ -44,6 +47,8 @@ export interface RequestOptions {
   readonly headers?: Record<string, string>;
   readonly signal?: AbortSignal;
   readonly timeoutMs?: number;
+  readonly method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  readonly body?: unknown;
 }
 
 export type ApiClientErrorCode =
@@ -84,9 +89,9 @@ export class ApiClientError extends Error {
 }
 
 export interface AnswerEndpointStatus {
-  readonly available: false;
+  readonly available: boolean;
   readonly reason: string;
-  readonly blockedTicket: 'API-003';
+  readonly blockedTicket?: 'API-003';
 }
 
 export class ApiClient {
@@ -204,16 +209,32 @@ export class ApiClient {
   }
 
   /**
+   * Request natural-language evidence-backed answer.
+   * POST /api/v1/answers
+   */
+  async createAnswer(request: AnswerRequest, options?: RequestOptions): Promise<AnswerResponse> {
+    const url = this.buildUrl('/api/v1/answers');
+    const json = await this.request(url, {
+      ...options,
+      method: 'POST',
+      body: request,
+    });
+    try {
+      return parseAnswerResponse(json);
+    } catch (err) {
+      throw this.createContractValidationError(err, 'AnswerResponse');
+    }
+  }
+
+  /**
    * Natural-language Q&A answer endpoint status.
-   * Per API-003 and project decision gates, the answer endpoint is blocked/unavailable
-   * pending LLM provider approval. This client explicitly reflects that status.
+   * Following API-003 integration, the answer endpoint is operational.
    */
   getAnswerEndpointStatus(): AnswerEndpointStatus {
     return {
-      available: false,
+      available: true,
       reason:
-        'Natural-language answer generation is pending LLM provider approval and RAG integration.',
-      blockedTicket: 'API-003',
+        'Natural-language answer generation is operational via POST /api/v1/answers (API-003).',
     };
   }
 
@@ -226,6 +247,7 @@ export class ApiClient {
   }
 
   private async request(url: string, options?: RequestOptions): Promise<unknown> {
+    const method = options?.method ?? 'GET';
     const headers: Record<string, string> = {
       ...this.defaultHeaders,
       ...options?.headers,
@@ -245,13 +267,20 @@ export class ApiClient {
       }, timeoutMs);
     }
 
+    const init: RequestInit = {
+      method,
+      headers,
+      signal: controller.signal,
+    };
+
+    if (options?.body !== undefined) {
+      init.body = JSON.stringify(options.body);
+      headers['Content-Type'] = 'application/json';
+    }
+
     let response: Response;
     try {
-      response = await this.fetchFn(url, {
-        method: 'GET',
-        headers,
-        signal: controller.signal,
-      });
+      response = await this.fetchFn(url, init);
     } catch (err) {
       if (controller.signal.aborted) {
         throw new ApiClientError({

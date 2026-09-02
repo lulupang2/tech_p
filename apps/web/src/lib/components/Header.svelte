@@ -80,9 +80,7 @@
             class:active={activeTab === 'qa'}
             onclick={() => selectTab('qa')}
           >
-            Q&amp;A Engine <span class="badge-pending" aria-label="Status: Pending Approval"
-              >Pending</span
-            >
+            Q&amp;A Engine
           </button>
         </li>
       </ul>
@@ -204,19 +202,5 @@
     background: #0c4a6e26;
     border-color: #0284c7;
     font-weight: 600;
-  }
-
-  .badge-pending {
-    font-size: 11px;
-    padding: 2px 6px;
-    background: #475569;
-    color: #cbd5e1;
-    border-radius: 9999px;
-    font-weight: 500;
-  }
-
-  .nav-btn.active .badge-pending {
-    background: #0369a1;
-    color: #e0f2fe;
   }
 </style>
