@@ -193,17 +193,16 @@ Replay requests address immutable IDs at `run`, `raw`, or `stage` scope and prod
 - drift: source별 item 수·본문 길이·selector 성공률 변화
 - cost: item/chunk/answer당 LLM·embedding 사용량
 
-## 9. 보존 제안
+## 9. 보존 및 Tombstone 정책
 
-아직 확정되지 않은 초기 정책이다.
+OPS-003으로 확정된 데이터 보존 및 삭제 정책이다.
 
-- normalized document, provenance, metric: MVP 기간 동안 보존
-- raw payload: 기본 90일 후 정책에 따라 삭제 또는 축약
-- 실패 payload: 민감정보를 제거하고 30일
-- job/log: 30일
-- query prompt/answer: 평가 동의 범위에서 30일 또는 익명화
+- normalized document, provenance, metric: MVP 기간 동안 불변 보존
+- raw payload: source별 30일/90일 기준 도래 후 정책에 따라 삭제 (dry-run 및 `CONFIRM_IRREVERSIBLE_RETENTION_PURGE` 확인 가드 적용)
+- 실패 payload/pipeline events: 30일 (민감정보 마스킹 유지)
+- job/log 및 query prompt/answer: 30일
 
-source별 raw 보존 제안은 다음과 같다. `source_rights.raw_retention_days`에 기록한다.
+source별 raw 보존 정책은 다음과 같다 (`source_rights.raw_retention_days` 및 `SOURCE_RAW_RETENTION_DAYS`에 기록).
 
 | source | raw 보존 | 근거 |
 |---|---|---|

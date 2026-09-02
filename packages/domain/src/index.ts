@@ -237,3 +237,64 @@ export type {
   DeduplicationServiceOptions,
   DeduplicationServicePort,
 } from './deduplication.js';
+
+export {
+  DEFAULT_RAW_RETENTION_DAYS,
+  PIPELINE_EVENTS_RETENTION_DAYS,
+  QUERY_RUNS_RETENTION_DAYS,
+  SOURCE_RAW_RETENTION_DAYS,
+  CONFIRM_IRREVERSIBLE_PURGE_TOKEN,
+  IrreversibleActionRefusalError,
+  InvalidRetentionRequestError,
+  computeRetentionCutoff,
+  isRetentionCandidate,
+  createRetentionService,
+} from './retention.js';
+
+export type {
+  RetentionCountSummary,
+  RetentionTargetPort,
+  RetentionAuditEvent,
+  RetentionAuditPort,
+  RetentionPlanOptions,
+  RetentionPlanResult,
+  RetentionServicePort,
+} from './retention.js';
+
+export {
+  TombstoneTargetNotFoundError,
+  InvalidTombstoneRequestError,
+  createTombstoneService,
+} from './tombstone.js';
+
+export type {
+  TombstoneScope,
+  TombstoneRecord,
+  CreateTombstoneInput,
+  TombstoneResult,
+  ReindexResult,
+  TombstoneTargetPort,
+  TombstoneAuditEvent,
+  TombstoneAuditPort,
+  TombstoneServicePort,
+} from './tombstone.js';
+
+export {
+  CONFIRM_RESTORE_OVERWRITE_TOKEN,
+  UnsafeRestoreRefusalError,
+  InvalidBackupManifestError,
+  validateBackupManifest,
+  createBackupRestoreService,
+} from './backup-restore.js';
+
+export type {
+  BackupTableManifest,
+  BackupManifest,
+  BackupValidationResult,
+  RestoreEnvironmentPort,
+  RestoreAuditEvent,
+  RestoreAuditPort,
+  RestoreDrillOptions,
+  RestoreDrillResult,
+  BackupRestoreServicePort,
+} from './backup-restore.js';

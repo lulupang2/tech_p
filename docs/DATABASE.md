@@ -172,13 +172,62 @@ database adapter 밖으로 Drizzle type과 PostgreSQL client를 노출하지 않
 
 schema, normalizer, chunker, taxonomy, embedding, prompt, workflow 버전은 독립적으로 기록한다. 파생 데이터 재처리는 새 버전을 만들고 기존 citation이 가리키는 revision을 파괴하지 않는다.
 
-## 8. 보존·삭제·백업
+## 8. 보존·삭제·백업 런북 (Runbooks)
 
-- 보존 기간은 [DATA_PIPELINE.md](./DATA_PIPELINE.md)의 제안에서 승인 후 확정한다.
-- source 삭제 요청은 raw → document → chunk/embedding → citation 영향 분석 순으로 처리한다.
-- MVP 백업 범위는 PostgreSQL 하나로 단순화하는 것을 추천한다.
-- 복구 연습은 schema migration 후 빈 DB와 백업 DB 양쪽에서 수행한다.
+### 8.1 보존 정책과 Dry-run / 확인 보호 (Retention Runbook)
 
+보존 정책은 [DATA_PIPELINE.md](./DATA_PIPELINE.md §9)의 승인된 기준을 따른다.
+- **Raw Items**: 90일(`github_releases`, `users_rust_lang`, `arxiv`, `chrome_release_notes`, `chrome_origin_trials`, `react_blog`), 30일(`stack_exchange`, `npm_registry`, `npm_downloads`, `github_search`, `huggingface_hub`).
+- **Pipeline Events (실패/격리)**: 30일.
+- **Query Runs & Citations**: 30일.
+- **불변 보존 항목**: 정규화된 문서(`documents`, `document_revisions`), `chunks`, `embeddings`, `duplicate_clusters`, `metric_observations`, `audit_events`는 보존 작업으로 삭제되지 않으며 감사/출처 계보를 유지한다.
+
+#### 실행 절차 및 안전 가드
+1. **Dry-Run (기본 모드)**:
+   - `dryRun: true`로 실행하여 기준 시점(`referenceDate`) 이전 대상 건수(`totalCandidates`, source별/범주별 건수, cutoff 시각)를 조회한다.
+   - 실제 DB 데이터는 변경되거나 삭제되지 않는다.
+   - 실행 기록은 `audit_events`에 `retention_dry_run`으로 기록된다.
+2. **Destructive Purge (비가역 삭제 실행)**:
+   - 실제 삭제(`dryRun: false`) 시 명시적인 확인 토큰(`CONFIRM_IRREVERSIBLE_RETENTION_PURGE`)이 반드시 전달되어야 한다.
+   - 토큰이 없거나 불일치하면 `IrreversibleActionRefusalError`가 발생하고 실행이 거부된다.
+   - 삭제는 트랜잭션 내에서 만료된 raw payload 및 임시 로그에 한해 수행되며, `retention_purge` 감사 이벤트를 기록한다.
+
+### 8.2 Tombstone 및 재색인 (Tombstone & Reindex Runbook)
+
+원 출처의 삭제 요청(DMCA, 사용자 삭제 등)이나 오염 source 발견 시, 데이터를 즉시 물리 삭제하지 않고 tombstone 처리하여 검색 노출을 차단하면서 과거 인용과 감사 이력을 보존한다.
+
+#### Tombstone 생성 및 검색 제외 절차
+1. **대상 식별**: scope(`source`, `document`, `document_revision`, `raw_item`) 및 `targetKey`를 지정한다.
+2. **Tombstone 적용**:
+   - `source` scope 지정 시 `sources.enabled = false`로 변경하고, 연결된 모든 `document_revisions.status`를 `'tombstoned'`로 갱신한다.
+   - 전문 검색(FTS) 및 벡터 검색은 `WHERE dr.status = 'searchable'` 조건을 강제하므로, tombstone 즉시 모든 검색 결과에서 제외된다.
+   - 원문 레코드(`raw_items`), 리비전 본문, 청크, 임베딩, 감사 이력은 물리적으로 삭제되지 않고 데이터베이스에 보존된다(`onDelete: set null` / append-only).
+   - `tombstone_create` 감사 이벤트가 actor, target, reason과 함께 기록된다.
+
+#### Reindex / 복구 절차
+1. 오염이 해소되거나 삭제 요청이 철회된 경우 `reindex(scope, targetKey)`를 호출한다.
+2. 유효한 청크가 존재하는 리비전의 `status`를 다시 `'searchable'`로 전환하고 `sources.enabled = true`로 복구한다.
+3. 복구 즉시 검색 결과에 재반영되며 `tombstone_reindex` 감사 이벤트가 기록된다.
+
+### 8.3 백업 및 복구 훈련 (Backup & Restore Runbook)
+
+PostgreSQL 및 pgvector 데이터베이스의 일관성과 백업 무결성을 보장하기 위한 절차이다.
+
+#### 백업 매니페스트 및 무결성 검증
+- 백업 아카이브는 스키마 버전(`formatVersion`), 백업 식별자(`backupId`), pgvector 차원(`vectorDimensions`), 테이블별 행 수와 SHA-256 체크섬을 포함하는 `BackupManifest`를 생성한다.
+- `validateBackupManifest`를 통해 테이블 manifest 누락, 체크섬 불일치, 행 수 음수/불일치, vector 차원 오류를 복구 전에 정적으로 검증한다.
+
+#### 빈 환경 복구 훈련 (Empty Environment Restore Drill)
+1. **환경 초기화 검증**: 타깃 DB가 깨끗한 빈 상태(0개 테이블 또는 0개 데이터 행)인지 확인한다.
+2. **안전 가드 (비가역 덮어쓰기 차단)**: 타깃 환경에 기존 데이터가 존재하는 경우, 명시적 확인 토큰(`CONFIRM_RESTORE_OVERWRITE`)이 제공되지 않으면 `UnsafeRestoreRefusalError`로 즉시 거부된다.
+3. **스키마 및 pgvector 부트스트랩**: PostgreSQL `vector` 확장을 활성화하고 Drizzle Kit 마이그레이션을 0000부터 최신까지 적용한다.
+4. **의존성 순서 데이터 복원**:
+   `sources` → `collection_runs` → `raw_items` → `pipeline_events` → `licenses` → `duplicate_clusters` → `documents` → `document_revisions` → `duplicate_cluster_memberships` → `topics` → `document_topics` → `chunks` → `embeddings` → `metric_observations` → `query_runs` → `answer_citations`
+5. **복구 후 무결성 검증 (Post-Restore Integrity Check)**:
+   - 외래 키 제약 조건 및 행 수 일치 확인
+   - `status = 'searchable'`과 `status = 'tombstoned'` 문서 분리 확인 (tombstone된 데이터의 검색 제외 유지 확인)
+   - 코사인 거리 pgvector 검색 쿼리 sanity 검증
+   - 복구 훈련 실행 이력 `restore_drill_execution` 감사 이벤트 기록
 ## 9. 미결정 사항
 
 - PostgreSQL 최소 버전과 pgvector 버전 pin

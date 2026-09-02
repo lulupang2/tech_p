@@ -52,4 +52,9 @@ export {
   createPipelineEventRepository,
   createMetricObservationRepository,
 } from './repositories.js';
+export {
+  createDatabaseRetentionTarget,
+  createDatabaseTombstoneTarget,
+  createDatabaseRestoreEnvironment,
+} from './ops.js';
 export { createSearchService } from './search.js';

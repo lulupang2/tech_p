@@ -97,7 +97,7 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 
 공개 데모의 사용자 인증 방식은 미결정이다. MVP에서 계정 기능을 만들지 않더라도 운영 기능 보호는 생략하지 않는다.
 
-## 7. 데이터베이스와 secret
+## 7. 데이터베이스와 secret 관리 (Secret Management & Rotation Runbook)
 
 - API와 worker 역할을 분리하고 필요한 table/action만 부여한다. Neon runtime role과 migration role도 분리한다.
 - Neon pooled/direct connection string은 secret manager 또는 배포 환경 주입으로만 제공한다. connection string을 client bundle·로그·오류 본문에 기록하지 않으며, provider endpoint의 네트워크·TLS 접근 제어는 Neon 설정과 배포 egress 정책으로 제한한다.
@@ -105,8 +105,22 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 - backup은 암호화하고 restore 권한을 제한한다.
 - raw payload와 query data를 log에 직렬화하지 않는다.
 - 개발용 `.env.example`에는 `DATABASE_URL`·`DATABASE_URL_DIRECT`의 이름만 두고 실제 값을 넣지 않는다. 각 runtime은 필요한 endpoint만 주입받는다.
-- secret rotation 후 API 재배포·worker restart 절차를 runbook에 둔다.
 
+### 7.1 Secret & Credential Rotation 런북
+
+비밀정보(Database URL, API 키, Worker Secret) 유출 또는 정기 교체 시 무중단(Zero-Downtime) 순차 롤아웃 절차를 따른다.
+
+1. **새 Credential 발급 및 Secret Manager 등록**:
+   - Neon 콘솔/CLI 또는 클라우드 Secret Manager에서 신규 Role/암호를 생성하여 dual-credential 상태를 만든다.
+   - staging/ops 환경에서 신규 connection string 연결성(pooled / direct)을 사전 검증한다.
+2. **애플리케이션 환경 변수 주입 및 순차 재배포**:
+   - API 배포 그룹에 신규 credential을 주입하고 rolling restart를 진행한다 (`/health/ready` 통과 확인).
+   - Worker 서비스에 신규 credential을 주입하고 graceful restart를 진행한다.
+3. **정상 트래픽 및 쿼리 동작 검증**:
+   - 신규 credential 기반 쿼리 및 job 처리가 활성화되었는지 모니터링한다.
+4. **구 Credential 폐기 및 감사 기록**:
+   - 이전 credential을 revoke/delete 처리한다.
+   - `audit_events`에 `action: 'credential_rotation'` 이력을 기록한다.
 ## 8. 개인정보·저작권·수집 윤리
 
 - 공개 기술 콘텐츠라 해도 작성자 ID, 댓글, 이메일 등 필요하지 않은 개인정보를 수집하지 않는다.
