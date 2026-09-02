@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0",
+  "experiment": "DISC-002",
+  "measuredAt": "2026-09-02T01:20:00Z",
+  "credentialValuesStored": false,
+  "sources": {
+    "github_releases": {
+      "attempts": 10,
+      "ok": 10,
+      "successRatePct": 100,
+      "statuses": { "200": 10 },
+      "p50Ms": 426,
+      "maxMs": 745,
+      "rateRemainingFirst": 4962,
+      "rateRemainingLast": 4953
+    },
+    "github_search": {
+      "attempts": 10,
+      "ok": 10,
+      "successRatePct": 100,
+      "statuses": { "200": 10 },
+      "p50Ms": 574,
+      "maxMs": 719,
+      "rateRemainingFirst": 29,
+      "rateRemainingLast": 20
+    },
+    "stack_exchange": {
+      "attempts": 10,
+      "ok": 10,
+      "successRatePct": 100,
+      "statuses": { "200": 10 },
+      "p50Ms": 201,
+      "maxMs": 310,
+      "quotaRemainingFirst": 9999,
+      "quotaRemainingLast": 9990,
+      "backoffObserved": false
+    }
+  },
+  "rawResponseBodiesStored": false,
+  "notes": [
+    "Only status, latency, rate/quota counters, and backoff metadata were retained.",
+    "Credentials were loaded from the local untracked environment and never written to this artifact."
+  ]
+}

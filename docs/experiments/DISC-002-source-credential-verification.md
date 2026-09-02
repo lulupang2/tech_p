@@ -26,6 +26,15 @@ When real credentials are injected (not committed), run this sequence:
    - `stack_exchange`: 10x repeat with `site=stackoverflow` + one target tag from SOURCE_CATALOG; confirm `backoff` handling; measure `quota_remaining` and `backoff` values after each request.
 3. Record raw measurements to `docs/experiments/disc-002/auth-rate-measurement.json` (same schema as EXP-001 `repeat-result.json`).
 4. If any source fails 10/10 auth repeat, block `COL-001` and document failure mode (403, 429, timeout, missing rate header) with sanitized error code only (SECURITY.md §9 — no full response body in logs).
+## Authenticated measurement result (2026-09-02)
+
+- The required credentials were injected from the local untracked environment; no credential value was persisted.
+- `github_releases`: 10/10 HTTP 200, 100% success, p50 426 ms, max 745 ms.
+- `github_search`: 10/10 HTTP 200, 100% success, p50 574 ms, max 719 ms.
+- `stack_exchange`: 10/10 HTTP 200, 100% success, p50 201 ms, max 310 ms; no `backoff`; quota decreased from 9,999 to 9,990.
+- Sanitized measurement artifact: [`disc-002/auth-rate-measurement.json`](./disc-002/auth-rate-measurement.json).
+- Raw response bodies and credentials were not stored.
+
 
 ## Acceptance (DISC-002 GATE)
 
