@@ -79,7 +79,9 @@ function parseIpv4Octets(hostname: string): [number, number, number, number] | n
 /**
  * Checks if IPv4 octets fall into private, loopback, link-local, carrier-grade NAT, or reserved space.
  */
-function isForbiddenIpv4(a: number, b: number, c: number, _d: number): boolean {
+function isForbiddenIpv4(a: number, b: number, c: number, d: number): boolean {
+  void c;
+  void d;
   // 0.0.0.0/8 (Current network / broadcast)
   if (a === 0) return true;
   // 10.0.0.0/8 (Private)
