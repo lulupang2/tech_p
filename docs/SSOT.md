@@ -1,4 +1,4 @@
-# TechPulse Single Source of Truth
+# Signal Archive Single Source of Truth
 
 - 상태: Active
 - 기준일: 2026-09-01
@@ -8,8 +8,8 @@
 
 ## 1. 제품 정의
 
-- 제품명은 **TechPulse**다.
-- TechPulse는 개발 기술 트렌드 Intelligence 서비스다.
+- 제품명은 **Signal Archive**다.
+- Signal Archive는 개발 기술 트렌드 Intelligence 서비스다.
 - 여러 개발 관련 데이터 소스에서 정보를 주기적으로 수집한다.
 - 수집 데이터는 정규화, 중복 처리, 임베딩 과정을 거친다.
 - 사용자는 자연어로 최근 기술 트렌드, 특정 기술 업데이트, 기술 간 관심 변화, 특정 분야에서 많이 언급되는 기술을 질문할 수 있다.

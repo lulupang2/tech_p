@@ -1,4 +1,4 @@
-# TechPulse Observability & Monitoring Design
+# Signal Archive Observability & Monitoring Design
 
 - 상태: Implemented baseline (OPS-002)
 - 작성일: 2026-09-02
@@ -8,7 +8,7 @@
 
 ## 1. 개요와 설계 원칙
 
-TechPulse의 관측성(Observability) 체계는 외부 개발 기술 신호 수집, 정규화, 중복 제거, 색인, 검색/RAG 질의 전 과정의 건전성과 지연시간을 투명하게 추적하고 장애 발생 시 신속하게 탐지하기 위한 구조화 로깅, 메트릭 수집 및 장애 알림 베이스라인을 정의한다.
+Signal Archive의 관측성(Observability) 체계는 외부 개발 기술 신호 수집, 정규화, 중복 제거, 색인, 검색/RAG 질의 전 과정의 건전성과 지연시간을 투명하게 추적하고 장애 발생 시 신속하게 탐지하기 위한 구조화 로깅, 메트릭 수집 및 장애 알림 베이스라인을 정의한다.
 
 ### 1.1 핵심 원칙
 

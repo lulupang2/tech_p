@@ -8,7 +8,7 @@
 
 ## Context
 
-TechPulse는 PostgreSQL + pgvector를 authoritative business store로 사용한다. raw item, immutable revision, citation provenance, metric observation의 제약과 인덱스를 TypeScript schema와 SQL migration 양쪽에서 검토 가능하게 유지하면서, domain이 ORM에 직접 의존하지 않는 경계가 필요하다.
+Signal Archive는 PostgreSQL + pgvector를 authoritative business store로 사용한다. raw item, immutable revision, citation provenance, metric observation의 제약과 인덱스를 TypeScript schema와 SQL migration 양쪽에서 검토 가능하게 유지하면서, domain이 ORM에 직접 의존하지 않는 경계가 필요하다.
 
 기존 [ADR-0007](./0007-repository-layout.md)은 ORM과 migration tool을 결정하지 않은 상태에서 작성됐다. 이 ADR은 그 미결정 항목만 결정하며, 저장소 package 경계와 PostgreSQL·pgvector 데이터 규칙은 변경하지 않는다.
 

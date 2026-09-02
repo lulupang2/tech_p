@@ -1,5 +1,5 @@
 /**
- * TechPulse database package entrypoint.
+ * Signal Archive database package entrypoint.
  *
  * Implements ADR-0009: Drizzle ORM + Drizzle Kit with Node PostgreSQL driver.
  * Exposes lazy client factory, schema entrypoint, and migration utilities.

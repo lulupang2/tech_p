@@ -1,4 +1,4 @@
-# TechPulse Repository Guide
+# Signal Archive Repository Guide
 
 이 파일은 저장소 전체에 적용된다. 더 하위 디렉터리에 별도 `AGENTS.md`가 생기면 그 범위에서는 더 구체적인 규칙이 우선한다.
 

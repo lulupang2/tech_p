@@ -361,7 +361,7 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
         )
         .join('\n\n');
 
-      const systemPrompt = `당신은 기술 분석 어시스턴트 TechPulse입니다.
+      const systemPrompt = `당신은 기술 분석 어시스턴트 Signal Archive입니다.
 반드시 아래 [근거 문서]에 포함된 정보만을 바탕으로 객관적으로 답변하세요.
 답변할 때 다음 규칙을 엄격히 준수하세요:
 1. 답변의 모든 사실 문장마다 반드시 인용한 근거의 식별자(예: [C1], [C2])를 표기하세요.

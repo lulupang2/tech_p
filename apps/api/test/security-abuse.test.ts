@@ -28,14 +28,14 @@ describe('SEC-001 Public API Abuse Controls & Threat Mitigations', () => {
       documentId: 'doc-sec-1',
       documentRevisionId: 'rev-sec-1',
       title: 'Security Architecture',
-      content: 'TechPulse implements robust API abuse controls and security headers.',
+      content: 'Signal Archive implements robust API abuse controls and security headers.',
       score: 1.0,
       publishedAt: new Date('2026-08-20T00:00:00.000Z'),
     },
   ];
 
   const chatPort = createDeterministicChatPort({
-    response: 'TechPulse는 보안 헤더와 레이트 리밋을 적용합니다 [C1].',
+    response: 'Signal Archive는 보안 헤더와 레이트 리밋을 적용합니다 [C1].',
   });
   const searchService = createFakeSearchService(sampleHits);
   const answerService = createAnswerService({ chatPort, searchService });

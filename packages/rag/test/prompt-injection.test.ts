@@ -34,7 +34,7 @@ describe('SEC-003 RAG Prompt-Injection and Egress Hardening', () => {
         const userMsg = params.messages.find((m) => m.role === 'user');
         sentUserPrompt = userMsg?.content ?? '';
         return {
-          content: 'TechPulse 정상 기술 분석 결과입니다 [C1].',
+          content: 'Signal Archive 정상 기술 분석 결과입니다 [C1].',
           metadata: { model: 'test-model', totalTokens: 50 },
         };
       },

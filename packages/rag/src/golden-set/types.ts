@@ -89,7 +89,7 @@ export type GoldenSetItem = {
 export const GoldenSetMetadataSchema = Type.Object(
   {
     version: Type.String({ minLength: 1 }),
-    reviewer: Type.Literal('TechPulse Evaluation Team'),
+    reviewer: Type.Literal('Signal Archive Evaluation Team'),
     reviewedAt: Type.String({ minLength: 1 }),
     totalItems: Type.Integer({ minimum: 1 }),
     questionCount: Type.Integer({ minimum: 1 }),

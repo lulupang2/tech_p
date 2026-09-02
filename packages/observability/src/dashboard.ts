@@ -1,5 +1,5 @@
 /**
- * Structured baseline dashboard snapshot generator for TechPulse observability.
+ * Structured baseline dashboard snapshot generator for Signal Archive observability.
  * Provides separated metric dimensions and units without unexplained composite scores.
  */
 

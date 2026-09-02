@@ -1,4 +1,4 @@
-# TechPulse API Design
+# Signal Archive API Design
 
 - 상태: Draft contract
 - 작성일: 2026-09-01

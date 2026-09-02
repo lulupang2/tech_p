@@ -1,4 +1,4 @@
-# TechPulse Architecture
+# Signal Archive Architecture
 
 - 상태: Draft
 - 작성일: 2026-09-01
@@ -17,7 +17,7 @@
 ```mermaid
 flowchart LR
     User[사용자] --> Web[Web UI]
-    Web --> API[TechPulse API]
+    Web --> API[Signal Archive API]
     API --> RAG[RAG workflow]
     RAG --> DB[(PostgreSQL + pgvector)]
     RAG --> LLM[LLM / Embedding API]

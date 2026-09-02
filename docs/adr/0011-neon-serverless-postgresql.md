@@ -8,7 +8,7 @@
 
 ## Context
 
-TechPulse는 raw item, immutable document revision, citation provenance, metric observation을 PostgreSQL + pgvector에 보존한다. [ADR-0009](./0009-drizzle-orm-migrations.md)가 `packages/database`의 Drizzle ORM·Drizzle Kit과 검토 가능한 SQL migration을 이미 승인했으므로, 이번 결정은 ORM이나 데이터 권위를 바꾸지 않고 PostgreSQL 실행·연결 경로만 정한다.
+Signal Archive는 raw item, immutable document revision, citation provenance, metric observation을 PostgreSQL + pgvector에 보존한다. [ADR-0009](./0009-drizzle-orm-migrations.md)가 `packages/database`의 Drizzle ORM·Drizzle Kit과 검토 가능한 SQL migration을 이미 승인했으므로, 이번 결정은 ORM이나 데이터 권위를 바꾸지 않고 PostgreSQL 실행·연결 경로만 정한다.
 
 운영 DB를 직접 관리하는 Docker PostgreSQL로 고정하면 백업, compute 확장, connection 관리와 운영 부담이 포트폴리오 MVP의 범위를 넘어선다. 반면 serverless 환경에서는 요청·job 실행 단위가 짧고 동시성이 변동하므로 연결을 무제한으로 만들거나 세션 상태를 전제로 한 ORM 사용은 안전하지 않다.
 

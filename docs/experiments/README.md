@@ -1,4 +1,4 @@
-# TechPulse Experiments
+# Signal Archive Experiments
 
 실험은 미결정 선택을 줄이기 위한 재현 가능한 기록이다. 실험 결과는 ADR의 근거가 되지만 ADR을 자동 승인하지 않는다.
 

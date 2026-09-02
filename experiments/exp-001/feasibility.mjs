@@ -4,7 +4,7 @@
 // Read-only. Respects documented rate limits. Disposable spike code.
 
 const SLEEP = (ms) => new Promise((r) => setTimeout(r, ms));
-const UA = 'TechPulse-EXP-001/0.1 (feasibility measurement; contact: repo owner)';
+const UA = 'Signal Archive-EXP-001/0.1 (feasibility measurement; contact: repo owner)';
 
 async function get(url, headers = {}) {
   const t0 = Date.now();

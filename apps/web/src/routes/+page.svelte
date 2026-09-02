@@ -36,7 +36,7 @@
   };
 </script>
 
-<svelte:head><title>TechPulse — 개발 기술 트렌드 인텔리전스</title></svelte:head>
+<svelte:head><title>Signal Archive — 개발 기술 트렌드 인텔리전스</title></svelte:head>
 <Header {activeTab} onTabChange={(tab) => (activeTab = tab)} />
 <main id="main-content" class="dashboard-shell">
   <header class="topbar">

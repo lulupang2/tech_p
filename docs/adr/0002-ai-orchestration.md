@@ -8,7 +8,7 @@
 
 ## Context
 
-TechPulse는 질의 해석, 문서/지표 검색, 근거 충분성 판단, 답변 생성, citation 검증을 재현 가능한 흐름으로 실행해야 한다. 필수 조건은 LangChain 또는 LangGraph 사용이다.
+Signal Archive는 질의 해석, 문서/지표 검색, 근거 충분성 판단, 답변 생성, citation 검증을 재현 가능한 흐름으로 실행해야 한다. 필수 조건은 LangChain 또는 LangGraph 사용이다.
 
 ## Decision drivers
 
@@ -23,7 +23,7 @@ TechPulse는 질의 해석, 문서/지표 검색, 근거 충분성 판단, 답�
 ### LangChain.js runnable/agent
 
 - 장점: 모델·retriever integration이 풍부하고 단순 chain을 빠르게 구성
-- 단점: 자유도가 높은 agent loop는 TechPulse의 제한된 의도에 과도하며 상태·분기 통제가 흐려질 수 있음
+- 단점: 자유도가 높은 agent loop는 Signal Archive의 제한된 의도에 과도하며 상태·분기 통제가 흐려질 수 있음
 
 ### LangGraph.js workflow
 

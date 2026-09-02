@@ -1,4 +1,4 @@
-/** Deterministic structured logging and correlation primitives for TechPulse services. */
+/** Deterministic structured logging and correlation primitives for Signal Archive services. */
 
 export const STRUCTURED_EVENT_SCHEMA_VERSION = 1 as const;
 export const REDACTED_VALUE = '[REDACTED]' as const;

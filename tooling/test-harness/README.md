@@ -1,4 +1,4 @@
-# TechPulse test harness
+# Signal Archive test harness
 
 `@techpulse/test-harness` contains provider-neutral deterministic test seams for Node unit and component tests. It does not import a provider SDK, access the network, patch global time, or use random values.
 

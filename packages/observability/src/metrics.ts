@@ -1,5 +1,5 @@
 /**
- * Deterministic metric primitives, registry, and standard catalog for TechPulse services.
+ * Deterministic metric primitives, registry, and standard catalog for Signal Archive services.
  * All metrics preserve explicit physical dimensions and units without unexplained composite scores.
  */
 

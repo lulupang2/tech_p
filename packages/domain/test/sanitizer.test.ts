@@ -199,9 +199,12 @@ describe('PIPE-002 HTML & Text Sanitizer', () => {
   describe('4. Entity Decoding and Invisible Character Stripping', () => {
     test('decodes standard and extended HTML entities correctly', () => {
       const input =
-        '<p>TypeScript &amp; JavaScript &lt;fast&gt; &quot;reliable&quot; &#39;modern&#39; &copy; 2026 &mdash; TechPulse</p>';
+        '<p>TypeScript &amp; JavaScript &lt;fast&gt; &quot;reliable&quot; &#39;modern&#39; &copy; 2026 &mdash; Signal Archive</p>';
       const output = sanitizeHtml(input);
-      assert.equal(output, `TypeScript & JavaScript <fast> "reliable" 'modern' © 2026 — TechPulse`);
+      assert.equal(
+        output,
+        `TypeScript & JavaScript <fast> "reliable" 'modern' © 2026 — Signal Archive`,
+      );
     });
 
     test('decodes decimal and hex numeric character references', () => {

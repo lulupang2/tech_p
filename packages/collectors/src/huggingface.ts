@@ -363,7 +363,7 @@ export class HuggingFaceCollector extends BaseCollector implements CollectorPort
     // 4. Build Request Headers (Conditional Authorization)
     const headers: Record<string, string> = {
       Accept: 'application/json',
-      'User-Agent': 'TechPulse-Collector/1.0',
+      'User-Agent': 'Signal Archive-Collector/1.0',
     };
 
     if (this.token && this.token.trim() !== '') {
@@ -594,7 +594,7 @@ export class HuggingFaceCollector extends BaseCollector implements CollectorPort
 
       const headers: Record<string, string> = {
         Accept: 'application/json',
-        'User-Agent': 'TechPulse-Collector/1.0',
+        'User-Agent': 'Signal Archive-Collector/1.0',
       };
       if (this.token && this.token.trim() !== '') {
         headers['Authorization'] = `Bearer ${this.token.trim()}`;

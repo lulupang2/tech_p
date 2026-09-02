@@ -5,7 +5,7 @@
 
 <svelte:head>
   <meta name="color-scheme" content="light" />
-  <meta name="description" content="TechPulse: 출처가 명확한 개발 기술 트렌드 인텔리전스" />
+  <meta name="description" content="Signal Archive: 출처가 명확한 개발 기술 트렌드 인텔리전스" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
   <link

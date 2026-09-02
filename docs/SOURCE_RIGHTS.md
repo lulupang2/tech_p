@@ -1,4 +1,4 @@
-# TechPulse Source Rights Matrix
+# Signal Archive Source Rights Matrix
 
 - 상태: Reviewed — 권리 근거 승인 완료 (2026-09-01)
 - 작성일: 2026-09-01

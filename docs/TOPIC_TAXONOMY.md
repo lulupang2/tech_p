@@ -1,4 +1,4 @@
-# TechPulse Topic Taxonomy
+# Signal Archive Topic Taxonomy
 
 - 상태: Draft — 초기 seed. `EXP-001`과 `EVAL-001` 결과로 조정
 - 작성일: 2026-09-01

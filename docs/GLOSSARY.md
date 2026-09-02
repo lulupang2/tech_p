@@ -1,4 +1,4 @@
-# TechPulse Glossary and Naming Rules
+# Signal Archive Glossary and Naming Rules
 
 - 상태: Active
 - 작성일: 2026-09-01
@@ -6,7 +6,14 @@
 
 이 문서는 결정을 만들지 않는다. 이미 다른 문서에 있는 개념의 표준 이름과 표기 규칙만 정한다. 용어 정의가 이 문서와 설계 문서에서 다르면 [SSOT.md](./SSOT.md) 우선순위를 따르고 이 문서를 고친다.
 
-## 1. 데이터 모델 용어
+## 1. 제품 및 기술 식별자
+
+- 사용자에게 표시하는 제품명은 항상 **Signal Archive**로 쓴다.
+- 기존 `@techpulse/*` 패키지 namespace, `TECHPULSE_*` 환경 변수, `techpulse_*` 메트릭 이름은 이미 배포·문서화된 기술 식별자이므로 이번 제품명 변경에서 유지한다.
+- 기술 식별자 변경은 package import, 운영 설정, 시계열 연속성에 영향을 주므로 별도 migration 결정 없이 제품명과 함께 바꾸지 않는다.
+
+
+## 2. 데이터 모델 용어
 
 | 용어 | 정의 | 정의 문서 |
 |---|---|---|
@@ -47,7 +54,7 @@
 |---|---|
 | `published_at` | 원 출처가 게시한 시각. 모르면 `null`이며 다른 값으로 대체하지 않는다 |
 | `updated_at` | 원 출처의 수정 시각 |
-| `collected_at` | TechPulse가 수집한 UTC 시각 |
+| `collected_at` | Signal Archive가 수집한 UTC 시각 |
 | `searchable_at` | revision이 `published` 상태가 되어 검색 가능해진 시각 |
 | freshness lag | `published_at → searchable_at`. 예약 지연은 `scheduled_at → completed_at`으로 따로 본다 |
 | `dataFreshThrough` | API 응답에서 사용자에게 노출하는 데이터 최신 시각 |

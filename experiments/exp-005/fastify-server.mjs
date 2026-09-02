@@ -48,7 +48,7 @@ const app = Fastify(
     : { logger: false },
 );
 await app.register(swagger, {
-  openapi: { info: { title: 'TechPulse spike', version: '0.0.0' } },
+  openapi: { info: { title: 'Signal Archive spike', version: '0.0.0' } },
 });
 
 app.get('/health/live', async () => ({ status: 'ok' }));

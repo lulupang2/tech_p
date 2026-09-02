@@ -1,4 +1,4 @@
-# TechPulse Product Requirements Document
+# Signal Archive Product Requirements Document
 
 - 상태: Draft
 - 작성일: 2026-09-01
@@ -7,7 +7,7 @@
 
 ## 1. 제품 요약
 
-TechPulse는 여러 개발 기술 데이터 소스에서 최근 정보를 수집해 정규화하고, 사용자의 자연어 질문에 기간과 출처가 명시된 기술 트렌드 답변을 제공하는 Intelligence 서비스다.
+Signal Archive는 여러 개발 기술 데이터 소스에서 최근 정보를 수집해 정규화하고, 사용자의 자연어 질문에 기간과 출처가 명시된 기술 트렌드 답변을 제공하는 Intelligence 서비스다.
 
 이 제품이 해결하려는 문제는 “정보를 찾을 수 없음”이 아니라 “서로 다른 신호를 같은 기간과 주제로 묶어, 근거를 확인할 수 있는 설명으로 만드는 데 시간이 많이 듦”이다.
 

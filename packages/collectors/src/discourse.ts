@@ -904,7 +904,7 @@ export class DiscourseCollector extends BaseCollector {
       method: 'GET',
       headers: {
         Accept: 'application/json',
-        'User-Agent': 'TechPulse-Collector/1.0',
+        'User-Agent': 'Signal Archive-Collector/1.0',
       },
       ...(signal ? { signal } : {}),
     });

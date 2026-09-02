@@ -31,7 +31,7 @@ export async function runOpsCli(
 
   if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
     const helpText = `
-TechPulse Operations CLI (API-004)
+Signal Archive Operations CLI (API-004)
 
 Usage:
   ops <command> [options]

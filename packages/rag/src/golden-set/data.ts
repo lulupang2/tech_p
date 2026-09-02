@@ -2,7 +2,7 @@ import type { GoldenSetCollection, GoldenSetItem, GoldenSetMetadata } from './ty
 
 export const GOLDEN_SET_METADATA: GoldenSetMetadata = {
   version: '1.0.0',
-  reviewer: 'TechPulse Evaluation Team',
+  reviewer: 'Signal Archive Evaluation Team',
   reviewedAt: '2026-09-02',
   totalItems: 43,
   questionCount: 38,

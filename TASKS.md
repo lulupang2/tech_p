@@ -1,4 +1,4 @@
-# TechPulse MVP Task Breakdown
+# Signal Archive MVP Task Breakdown
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01

@@ -17,7 +17,7 @@ import {
 
 describe('Golden Set Schema and Completeness (EVAL-001)', () => {
   test('metadata matches EVAL-001 contract', () => {
-    expect(GOLDEN_SET_METADATA.reviewer).toBe('TechPulse Evaluation Team');
+    expect(GOLDEN_SET_METADATA.reviewer).toBe('Signal Archive Evaluation Team');
     expect(GOLDEN_SET_METADATA.reviewedAt).toBe('2026-09-02');
     expect(GOLDEN_SET_METADATA.totalItems).toBe(43);
     expect(GOLDEN_SET_METADATA.questionCount).toBe(38);

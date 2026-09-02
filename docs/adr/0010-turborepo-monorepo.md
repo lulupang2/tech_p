@@ -9,7 +9,7 @@
 
 ## Context
 
-TechPulse는 web, API, worker와 공통 contracts/domain/database/collectors/RAG/observability package를 한 저장소에서 함께 개발한다. package 설치·링크에는 pnpm workspaces가 적합하지만, package와 app이 늘어날수록 동일 task의 중복 실행을 피하고 영향 범위만 실행하며 CI 결과를 재사용할 orchestration이 필요하다.
+Signal Archive는 web, API, worker와 공통 contracts/domain/database/collectors/RAG/observability package를 한 저장소에서 함께 개발한다. package 설치·링크에는 pnpm workspaces가 적합하지만, package와 app이 늘어날수록 동일 task의 중복 실행을 피하고 영향 범위만 실행하며 CI 결과를 재사용할 orchestration이 필요하다.
 
 [ADR-0007](./0007-repository-layout.md)은 초기 MVP에서 추가 build orchestrator를 사용하지 않기로 결정했다. 현재 사용자의 명시적 결정으로 Turborepo를 채택하되, ADR-0007이 기록한 package 경계·의존 방향과 당시 실험 결과는 보존한다.
 

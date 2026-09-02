@@ -1,6 +1,6 @@
-# TechPulse Operational Runbook
+# Signal Archive Operational Runbook
 
-This runbook defines the operational procedures, deployment topologies, container configurations, and troubleshooting workflows for the TechPulse platform.
+This runbook defines the operational procedures, deployment topologies, container configurations, and troubleshooting workflows for the Signal Archive platform.
 
 ---
 
@@ -92,7 +92,7 @@ pnpm --filter @techpulse/web dev
 
 ## 3. Container Security & Image Design
 
-All TechPulse container images follow strict security and production-readiness standards:
+All Signal Archive container images follow strict security and production-readiness standards:
 
 1. **Non-Root Execution**:
    - All runtime images run under unprivileged user `USER node` (UID/GID 1000).
@@ -116,7 +116,7 @@ All TechPulse container images follow strict security and production-readiness s
 
 ## 4. Database Connection Strategy: Neon vs. Local Fallback
 
-Per **ADR-0011** and **DATABASE.md §5**, TechPulse uses a strict separation between hosted production (Neon) and local development (Docker Compose):
+Per **ADR-0011** and **DATABASE.md §5**, Signal Archive uses a strict separation between hosted production (Neon) and local development (Docker Compose):
 
 ```
 +------------------------------------------------------------------------------+

@@ -633,8 +633,8 @@
             <h3 class="notice-title">Insufficient Evidence for Requested Query</h3>
             <p class="notice-description">
               수집된 공개 기술 데이터 및 지정된 기간 내에 질의를 뒷받침할 수 있는 충분하고 검증된
-              근거(Evidence)가 발견되지 않았습니다. TechPulse는 환각(Hallucination) 및 미검증된 허위
-              답변 생성을 방지하기 위해 답변 생성을 보류했습니다.
+              근거(Evidence)가 발견되지 않았습니다. Signal Archive는 환각(Hallucination) 및 미검증된
+              허위 답변 생성을 방지하기 위해 답변 생성을 보류했습니다.
             </p>
 
             {#if response.coverage.limitations.length > 0}

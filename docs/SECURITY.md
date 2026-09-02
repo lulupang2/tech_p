@@ -1,4 +1,4 @@
-# TechPulse Security Design
+# Signal Archive Security Design
 
 - 상태: Draft threat model
 - 작성일: 2026-09-01

@@ -94,7 +94,7 @@ export class GitHubReleasesCollector extends BaseCollector implements CollectorP
     const headers: Record<string, string> = {
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
-      'User-Agent': 'TechPulse-Collector/1.0',
+      'User-Agent': 'Signal Archive-Collector/1.0',
     };
 
     if (pat) {

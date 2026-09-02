@@ -1,4 +1,4 @@
-# TechPulse Traceability Matrix
+# Signal Archive Traceability Matrix
 
 - 상태: Active
 - 작성일: 2026-09-01

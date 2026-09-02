@@ -27,12 +27,12 @@ const messages = {
 export type MessageKey = keyof typeof messages.ko;
 function initialLocale(): Locale {
   if (!browser) return 'ko';
-  return window.localStorage.getItem('techpulse-locale') === 'en' ? 'en' : 'ko';
+  return window.localStorage.getItem('signal-archive-locale') === 'en' ? 'en' : 'ko';
 }
 export const locale = writable<Locale>(initialLocale());
 export function setLocale(next: Locale): void {
   locale.set(next);
-  if (browser) window.localStorage.setItem('techpulse-locale', next);
+  if (browser) window.localStorage.setItem('signal-archive-locale', next);
 }
 export function t(key: MessageKey, current: Locale): string {
   return messages[current][key];

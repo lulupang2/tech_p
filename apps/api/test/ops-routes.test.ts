@@ -664,7 +664,7 @@ describe('API-004 Protected Operations Interface and Authentication Controls', (
     // 1. Help flag
     const helpRes = await runOpsCli(['--help']);
     assert.equal(helpRes.exitCode, 0);
-    assert.match(String(helpRes.output), /TechPulse Operations CLI/iu);
+    assert.match(String(helpRes.output), /Signal Archive Operations CLI/iu);
 
     // 2. Missing API key
     const noKeyRes = await runOpsCli(['status'], { appHandler });

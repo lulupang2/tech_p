@@ -1,5 +1,5 @@
 /**
- * HTML and text sanitizer for TechPulse data pipeline.
+ * HTML and text sanitizer for Signal Archive data pipeline.
  *
  * Implements strict removal of:
  * - Executable / embeddable elements: <script>, <style>, <iframe>, <object>, <embed>, <applet>, <noscript>, <template>, <svg>, <canvas>, <audio>, <video>, <frame>, <frameset>, <link>, <meta>

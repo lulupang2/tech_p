@@ -44,7 +44,7 @@
         {answerStatus.reason}
       </p>
       <div class="governance-box">
-        <h4 class="gov-title">TechPulse Governance &amp; Grounding Rules:</h4>
+        <h4 class="gov-title">Signal Archive Governance &amp; Grounding Rules:</h4>
         <ul class="gov-list">
           <li>
             <strong>No Hallucinations:</strong> Responses are never generated without verifiable citations

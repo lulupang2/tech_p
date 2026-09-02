@@ -1,4 +1,4 @@
-# TechPulse RAG Design
+# Signal Archive RAG Design
 
 - 상태: Draft
 - 작성일: 2026-09-01

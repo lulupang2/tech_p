@@ -3,7 +3,7 @@
 // Spacing respects each source's documented rate limits. Read-only.
 
 const SLEEP = (ms) => new Promise((r) => setTimeout(r, ms));
-const UA = 'TechPulse-EXP-001/0.1 (feasibility measurement; contact: repo owner)';
+const UA = 'Signal Archive-EXP-001/0.1 (feasibility measurement; contact: repo owner)';
 const N = 10;
 
 async function attempt(url, headers = {}) {

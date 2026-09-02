@@ -5,7 +5,7 @@
 
 ## 질문
 
-어떤 chat model과 embedding model이 TechPulse의 한국어·영어 질의, structured output, citation-grounded answer를 예측 가능한 비용과 정책으로 제공하는가?
+어떤 chat model과 embedding model이 Signal Archive의 한국어·영어 질의, structured output, citation-grounded answer를 예측 가능한 비용과 정책으로 제공하는가?
 
 ## 후보 선정 규칙
 

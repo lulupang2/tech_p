@@ -1,7 +1,7 @@
-# TechPulse RAG Golden Set
+# Signal Archive RAG Golden Set
 
 - 상태: Reviewed (라벨 확정)
-- 검토자: `TechPulse Evaluation Team`
+- 검토자: `Signal Archive Evaluation Team`
 - 검토일: `2026-09-02`
 - 작성일: `2026-09-01`
 - 대응 task: `EVAL-001`, `EVAL-002`
@@ -845,7 +845,7 @@
 ## 12. 사용 규칙
 
 1. **불변성**: 결과를 본 뒤 질문을 바꾸지 않는다. 질문 변경이 필요하면 새 항목을 추가하고 기존 항목을 보존한다.
-2. **사람 검토 원칙**: 라벨은 사람이 검토하고 검토자(`TechPulse Evaluation Team`)와 검토일(`2026-09-02`)을 유지한다.
+2. **사람 검토 원칙**: 라벨은 사람이 검토하고 검토자(`Signal Archive Evaluation Team`)와 검토일(`2026-09-02`)을 유지한다.
 3. **회귀 평가 연계**: `EVAL-002`는 commit·model·config별로 이 골든셋의 결과를 비교하고 실패 질문 목록을 artifact로 남긴다.
 4. **저작권 보호**: 골든셋 자체에는 저작권 있는 원문을 복제하지 않는다. 근거는 revision ID와 허용된 발췌문으로 참조한다.
 5. **결정적 테스트 동기화**: `packages/rag/test/golden-set.test.ts`를 통해 골든셋 스키마 유효성과 43개 전 항목의 완전성을 상시 검증한다.

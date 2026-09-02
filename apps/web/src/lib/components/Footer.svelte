@@ -4,7 +4,7 @@
 
 <footer class="app-footer">
   <div>
-    <strong>TechPulse</strong>
+    <strong>Signal Archive</strong>
     <p>검증 가능한 공개 기술 출처를 바탕으로 변화를 읽습니다.</p>
   </div>
   <div class="footer-meta">
