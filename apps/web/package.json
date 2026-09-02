@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite dev",
     "build": "svelte-kit sync && vite build",
+    "preview": "vite preview",
+    "start": "vite preview --host 0.0.0.0 --port 5173",
     "format": "pnpm --dir ../.. exec prettier --check apps/web",
     "lint": "eslint .",
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",

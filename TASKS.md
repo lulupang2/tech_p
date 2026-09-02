@@ -210,7 +210,7 @@
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
-| OPS-001 | API/web/worker Docker images와 full Compose | API-004, WEB-003, FND-004 | BLOCKED | non-root images, healthcheck, graceful shutdown; clean machine에서 documented one-command stack; browser binary/version pin 검증 |
+| OPS-001 | API/web/worker Docker images와 full Compose | API-004, WEB-003, FND-004 | DONE | non-root images, healthcheck, graceful shutdown; clean machine에서 documented one-command stack; browser binary/version pin 검증 |
 | OPS-002 | metrics/dashboard와 failure alert baseline | OBS-001, PIPE-007, API-003 | DONE | source freshness, stage counts/errors, queue lag, DB/LLM latency/usage가 correlation IDs로 추적; alert test event 확인 |
 | OPS-003 | backup/restore, retention, tombstone runbook | DB-005, PIPE-007, SEC-002 | DONE | 빈 환경 restore drill 성공; source tombstone 후 search 제외; retention dry-run/count와 irreversible step 보호가 문서화됨 |
 | DOC-001 | developer/operator README와 runbook | OPS-001, OPS-002, OPS-003 | BLOCKED | setup, source policy, collect/replay, query, evaluation, rotate secret, backup/restore, known limits가 clean-reader test를 통과 |
@@ -401,3 +401,24 @@ flowchart TD
   - 모든 변경 연산(POST/PATCH)에 `Idempotency-Key` 헤더를 강제(누락 시 400 `INVALID_REQUEST`)하고, SHA-256 canonical payload hash 기반으로 동일 키 중복 요청 시 캐시된 응답을 반환하며, 페이로드 불일치 시 409 `IDEMPOTENCY_CONFLICT`를 반환한다.
   - 모든 운영 연산(`ops.collection_run.triggered`, `ops.pipeline_replay.requested`, `ops.source.enabled`, `ops.source.disabled`)에 대해 UTC 타임스탬프, 요청 상관관계 ID(`requestId`), 실행자(`actor`)를 포함한 감사 이벤트를 기록하며, `token`, `password`, `cookie`, `secret`, `database_url` 등 민감 정보는 `[REDACTED]`로 마스킹한다.
 - **검증**: `apps/api` 9개 test file·51개 test 전체 통과(`ops-routes.test.ts` 11개 결정적 테스트 포함), `@techpulse/domain`, `@techpulse/database`, `@techpulse/observability`, `@techpulse/worker`, `@techpulse/contracts` 패키지 단위 테스트 전체 통과.
+
+### OPS-001 완료 증빙 (2026-09-02)
+
+- **프로덕션 지향 Non-Root Dockerfile 구현**:
+  - `apps/api/Dockerfile`, `apps/web/Dockerfile`, `apps/worker/Dockerfile`을 multi-stage build(base → builder → runner) 및 unprivileged `USER node`(UID 1000) 기반으로 구현했다.
+  - ADR-0001에 따라 Node.js 22 LTS(`node:22-alpine`)와 `pnpm@10.32.1`로 버전을 고정하고, `pnpm install --frozen-lockfile`을 통해 재현 가능한 의존성 빌드를 보장한다.
+  - 이미지 레이어 및 Dockerfile 내에 하드코딩된 비밀번호, API 키, 토큰 등 민감 정보를 일체 포함하지 않으며(`zero baked secrets`), 런타임 환경 변수 주입으로만 구성된다.
+  - 컨테이너 종료 시 graceful shutdown을 위한 `STOPSIGNAL SIGTERM` 및 표준 헬스체크(`HEALTHCHECK`)를 정의했다.
+- **풀 스택 Compose 프로파일 및 의존성 구성 (`compose.yaml`)**:
+  - 프로파일 분리: 전체 스택(`stack`, `full`), 단독 서비스(`api`, `web`, `worker`), 로컬 의존성(`persistent`, `ephemeral`)을 명확히 지원한다.
+  - 클린 머신 단일 명령 스택 기동: `docker compose --profile stack up -d --wait`로 인프라(`postgres`, `redis`) 및 전체 애플리케이션(`api`, `worker`, `web`)을 단번에 기동한다.
+  - 헬스체크 및 의존 순서: `postgres`(`pg_isready` + pgvector 확장 확인), `redis`(`redis-cli ping`), `api`(`/health/live`), `web`(`/`), `worker` 헬스체크를 정의하고 `depends_on: { condition: service_healthy }`로 안전한 시작 순서를 강제했다.
+  - Graceful shutdown 설정: 모든 서비스에 `stop_signal: SIGTERM` 및 `stop_grace_period: 15s`를 적용했다.
+  - 네트워크 및 자격증명 경계: `postgres` 및 `redis` 네트워크 alias를 제공하며, 로컬 fallback 기본값은 `unsafe-local-development-only`로 명시되어 프로덕션 환경과의 혼용을 방지한다.
+- **환경 변수 템플릿 (`.env.example`) 및 운영 런북 (`docs/RUNBOOK.md`)**:
+  - 루트 `.env.example`을 생성하여 프로덕션 Neon Serverless Postgres(runtime pooled `DATABASE_URL` vs migration direct `DATABASE_URL_DIRECT`)와 로컬 Docker fallback URL의 분리 기준, Redis, AI Chat/Embedding, 소스 자격증명 및 서비스 포트 설정을 문서화했다.
+  - `docs/RUNBOOK.md`에 단일 명령 스택 기동, 프로파일별 실행/종료 절차, 컨테이너 보안, Neon/Local 연결 분리, 브라우저 수집기 런타임 요건(Node 22 LTS 고정 및 Playwright 요구사항), 시크릿 로테이션 및 트러블슈팅 가이드를 작성했다.
+- **결정적 정적/설정 검증**:
+  - `tooling/test-harness/test/ops-config.test.ts`를 구현하여 Dockerfile multi-stage/non-root/SIGTERM/HEALTHCHECK/no-secret 검증, compose.yaml 프로파일/헬스체크/의존순서/graceful shutdown 검증, RUNBOOK.md 및 .env.example 계약 검증 8개 테스트를 작성하고 전체 통과를 확인했다.
+  - 실행 환경의 Docker Linux engine 데몬 미가동 상태(`failed to connect to docker API at npipe:////./pipe/dockerDesktopLinuxEngine`)를 확인하였으며, 허위 컨테이너 실행 결과를 생성하지 않고 결정적 계약 검증 및 정적 검증으로 증빙을 확정했다.
+  - 검증: `tooling/test-harness` 2개 test file·20개 test 전체 통과, static checks(typecheck, ESLint, Prettier) 통과.

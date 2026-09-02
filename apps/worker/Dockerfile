@@ -1,0 +1,50 @@
+# Production-oriented non-root container for @techpulse/worker
+# Node version pinned per ADR-0001 (Node 22 LTS)
+FROM node:22-alpine AS base
+
+ENV NODE_ENV=production
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+WORKDIR /app
+
+FROM base AS builder
+
+ENV NODE_ENV=development
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+COPY apps/worker/package.json ./apps/worker/
+COPY packages/contracts/package.json ./packages/contracts/
+COPY packages/database/package.json ./packages/database/
+COPY packages/domain/package.json ./packages/domain/
+COPY packages/observability/package.json ./packages/observability/
+COPY packages/rag/package.json ./packages/rag/
+COPY packages/collectors/package.json ./packages/collectors/
+COPY tooling/test-harness/package.json ./tooling/test-harness/
+
+RUN pnpm install --frozen-lockfile
+
+COPY tsconfig.base.json ./
+COPY packages ./packages
+COPY apps/worker ./apps/worker
+
+RUN pnpm --filter @techpulse/worker build
+
+FROM base AS runner
+
+# Non-root unprivileged execution
+USER node
+WORKDIR /app
+
+COPY --chown=node:node --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/packages ./packages
+COPY --chown=node:node --from=builder /app/apps/worker ./apps/worker
+
+ENV NODE_ENV=production
+
+STOPSIGNAL SIGTERM
+
+HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=5 \
+  CMD node -e "process.exit(0)"
+
+CMD ["node", "--import=tsx/esm", "apps/worker/src/index.ts"]

@@ -1,13 +1,25 @@
-# Local development dependencies only. These services are not production deployment configuration.
-# Select exactly one profile:
-#   docker compose --profile persistent up -d --wait
-#   docker compose --profile ephemeral up -d --wait
-# Persistent cleanup (keeps data): docker compose --profile persistent down
-# Persistent data deletion (intentional): docker compose --profile persistent down --volumes
-# Ephemeral cleanup (PostgreSQL data is tmpfs-backed; Redis has no persistent volume): docker compose --profile ephemeral down
+# TechPulse Docker Compose
+# Local development and full-stack profiles.
 #
-# The fallback PostgreSQL credentials below are deliberately named UNSAFE and are
-# suitable only for a local machine. Override them with TECHPULSE_DEV_POSTGRES_* if needed.
+# Usage:
+#   Full application stack (api, web, worker, postgres, redis):
+#     docker compose --profile stack up -d --wait
+#   Dependencies only (persistent volume for PostgreSQL & Redis):
+#     docker compose --profile persistent up -d --wait
+#   Dependencies only (ephemeral tmpfs for PostgreSQL, in-memory Redis):
+#     docker compose --profile ephemeral up -d --wait
+#
+# Cleanup:
+#   docker compose --profile stack down
+#   docker compose --profile persistent down
+#   docker compose --profile persistent down --volumes  (deletes data)
+#   docker compose --profile ephemeral down
+#
+# Security & Connection Boundaries:
+#   The fallback credentials below are for local development ONLY.
+#   Production deployments use Neon Serverless Postgres via secret injection:
+#     - DATABASE_URL: pooled connection URL for runtime queries
+#     - DATABASE_URL_DIRECT: direct connection URL for Drizzle Kit migrations
 
 x-postgres-environment: &postgres-environment
   POSTGRES_DB: ${TECHPULSE_DEV_POSTGRES_DB:-techpulse_dev}
@@ -36,43 +48,175 @@ x-redis-healthcheck: &redis-healthcheck
   start_period: 3s
 
 services:
+  # ============================================================================
+  # Infrastructure: PostgreSQL with pgvector (Persistent)
+  # ============================================================================
   postgres-persistent:
     image: pgvector/pgvector:pg17
-    profiles: [persistent]
+    profiles: [persistent, stack, full]
     environment: *postgres-environment
     ports:
-      - 127.0.0.1:5432:5432
+      - '127.0.0.1:5432:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck: *postgres-healthcheck
+    networks:
+      default:
+        aliases:
+          - postgres
 
+  # ============================================================================
+  # Infrastructure: Redis 7.4 (Persistent)
+  # ============================================================================
   redis-persistent:
     image: redis:7.4-alpine
-    profiles: [persistent]
+    profiles: [persistent, stack, full]
     command: ['redis-server', '--appendonly', 'yes']
     ports:
-      - 127.0.0.1:6379:6379
+      - '127.0.0.1:6379:6379'
     volumes:
       - redis-data:/data
     healthcheck: *redis-healthcheck
+    networks:
+      default:
+        aliases:
+          - redis
 
+  # ============================================================================
+  # Infrastructure: PostgreSQL with pgvector (Ephemeral)
+  # ============================================================================
   postgres-ephemeral:
     image: pgvector/pgvector:pg17
     profiles: [ephemeral]
     environment: *postgres-environment
     ports:
-      - 127.0.0.1:5432:5432
+      - '127.0.0.1:5432:5432'
     tmpfs:
       - /var/lib/postgresql/data
     healthcheck: *postgres-healthcheck
 
+  # ============================================================================
+  # Infrastructure: Redis 7.4 (Ephemeral)
+  # ============================================================================
   redis-ephemeral:
     image: redis:7.4-alpine
     profiles: [ephemeral]
     command: ['redis-server', '--save', '', '--appendonly', 'no']
     ports:
-      - 127.0.0.1:6379:6379
+      - '127.0.0.1:6379:6379'
     healthcheck: *redis-healthcheck
+
+  # ============================================================================
+  # Application: HTTP API Server (@techpulse/api)
+  # ============================================================================
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    profiles: [stack, full, app, api]
+    depends_on:
+      postgres-persistent:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgresql://techpulse_dev_unsafe:unsafe-local-development-only@postgres:5432/techpulse_dev}
+      PORT: 3000
+      API_RATE_LIMIT_WINDOW_MS: ${API_RATE_LIMIT_WINDOW_MS:-60000}
+      API_RATE_LIMIT_MAX_REQUESTS: ${API_RATE_LIMIT_MAX_REQUESTS:-100}
+      API_MAX_CONCURRENT_ANSWERS: ${API_MAX_CONCURRENT_ANSWERS:-10}
+      AI_CHAT_BASE_URL: ${OPENAI_BASE_URL:-https://api.runinfra.ai/v1}
+      AI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-deepseek-v4-flash}
+      AI_CHAT_API_KEY: ${OPENAI_API_KEY:-}
+      AI_EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-https://openrouter.ai/api/v1}
+      AI_EMBEDDING_MODEL: ${EMBEDDING_MODEL:-perplexity/pplx-embed-v1-0.6b}
+      AI_EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
+      AI_EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+    ports:
+      - '127.0.0.1:3000:3000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          'fetch("http://127.0.0.1:3000/health/live").then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    stop_signal: SIGTERM
+    stop_grace_period: 15s
+
+  # ============================================================================
+  # Application: Worker Service (@techpulse/worker)
+  # ============================================================================
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    profiles: [stack, full, app, worker]
+    depends_on:
+      postgres-persistent:
+        condition: service_healthy
+      redis-persistent:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:-postgresql://techpulse_dev_unsafe:unsafe-local-development-only@postgres:5432/techpulse_dev}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-2}
+      GITHUB_PAT: ${GITHUB_PAT:-}
+      STACK_EXCHANGE_KEY: ${STACK_EXCHANGE_KEY:-}
+      HUGGINGFACE_TOKEN: ${HUGGINGFACE_TOKEN:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.runinfra.ai/v1}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-deepseek-v4-flash}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      EMBEDDING_BASE_URL: ${EMBEDDING_BASE_URL:-https://openrouter.ai/api/v1}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-perplexity/pplx-embed-v1-0.6b}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1024}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+    healthcheck:
+      test: ['CMD', 'node', '-e', 'process.exit(0)']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    stop_signal: SIGTERM
+    stop_grace_period: 15s
+
+  # ============================================================================
+  # Application: Web UI Frontend (@techpulse/web)
+  # ============================================================================
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    profiles: [stack, full, app, web]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5173
+      ORIGIN: ${WEB_ORIGIN:-http://localhost:5173}
+    ports:
+      - '127.0.0.1:5173:5173'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          'fetch("http://127.0.0.1:5173/").then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    stop_signal: SIGTERM
+    stop_grace_period: 15s
 
 volumes:
   postgres-data:
