@@ -5,9 +5,27 @@ const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) throw new Error('DATABASE_URL is required');
 
 const sources = [
-  ['github_releases', 'GitHub Releases', 'release_note', 'https://api.github.com', { cadence: 'daily', owner: 'microsoft', repo: 'playwright' }],
-  ['github_search', 'GitHub Search Signals', 'metric', 'https://api.github.com', { cadence: 'daily', query: 'topic:typescript stars:>500' }],
-  ['stack_exchange', 'Stack Exchange', 'qa_post', 'https://api.stackexchange.com', { cadence: 'daily', site: 'stackoverflow', tag: 'typescript' }],
+  [
+    'github_releases',
+    'GitHub Releases',
+    'release_note',
+    'https://api.github.com',
+    { cadence: 'daily', owner: 'microsoft', repo: 'playwright' },
+  ],
+  [
+    'github_search',
+    'GitHub Search Signals',
+    'metric',
+    'https://api.github.com',
+    { cadence: 'daily', query: 'topic:typescript stars:>500' },
+  ],
+  [
+    'stack_exchange',
+    'Stack Exchange',
+    'qa_post',
+    'https://api.stackexchange.com',
+    { cadence: 'daily', site: 'stackoverflow', tag: 'typescript' },
+  ],
 ];
 
 const pool = new Pool({ connectionString: databaseUrl });

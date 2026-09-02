@@ -41,9 +41,13 @@ function sanitizeErrorMessage(message: string): string {
 export function createDatabaseClient(input: DatabaseConfig | string): DatabaseClient {
   const normalizedConfig = typeof input === 'string' ? { databaseUrl: input } : input;
   const config = validateDatabaseConfig(normalizedConfig);
-  const isLocalDatabase = /@(?:localhost|127\.0\.0\.1|postgres)(?::\d+)?\//u.test(
-    config.databaseUrl,
-  );
+  const databaseHostname = new URL(config.databaseUrl).hostname;
+  const isLocalDatabase =
+    databaseHostname === 'localhost' ||
+    databaseHostname === '127.0.0.1' ||
+    databaseHostname === '::1' ||
+    databaseHostname === 'postgres' ||
+    databaseHostname.startsWith('postgres-');
 
   const pool = (isLocalDatabase
     ? new NodePool({

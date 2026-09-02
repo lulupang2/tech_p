@@ -12,6 +12,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed:mvp": "node scripts/seed-mvp-sources.mjs",
+    "format": "pnpm --dir ../.. exec prettier --check packages/database",
     "lint": "eslint .",
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
     "test": "vitest run --fileParallelism=false",
