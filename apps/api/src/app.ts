@@ -22,7 +22,12 @@ import { resolveRequestCorrelation } from './correlation.js';
 import { ApiHttpError, formatErrorToEnvelope } from './errors.js';
 import { createAnswerRoutes } from './routes/answers.js';
 import { createHealthRoutes, type DatabaseHealthCheck } from './routes/health.js';
-import { createOpsRoutes, type IdempotencyStore, type OpsAuditEvent } from './routes/ops.js';
+import {
+  createOpsRoutes,
+  type CollectionDispatcher,
+  type IdempotencyStore,
+  type OpsAuditEvent,
+} from './routes/ops.js';
 import { createSourceRoutes } from './routes/sources.js';
 import { createTopicRoutes } from './routes/topics.js';
 
@@ -33,6 +38,7 @@ export interface AppOptions {
   readonly sourceRepository?: SourceRepositoryPort | undefined;
   readonly topicRepository?: TopicRepositoryPort | undefined;
   readonly collectionRunRepository?: CollectionRunRepositoryPort | undefined;
+  readonly collectionDispatcher?: CollectionDispatcher | undefined;
   readonly answerService?: AnswerServicePort | undefined;
   readonly replayService?:
     { readonly replay: (request: ReplayRequest) => Promise<ReplayResult> } | undefined;
@@ -146,22 +152,36 @@ export function createApp(options: AppOptions = {}) {
       v1
         .onBeforeHandle(({ request, set }) => {
           const urlPath = new URL(request.url).pathname;
-          if (urlPath.startsWith('/api/v1/ops') || urlPath.startsWith('/ops')) {
-            return;
-          }
+          const isOps = urlPath.startsWith('/api/v1/ops') || urlPath.startsWith('/ops');
 
-          // Apply rate limiting across public API v1 endpoints
+          // Trusted proxies append to the right; the final XFF hop is the first
+          // non-proxy hop, so reading the trailing entry defeats client forgeries.
+          const xff = request.headers.get('x-forwarded-for');
           const clientIp =
-            request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+            (xff
+              ? xff
+                  .split(',')
+                  .map((hop) => hop.trim())
+                  .filter(Boolean)
+                  .at(-1)
+              : undefined) ||
             request.headers.get('x-real-ip') ||
             'client_default';
 
           const limitResult = rateLimiter.check(clientIp);
-          if (!limitResult.allowed) {
+          if (!limitResult.allowed && !isOps) {
             set.headers['retry-after'] = String(limitResult.reset);
             set.headers['ratelimit-limit'] = String(limitResult.limit);
             set.headers['ratelimit-remaining'] = '0';
             set.headers['ratelimit-reset'] = String(limitResult.reset);
+            throw new ApiHttpError({
+              code: 'RATE_LIMITED',
+              status: 429,
+              message: 'Rate limit exceeded. Please try again later.',
+              retryable: true,
+            });
+          }
+          if (isOps && !limitResult.allowed) {
             throw new ApiHttpError({
               code: 'RATE_LIMITED',
               status: 429,
@@ -188,6 +208,7 @@ export function createApp(options: AppOptions = {}) {
             opsApiKey: options.opsApiKey,
             sourceRepository,
             collectionRunRepository,
+            collectionDispatcher: options.collectionDispatcher,
             replayService: options.replayService,
             tombstoneService: options.tombstoneService,
             logger,

@@ -42,6 +42,7 @@ describe('API runtime configuration', () => {
 
     assert.deepEqual(config, {
       databaseUrl: 'postgresql://db.test:5432/techpulse',
+      redisUrl: 'redis://127.0.0.1:6379',
       port: 4310,
     });
   });

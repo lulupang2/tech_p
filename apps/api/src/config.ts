@@ -5,6 +5,7 @@ const DATABASE_PROTOCOLS: Record<string, true> = {
 
 export interface ApiConfig {
   readonly databaseUrl: string;
+  readonly redisUrl: string;
   readonly port: number;
   readonly corsAllowedOrigins?: readonly string[] | undefined;
   readonly rateLimitWindowMs?: number | undefined;
@@ -119,6 +120,7 @@ export function loadApiConfig(env: Environment = process.env): ApiConfig {
 
   return {
     databaseUrl: databaseUrl as string,
+    redisUrl: env['REDIS_URL'] || 'redis://127.0.0.1:6379',
     port,
     ...(corsAllowedOrigins ? { corsAllowedOrigins } : {}),
     ...(rateLimitWindowMs !== undefined ? { rateLimitWindowMs } : {}),

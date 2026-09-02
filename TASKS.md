@@ -177,8 +177,8 @@
 |---|---|---|---|---|
 | AI-001 | provider-neutral chat/embedding ports와 fakes | FND-001, CON-001, TST-001 | DONE | domain/RAG가 provider SDK를 import하지 않음; timeout/usage/model metadata contract와 deterministic fake가 테스트됨; 구현·review 완료 |
 | EVAL-001 | 골든 corpus와 질의 라벨 작성 | DEC-001, COL-002, COL-003 | DONE | [EVAL_GOLDEN_SET](./docs/EVAL_GOLDEN_SET.md)의 38개 질문과 5개 주입 항목에 relevance·allowed·forbidden claim 라벨이 채워짐; 검토자와 검토일 기록; `insufficient_evidence`·`unsupported_intent` 기대값이 6개 이상 |
-| EXP-003 | model provider 평가 실행 | AI-001, EVAL-001, PIPE-005 | BLOCKED | [EXP-003](./docs/experiments/EXP-003-model-providers.md)의 최소 2개 후보 품질·latency·비용·policy scorecard와 raw measurement가 기록됨 |
-| DEC-007 | chat/embedding provider와 model 승인 | EXP-003 | GATE | ADR-0006이 Accepted/Rejected로 변경; model IDs, dimensions, budget, data policy가 SSOT/RAG/DATABASE에 반영됨 |
+| EXP-003 | model provider 평가 실행 | AI-001, EVAL-001, PIPE-005 | DONE | 2 chat/2 embedding 후보를 43개 전 항목으로 측정. Embedding gate 통과, chat gate 실패; [EXP-003](./docs/experiments/EXP-003-model-providers.md) scorecard와 sanitized raw measurement 기록 (2026-09-02) |
+| DEC-007 | chat/embedding provider와 model 승인 | EXP-003 | GATE | Embedding recommendation은 유지. Chat 후보가 gate를 통과하지 못해 [ADR-0012](./docs/adr/0012-chat-provider-revalidation.md) Proposed; 새 chat 평가·사람 blind review·data policy/budget 승인 필요 |
 | AI-002 | 선택 provider adapter 구현 | DEC-007, AI-001 | BLOCKED | structured output, timeout, rate error, usage를 공통 contract로 변환; secret/log redaction; provider contract test 통과 |
 | PIPE-008 | versioned embedding stage | AI-002, PIPE-005, DB-003 | BLOCKED | 동일 chunk/model/input hash는 API 재호출 없음; partial failure 재개; dimensions mismatch 차단; publish는 필수 embedding 완료 후만 가능 |
 | RAG-001 | query intent/entity/time parser | DEC-003, AI-002, CON-001 | BLOCKED | 4개 intent와 명시 기간 우선, timezone/rolling window, alias, invalid/ambiguous fixture 통과; 날짜 계산은 deterministic code에서 수행 |
@@ -188,7 +188,7 @@
 | RAG-004 | evidence sufficiency와 context assembly | RAG-003 | BLOCKED | intent별 최소 근거, token budget, adjacent chunk merge, duplicate upstream 억제; 부족하면 기간을 몰래 넓히지 않고 abstain |
 | RAG-005 | answer generation과 citation validation workflow | RAG-001, RAG-004, AI-002 | BLOCKED | 승인 orchestration에서 parse→retrieve→generate→validate branch가 trace됨; fabricated/missing/out-of-range citation 차단; `verbatim_only` source 근거가 재서술 없이 원문 발췌로 제시되는지 후검증; retry 최대 1회 |
 | RAG-006 | comparison/trend computation | PIPE-006, RAG-001, RAG-004 | BLOCKED | 두 대상에 동일 기간·unit 적용; absolute value와 baseline 표시; missing/zero baseline 안전 처리; 서로 다른 metric 미합산 |
-| EVAL-002 | RAG regression harness와 release gate | RAG-005, RAG-006, EVAL-001 | BLOCKED | retrieval/generation/security 지표를 commit/model/config별 비교; proposed MVP gate 결과와 실패 질문 목록을 artifact로 출력 |
+| EVAL-002 | RAG regression harness와 release gate | RAG-005, RAG-006, EVAL-001 | BLOCKED | Harness와 commit/model/config artifact 출력은 구현됨. 2026-09-02 provider-proxy baseline은 retrieval gate만 통과하고 citation/unsupported/status/security gate 실패; production corpus 재평가 필요 |
 
 ## 7. API, security, and web
 
@@ -204,7 +204,7 @@
 | WEB-001 | web shell과 typed API client | DEC-005, FND-001, CON-001, API-001 | DONE | web이 DB/provider package를 import하지 않음; server 전용 코드가 `+page.server.ts`·`+server.ts`·`$lib/server/` 경계 안에만 있고 client bundle 산출물 검사에서 secret이 발견되지 않음; loading/error/empty layout 접근성 smoke; API contract type drift test 통과 |
 | WEB-002 | 질문·답변·citation UI | WEB-001, API-003 | DONE | 질문/기간 입력, resolved range, answer, clickable citation/date/source, limitations/insufficient state 표시; keyboard/screen-reader labels 검증 |
 | WEB-003 | 비교 metric과 source freshness UI | WEB-002, API-002, RAG-006 | DONE | metric별 unit/기간 분리 표시; composite score 없음; stale/partial source warning이 API coverage와 일치 |
-| TST-002 | Playwright UI E2E suite | WEB-002, WEB-003, TST-001 | BLOCKED | seeded DB+fake model에서 summary/comparison/no-data/citation 흐름 통과; collector suite와 분리; flaky retry 없이 Chromium PR smoke 성공 |
+| TST-002 | Playwright UI E2E suite | WEB-002, WEB-003, TST-001 | DONE | seeded deterministic API/fake model contract에서 summary/comparison/no-data/citation 및 locale persistence 흐름 통과; collector suite와 분리; flaky retry 없이 Chromium PR smoke 성공 (2026-09-02) |
 
 ## 8. Operations and MVP acceptance
 
@@ -213,7 +213,7 @@
 | OPS-001 | API/web/worker Docker images와 full Compose | API-004, WEB-003, FND-004 | DONE | non-root images, healthcheck, graceful shutdown; clean machine에서 documented one-command stack; browser binary/version pin 검증 |
 | OPS-002 | metrics/dashboard와 failure alert baseline | OBS-001, PIPE-007, API-003 | DONE | source freshness, stage counts/errors, queue lag, DB/LLM latency/usage가 correlation IDs로 추적; alert test event 확인 |
 | OPS-003 | backup/restore, retention, tombstone runbook | DB-005, PIPE-007, SEC-002 | DONE | 빈 환경 restore drill 성공; source tombstone 후 search 제외; retention dry-run/count와 irreversible step 보호가 문서화됨 |
-| DOC-001 | developer/operator README와 runbook | OPS-001, OPS-002, OPS-003 | BLOCKED | setup, source policy, collect/replay, query, evaluation, rotate secret, backup/restore, known limits가 clean-reader test를 통과 |
+| DOC-001 | developer/operator README와 runbook | OPS-001, OPS-002, OPS-003 | DONE | setup, source policy, collect/replay, query, evaluation, rotate secret, backup/restore, known limits가 clean-reader test를 통과 (2026-09-02) |
 | MVP-001 | end-to-end MVP acceptance | TST-002, EVAL-002, SEC-003, OPS-001, OPS-002, DOC-001, FND-006 | BLOCKED | 승인 source 3개 이상 예약 수집; raw→normalize→dedup→embed→query 흐름; 사용자 예시 4개 결과·출처; 테스트/보안/RAG gate와 freshness/cost 보고서 통과 |
 
 ## 9. Dependency graph
@@ -244,7 +244,7 @@ flowchart TD
 
 ## 10. 현재 상태와 다음 행동
 
-**구현 단계다.** `FND-001`~`FND-005`, `CON-001`, `OBS-001`이 2026-09-01에 완료됐다. 현재 착수 가능한 task는 `DB-001`, `QUE-001`, `TST-001`이며, 후속 task 상태는 §3 표를 따른다.
+**구현·검증 대부분이 완료됐고 MVP acceptance 단계에 있다.** `FND-*`, `CON-001`, `OBS-*`, `DB-001`, `QUE-001`, `TST-001`, `COL-*`, `PIPE-*`, `API-*`, `WEB-*`, `SEC-*`, `DOC-001`은 DONE이다. 남은 미결은 chat/embedding provider 승인(`DEC-007`, ADR-0012 Proposed), embedding adapter(`AI-002`)·RAG(`RAG-*`)·production corpus 평가(`EVAL-002`)이며 `MVP-001`은 BLOCKED다.
 
 ### 확정된 기술 스택
 
@@ -257,7 +257,7 @@ flowchart TD
 | Repository | pnpm workspaces + Turborepo |
 | Database | PostgreSQL + pgvector; Drizzle ORM + Drizzle Kit |
 
-미결정은 LLM·embedding provider(`DEC-007`), hosting과 배포 adapter다.
+미결정은 chat provider 승인(`DEC-007`은 embedding만 검증됨, chat 재승인은 ADR-0012), embedding adapter(`AI-002`), production corpus RAG gate(`EVAL-002`), hosting·배포 adapter다.
 
 ### 구현 순서
 
@@ -267,11 +267,9 @@ flowchart TD
 
 | 항목 | 필요 시점 |
 |---|---|
-| `DISC-002` 자격증명(GitHub PAT, Stack Exchange key, HF token) | `COL-001` |
-| `DEC-007` provider 승인과 지출 승인 | `AI-002` |
+| `DEC-007` chat provider 승인·지출 승인 (embedding은 EXP-003 통과) | `AI-002`, `EVAL-002` |
+| `EXP-002` retrieval 실험 (실제 corpus 필요) | `COL-*` corpus 확보 후 |
 | 라이선스 귀속 설계 | 발췌 표시 기능 출시 |
-
-이 셋은 `FND-*`와 `DB-*` 진행을 막지 않는다.
 
 ### corpus가 필요한 작업
 
@@ -368,6 +366,13 @@ flowchart TD
 - 접근성 및 안전한 렌더링: WCAG 시맨틱 마크업(`role="region"`, `aria-label`, `aria-live="polite"`, `aria-pressed`), 고대비 시각 상태, 안전한 데이터 바인딩(XSS 방지)을 보장한다.
 - 검증: `apps/web` 4개 test file·33개 test 통과(단위 분리 비교, composite score 부재, baseline change, stale/partial coverage 경고), svelte-check 0 errors, ESLint 통과, Prettier 검사 통과 및 Vite 프로덕션 빌드 성공.
 
+### TST-002 완료 증빙 (2026-09-02)
+
+- `apps/web/playwright.config.ts`에 Chromium 전용 UI project, SvelteKit production preview `webServer`, retry 0, 실패 시에만 trace/screenshot 보존을 구성했다.
+- `apps/web/e2e/dashboard.spec.ts`는 결정적 API/fake-model 응답으로 한국어 기본값과 locale persistence, 토픽 결과·빈 상태, 비교 지표 단위 분리, 정상 답변과 외부 citation URL, `insufficient_evidence` abstention을 실제 브라우저에서 검증한다.
+- `.github/workflows/ci.yml`의 Playwright job은 optional upstream contract job이 skipped여도 실행되며 Chromium OS dependency를 설치한 뒤 `pnpm --filter @techpulse/web test:e2e`를 수행한다.
+- 검증: Chromium 단일 worker, retry 0에서 4개 E2E가 모두 통과했고 web unit 33개 및 static gate가 통과했다.
+
 ### OPS-002 완료 증빙 (2026-09-02)
 
 - `@techpulse/observability` 패키지에 메트릭 수집 기본 단위(`Counter`, `Gauge`, `Histogram`), `MetricRegistry`, 대시보드 스냅샷(`createDashboardSnapshot`) 및 장애 알림 임계치 평가 엔진(`evaluateAlerts`, `DEFAULT_ALERT_RULES`, `createAlertStructuredEvent`, `createTestAlertEvent`)을 구현했다.
@@ -422,3 +427,27 @@ flowchart TD
   - `tooling/test-harness/test/ops-config.test.ts`를 구현하여 Dockerfile multi-stage/non-root/SIGTERM/HEALTHCHECK/no-secret 검증, compose.yaml 프로파일/헬스체크/의존순서/graceful shutdown 검증, RUNBOOK.md 및 .env.example 계약 검증 8개 테스트를 작성하고 전체 통과를 확인했다.
   - 실행 환경의 Docker Linux engine 데몬 미가동 상태(`failed to connect to docker API at npipe:////./pipe/dockerDesktopLinuxEngine`)를 확인하였으며, 허위 컨테이너 실행 결과를 생성하지 않고 결정적 계약 검증 및 정적 검증으로 증빙을 확정했다.
   - 검증: `tooling/test-harness` 2개 test file·20개 test 전체 통과, static checks(typecheck, ESLint, Prettier) 통과.
+
+### DOC-001 완료 증빙 (2026-09-02)
+
+- `README.md`에 clean checkout 설치, full Compose, migration, 서비스 URL, static/unit/Playwright 검증 순서를 추가하고 live provider 검증과 deterministic fake 검증을 구분했다.
+- `docs/RUNBOOK.md`에 bounded collect/replay/run inspection, public query smoke, RAG evaluation gate, secret rotation, `pg_dump`/격리 `pg_restore`, retention/tombstone/purge 보호, known limits를 실행 가능한 명령과 함께 문서화했다.
+- `apps/api/src/ops-cli.ts`와 package `ops` script를 추가해 문서화된 운영 명령이 실제 CLI entrypoint를 실행한다.
+- `tooling/test-harness/test/documentation.test.ts`의 clean-reader contract 3개를 포함해 test-harness 23개 테스트가 통과했다.
+
+### EVAL-002 부분 증빙 및 차단 사유 (2026-09-02)
+
+- `packages/rag/src/evaluation.ts`가 43개 고유 observation 완전성을 강제하고 Recall@10, nDCG@10, citation precision, unsupported claim rate, status accuracy, injection safety, p95 latency를 집계한다.
+- `packages/rag/src/evaluate-cli.ts`가 dataset/commit/model/config/executedAt과 failed checks/items를 JSON artifact로 기록하며 gate 실패 시 non-zero로 종료한다.
+- `packages/rag/test/evaluation.test.ts`의 pass/regression/partial-run 계약을 포함해 RAG 26개 테스트가 통과했다.
+- `docs/experiments/exp-003/eval-report.json` provider-proxy baseline: Recall@10 0.9535, nDCG@10 0.9115, citation precision 0.7209, unsupported claim rate 0.4419, status accuracy 0.7209, injection safety 0.4, p95 10.16초. 실패 checks는 citation, unsupported claims, status, security다.
+- 이 artifact는 synthetic corpus provider proxy이므로 production 수집 corpus의 end-to-end gate를 대체하지 않는다. Chat 재결정과 실제 corpus 평가 전까지 EVAL-002는 BLOCKED다.
+### MVP-001 acceptance 관측 (2026-09-02, 실행 stack)
+
+Docker Compose 전체 stack(api/web/worker/postgres/redis, 5 컨테이너 healthy)에서 실제 관측한 결과다. 이후 보안 픽스로 API/worker를 재빌드했으며 워크스페이스 정적 검증과 테스트가 통과했다.
+
+- **예약 수집(3 source)**: 승인 source `github_releases`(itemsPersisted 0, 기존 30건 dedup skip), `github_search`(30 fetch, 27 persist, 3 dup skip), `stack_exchange`(30 persist, 30 stage job 발행) — collection→normalization 큐 발행까지 성공.
+- **파이프라인 진행**: DB 관측 raw_items 170, document_revisions 10(7 searchable/3 pending), chunks 8, embeddings 4(openrouter pplx-embed 1024dim), duplicate_clusters 1. normalization pipeline_events 136(78 success/58 failed) → embedding 단계가 부분적으로만 완료.
+- **query 흐름**: `/api/v1/answers`가 결정적으로 200 `insufficient_evidence`(documentsConsidered 0, citations [])를 반환 — RAG answer quality gate를 충족하는 grounded 답변은 아직 없음.
+- **보안 픽스**: `.dockerignore` 추가(이미지 내 .env 번들링 차단), stack-exchange URL 오류 key 노출 제거, XFF 마지막 홉 신뢰 + ops 레이트 리밋 적용, abuse control env(`API_RATE_LIMIT_*`/`API_MAX_CONCURRENT_ANSWERS`/`API_MAX_DAILY_ANSWER_BUDGET`)를 createApp에 배선, 수집기 런타임에 `createHardenedFetch` 연결.
+- **결론**: MVP-001은 **BLOCKED 유지**. 파이프라인 기계는 실행되지만 승인된 chat provider(DEC-007 GATE)와 production corpus 기반 EVAL-002 release gate가 없어 grounded 사용자 예시 4개와 freshness/cost 보고서 acceptance를 충족하지 못한다. 후속: ADR-0012 승인 → AI-002/PIPE-008/RAG 통합 → 실제 corpus 평가.

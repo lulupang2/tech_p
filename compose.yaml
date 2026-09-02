@@ -121,9 +121,11 @@ services:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL:-postgresql://techpulse_dev_unsafe:unsafe-local-development-only@postgres:5432/techpulse_dev}
       PORT: 3000
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       API_RATE_LIMIT_WINDOW_MS: ${API_RATE_LIMIT_WINDOW_MS:-60000}
       API_RATE_LIMIT_MAX_REQUESTS: ${API_RATE_LIMIT_MAX_REQUESTS:-100}
       API_MAX_CONCURRENT_ANSWERS: ${API_MAX_CONCURRENT_ANSWERS:-10}
+      OPS_API_KEY: ${OPS_API_KEY:-}
       AI_CHAT_BASE_URL: ${OPENAI_BASE_URL:-https://api.runinfra.ai/v1}
       AI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-deepseek-v4-flash}
       AI_CHAT_API_KEY: ${OPENAI_API_KEY:-}

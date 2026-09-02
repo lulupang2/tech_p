@@ -97,9 +97,8 @@ jobs:
     name: Playwright E2E
     needs: [contract]
     runs-on: ubuntu-latest
-    # Unregistered/conditional until UI Playwright E2E suite (TST-002) is implemented.
-    # Avoids dummy/empty passing tests.
-    if: ${{ vars.TECHPULSE_CI_ENABLE_E2E == 'true' }}
+    # TST-002 is implemented. Run even when optional upstream contract/integration jobs are skipped.
+    if: ${{ always() && (needs.contract.result == 'success' || needs.contract.result == 'skipped') }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -116,6 +115,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm --filter @techpulse/web exec playwright install --with-deps chromium
 
       - name: Run Playwright E2E tests
         run: pnpm --filter @techpulse/web run test:e2e

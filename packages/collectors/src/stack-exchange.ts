@@ -8,6 +8,7 @@ import type {
 import { BaseCollector } from './base.js';
 import { SOURCE_POLICIES } from './policies.js';
 import { decodeOpaqueCursor, encodeOpaqueCursor } from './cursor.js';
+import { createHardenedFetch } from './guard.js';
 
 /**
  * Options for configuring the StackExchangeCollector.
@@ -166,13 +167,14 @@ export class StackExchangeCollector extends BaseCollector {
     // 3. Validate URL against policy guard (SSRF & allowed hosts)
     const urlValidation = this.guard.validateUrl(url.toString(), this.policy);
     if (!urlValidation.valid) {
+      const safeUrl = `${url.origin}${url.pathname}`;
       throw new Error(
-        `Security violation: URL '${url.toString()}' rejected by policy guard: ${urlValidation.reason}`,
+        `Security violation: URL '${safeUrl}' rejected by policy guard: ${urlValidation.reason}`,
       );
     }
-
     // 4. Perform injected fetch
-    const fetchFn = this.options.fetchFn ?? globalThis.fetch;
+    const baseFetch = this.options.fetchFn ?? globalThis.fetch;
+    const fetchFn = createHardenedFetch({ guard: this.guard, policy: this.policy, baseFetch });
     let response: Response;
     try {
       response = await fetchFn(url.toString(), {
@@ -345,7 +347,8 @@ export class StackExchangeCollector extends BaseCollector {
       throw new Error(`Security violation: URL rejected: ${urlValidation.reason}`);
     }
 
-    const fetchFn = this.options.fetchFn ?? globalThis.fetch;
+    const baseFetch = this.options.fetchFn ?? globalThis.fetch;
+    const fetchFn = createHardenedFetch({ guard: this.guard, policy: this.policy, baseFetch });
     let response: Response;
     try {
       response = await fetchFn(url.toString(), {

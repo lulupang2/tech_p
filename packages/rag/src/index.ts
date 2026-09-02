@@ -1,4 +1,5 @@
 export * from './golden-set/index.js';
+export * from './evaluation.js';
 export {
   InvalidTimeRangeError,
   ModelProviderError,

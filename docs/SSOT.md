@@ -129,13 +129,13 @@ Backend와 queue 결정에서 파생되는 구현 조건은 다음과 같다. �
 
 ## 5. 아직 확정되지 않은 사항
 
-아래 항목은 이 문서의 결정이 아니다.
+아래 항목은 이 문서의 결정이 아니다. 2026-09-02 기준 EXP-003에서 embedding 후보(`perplexity/pplx-embed-v1-0.6b`, 1024)는 gate를 통과했으나 chat candidate는 gate 실패로 미승인이다(재검증 [ADR-0012](./adr/0012-chat-provider-revalidation.md)). 채택 전까지 chat은 확정값으로 쓰지 않는다.
 
-- LLM·embedding provider와 model
+- chat provider와 model (`embedding`은 검증됨, `chat`은 미승인)
 - source별 수집 주기와 schedule 설정값
 - API·worker hosting, production topology, secret manager, 배포 adapter
 - 사용자 인증, 운영 API 인증, rate limit 수치
-- chunking, embedding dimensions, retrieval 가중치·index
+- chunking, retrieval 가중치·index(embedding dimensions는 대안별로 고정 필요)
 - 데이터·질문·답변 보존 기간
 - 성능·품질 수치의 최종 acceptance threshold
 

@@ -111,10 +111,22 @@ export function sanitizeAuditData(data: Record<string, unknown>): Record<string,
   return result;
 }
 
+export interface CollectionDispatchRequest {
+  readonly collectionRunId: string;
+  readonly sourceKey: string;
+  readonly cursor: string | null;
+  readonly scheduledAt: Date;
+}
+
+export interface CollectionDispatcher {
+  readonly dispatch: (request: CollectionDispatchRequest) => Promise<void>;
+}
+
 export interface OpsRouteOptions {
   readonly opsApiKey?: string | undefined;
   readonly sourceRepository?: SourceRepositoryPort | undefined;
   readonly collectionRunRepository?: CollectionRunRepositoryPort | undefined;
+  readonly collectionDispatcher?: CollectionDispatcher | undefined;
   readonly replayService?:
     { readonly replay: (request: ReplayRequest) => Promise<ReplayResult> } | undefined;
   readonly tombstoneService?: TombstoneServicePort | undefined;
@@ -414,6 +426,30 @@ export function createOpsRoutes(options: OpsRouteOptions = {}) {
               counts: {},
             });
             createdRunId = created.id;
+          }
+
+          if (options.collectionDispatcher && !body.dryRun) {
+            try {
+              await options.collectionDispatcher.dispatch({
+                collectionRunId: createdRunId,
+                sourceKey: body.sourceKey,
+                cursor: body.cursor ?? null,
+                scheduledAt,
+              });
+            } catch {
+              if (options.collectionRunRepository) {
+                await options.collectionRunRepository.update(createdRunId, {
+                  status: 'failed',
+                  endedAt: new Date(),
+                  errorSummary: 'Collection job dispatch failed',
+                });
+              }
+              throw new ApiHttpError({
+                code: 'DEPENDENCY_UNAVAILABLE',
+                status: 503,
+                message: 'Collection queue is unavailable',
+              });
+            }
           }
 
           const auditEvent: OpsAuditEvent = {

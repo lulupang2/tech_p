@@ -1,3 +1,8 @@
+import {
+  COLLECTION_QUEUE_JOB_NAME,
+  createCollectionQueueJobData,
+  type CollectionQueueJobData,
+} from '@techpulse/contracts';
 import { createDatabaseClient, createSearchService } from '@techpulse/database';
 import {
   createOpenAiCompatibleChatPort,
@@ -13,9 +18,12 @@ import {
 import { node } from '@elysiajs/node';
 import { Elysia } from 'elysia';
 import { pathToFileURL } from 'node:url';
+import { Queue } from 'bullmq';
+import { Redis } from 'ioredis';
 
 import { loadApiConfig, type Environment } from './config.js';
 import { createApp, type AppOptions } from './app.js';
+import { ConcurrencyLimiter, DailyBudgetTracker, MemoryRateLimiter } from './abuse-controls.js';
 
 export { createApp, type AppOptions };
 export {
@@ -44,6 +52,38 @@ export function logApiStartup(port: number): StructuredEvent {
 export function start(env: Environment = process.env) {
   const config = loadApiConfig(env);
   const databaseClient = createDatabaseClient(config.databaseUrl);
+  const redis = new Redis(config.redisUrl, { maxRetriesPerRequest: null });
+  const collectionQueue = new Queue<CollectionQueueJobData>('techpulse-collection', {
+    connection: redis,
+  });
+  const collectionDispatcher = {
+    dispatch: async (request: {
+      readonly collectionRunId: string;
+      readonly sourceKey: string;
+      readonly cursor: string | null;
+      readonly scheduledAt: Date;
+    }): Promise<void> => {
+      const windowEnd = new Date(request.scheduledAt.getTime() + 60 * 60 * 1000);
+      const data = createCollectionQueueJobData(
+        {
+          schemaVersion: 1,
+          collectionRunId: request.collectionRunId,
+          sourceKey: request.sourceKey,
+          cursor: request.cursor,
+        },
+        {
+          from: request.scheduledAt.toISOString(),
+          to: windowEnd.toISOString(),
+        },
+      );
+      await collectionQueue.add(COLLECTION_QUEUE_JOB_NAME, data, {
+        jobId: data.naturalKey,
+        attempts: 5,
+        backoff: { type: 'exponential', delay: 1_000 },
+        removeOnComplete: true,
+      });
+    },
+  };
 
   let answerService: AnswerServicePort | undefined;
   if (config.aiChatApiKey) {
@@ -75,7 +115,34 @@ export function start(env: Environment = process.env) {
   const serverApp = createApp({
     databaseClient,
     answerService,
+    collectionDispatcher,
     logger: apiLogger,
+    rateLimiter:
+      config.rateLimitWindowMs !== undefined || config.rateLimitMaxRequests !== undefined
+        ? new MemoryRateLimiter(
+            config.rateLimitWindowMs !== undefined || config.rateLimitMaxRequests !== undefined
+              ? {
+                  ...(config.rateLimitWindowMs !== undefined
+                    ? { windowMs: config.rateLimitWindowMs }
+                    : {}),
+                  ...(config.rateLimitMaxRequests !== undefined
+                    ? { maxRequests: config.rateLimitMaxRequests }
+                    : {}),
+                }
+              : {},
+          )
+        : new MemoryRateLimiter(),
+    ...(config.maxConcurrentAnswers !== undefined
+      ? {
+          concurrencyLimiter: new ConcurrencyLimiter({
+            maxConcurrent: config.maxConcurrentAnswers,
+          }),
+        }
+      : {}),
+    ...(config.maxDailyAnswerBudget !== undefined
+      ? { budgetTracker: new DailyBudgetTracker({ maxDailyQueries: config.maxDailyAnswerBudget }) }
+      : {}),
+    ...(config.opsApiKey ? { opsApiKey: config.opsApiKey } : {}),
     ...(config.corsAllowedOrigins ? { corsAllowedOrigins: config.corsAllowedOrigins } : {}),
   });
   logApiStartup(config.port);

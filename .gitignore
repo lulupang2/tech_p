@@ -1,6 +1,8 @@
 node_modules/
 .svelte-kit/
 .turbo/
+playwright-report/
+test-results/
 .env
 .env.*
 !.env.example

@@ -216,3 +216,120 @@ docker compose --profile persistent down --volumes
 | **Worker fails on startup with `REDIS_URL is required`** | Redis container not running or URL malformed. | Verify `REDIS_URL=redis://localhost:6379` (or `redis://redis:6379` inside Compose network). |
 | **CORS errors in Web UI** | Web origin not listed in API CORS configuration. | Update `CORS_ALLOWED_ORIGINS` to include `http://localhost:5173` or client URL. |
 | **Port conflict on 3000 / 5173 / 5432** | Another process is binding the port on host. | Change `PORT` in `.env` or stop conflicting local service. |
+
+---
+
+## 8. Collection and Replay
+
+운영 변경 명령은 public API와 분리된 operations API를 사용하며 `OPS_API_KEY`가 필요하다. 비밀값을 명령행 인자나 shell history에 남기지 말고 환경 변수 또는 secret manager로 주입한다.
+
+```bash
+# 상태 확인
+pnpm --filter @techpulse/api ops status
+
+# 변경 없이 수집 범위와 권한 확인
+pnpm --filter @techpulse/api ops collect \
+  --source github_releases \
+  --limit 50 \
+  --dry-run
+
+# 실제 bounded 수집
+pnpm --filter @techpulse/api ops collect \
+  --source github_releases \
+  --limit 50 \
+  --idempotency-key collect-github-releases-2026-09-02
+
+# 실패 run의 정규화 단계만 replay
+pnpm --filter @techpulse/api ops replay \
+  --scope stage \
+  --target <raw-or-run-id> \
+  --idempotency-key replay-normalization-<target-id>
+
+# 최근 run과 단일 run 확인
+pnpm --filter @techpulse/api ops runs --limit 20
+pnpm --filter @techpulse/api ops run <run-id>
+```
+
+- `--limit`은 1~500으로 제한한다.
+- mutation은 idempotency key를 재사용해 중복 dispatch를 막는다.
+- disabled source는 먼저 정책·권리 상태를 확인한다. `source enable`은 tombstone과 재색인 영향을 검토한 뒤 실행한다.
+- replay는 기존 raw item, document revision, citation을 덮어쓰지 않는다.
+
+## 9. Query and Evaluation
+
+### 9.1 Public query smoke
+
+```bash
+curl -sS http://127.0.0.1:3000/api/v1/answers \
+  -H 'content-type: application/json' \
+  --data '{
+    "question": "최근 한 달간 Bun과 Node.js의 관심 변화를 비교해줘.",
+    "timezone": "Asia/Seoul",
+    "language": "ko"
+  }'
+```
+
+응답에서 `status`, `resolvedTimeRange`, `coverage.dataFreshThrough`, `citations[].documentRevisionId`, 원 source URL을 확인한다. `insufficient_evidence`는 정상적인 200 응답이며 운영자가 임의 답변으로 대체하지 않는다.
+
+### 9.2 Deterministic and browser gates
+
+```bash
+pnpm run static
+pnpm run test
+pnpm --filter @techpulse/web test:e2e:install
+pnpm --filter @techpulse/web test:e2e
+
+```
+
+RAG evaluation은 `docs/EVAL_GOLDEN_SET.md`의 고정 질문·라벨과 `@techpulse/rag` 평가 명령을 사용하며 결과에 commit, model, config, dataset version을 기록한다.
+
+Playwright UI E2E는 Chromium, retry 0, 결정적 API/fake-model fixture를 사용한다. 실제 provider 평가는 blocking PR suite와 분리하며 `TECHPULSE_EVAL_PAID_LLM=true`인 승인된 수동 실행에서만 수행한다.
+
+## 10. Backup, Restore, Retention, and Tombstone
+
+### 10.1 Backup
+
+공유 production branch가 아닌 승인된 대상과 UTC timestamp가 포함된 파일명을 사용한다.
+
+```bash
+pg_dump \
+  --format=custom \
+  --no-owner \
+  --no-acl \
+  --file signal-archive-<UTC_TIMESTAMP>.dump \
+  \"$DATABASE_URL_DIRECT\"
+```
+
+백업 파일을 repository, CI artifact, 일반 로그에 업로드하지 않는다. 암호화된 전용 저장소에 보관하고 checksum과 보존 만료일을 함께 기록한다.
+
+### 10.2 Restore drill
+
+빈 격리 database를 준비하고 그 연결 문자열만 `RESTORE_DATABASE_URL`에 설정한다. 기존 database 위에 복원하지 않는다.
+
+```bash
+pg_restore \
+  --exit-on-error \
+  --no-owner \
+  --no-acl \
+  --dbname \"$RESTORE_DATABASE_URL\" \
+  signal-archive-<UTC_TIMESTAMP>.dump
+```
+
+복원 후 migration hash, pgvector extension, source/document/revision/chunk 수, citation FK를 확인한다. 검증이 끝나기 전에는 복원 database를 production endpoint로 승격하지 않는다.
+
+### 10.3 Retention and source removal
+
+1. retention 대상 수와 기간을 dry-run으로 확인한다.
+2. 보존 대상 raw/revision/citation이 참조 중인지 확인한다.
+3. source 정책 변경 시 source를 disable하고 검색 제외 tombstone을 먼저 생성한다.
+4. 재색인·citation 영향과 audit event를 확인한다.
+5. irreversible purge는 별도 승인과 백업 확인 뒤 실행한다.
+
+## 11. Known Limits
+
+- GitHub repository attention은 수집 시작 이전 기간을 backfill할 수 없다.
+- 외부 source의 rate limit·지연으로 freshness가 낮아질 수 있으며 이를 0으로 대체하지 않는다.
+- provider credential이 없으면 live chat/embedding 평가를 실행할 수 없다. 결정적 fake 기반 테스트 통과를 live provider 검증으로 해석하지 않는다.
+- PostgreSQL integration test는 `DATABASE_URL`이 없으면 skip된다. skip은 통과 증빙이 아니다.
+- Stack Exchange는 `verbatim_only`이며 허용된 발췌와 귀속 없이 재서술하지 않는다.
+- 자동 provider fallback은 없다. 모델 변경은 명시적 평가와 embedding 재색인을 요구한다.

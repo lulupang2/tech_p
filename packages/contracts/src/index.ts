@@ -1,4 +1,12 @@
 export {
+  COLLECTION_QUEUE_JOB_NAME,
+  COLLECTION_QUEUE_JOB_SCHEMA_VERSION,
+  createCollectionQueueJobData,
+  type CollectionQueueJobData,
+  type CollectionScheduleWindow,
+} from './collection-queue.js';
+
+export {
   AnswerRequestSchema,
   AnswerResponseSchema,
   CitationSchema,

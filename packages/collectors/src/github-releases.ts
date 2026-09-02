@@ -9,6 +9,7 @@ import type {
 import { BaseCollector } from './base.js';
 import { SOURCE_POLICIES } from './policies.js';
 import { decodeOpaqueCursor, encodeOpaqueCursor } from './cursor.js';
+import { createHardenedFetch } from './guard.js';
 
 export interface GitHubReleasesConfig {
   owner: string;
@@ -67,7 +68,8 @@ export class GitHubReleasesCollector extends BaseCollector implements CollectorP
 
   async collect(context: CollectionContext): Promise<CollectionResult> {
     const startedAt = Date.now();
-    const fetchFn = this.customFetch ?? globalThis.fetch;
+    const baseFetch = this.customFetch ?? globalThis.fetch;
+    const fetchFn = createHardenedFetch({ guard: this.guard, policy: this.policy, baseFetch });
     const pat = this.config.pat ?? process.env['GITHUB_PAT'];
     const perPage = this.config.perPage ?? 30;
 

@@ -2,25 +2,52 @@
 
 개발 기술 트렌드 Intelligence 서비스. 여러 개발 데이터 소스를 주기적으로 수집·정규화·임베딩하고, 자연어 질문에 대해 기간과 출처가 명시된 답변을 제공한다.
 
-현재 **MVP 구현과 로컬 검증이 완료된 상태**다. API, web, worker, collector framework, RAG answer flow, 운영 인터페이스, 보안 hardening, Docker stack을 구현했다.
+현재 **기능 구현·로컬 검증은 완료됐지만 MVP acceptance는 미승인 상태**다. API, web, worker, collector framework, RAG answer flow, 운영 인터페이스, 보안 hardening, Docker stack을 구현했다. chat provider 미승인과 production corpus gate 미완료로 운영 출시는 보류한다.
 
 ## 현재 상태
 
 - API 계약·RAG·운영 API·web UI 구현 완료
 - OpenRouter `perplexity/pplx-embed-v1-0.6b` embedding live smoke 확인
 - RunInfra chat provider와 provider-neutral adapter 경계 구현
-- API 51개, collector 152개(+1 skip), web 33개, contracts 22개 테스트 통과
+- API 51개, collector 152개(+1 skip), web unit 33개 테스트 통과
+- Chromium Playwright E2E 4개 통과(locale persistence, topic empty state, comparison/citation, insufficient evidence)
 - production web build 및 browser smoke 통과
 - 보안·백업·복구·보존·tombstone 절차는 [docs/RUNBOOK.md](./docs/RUNBOOK.md)에 정리
 
-운영 배포 전에는 실제 source credential 측정과 seeded PostgreSQL 기반 RAG regression/E2E gate를 수행해야 한다. 이 두 항목은 외부 자격증명과 운영 데이터 준비가 필요한 배포 gate다.
+운영 배포 전에는 승인된 provider 평가 결과와 실제 수집 corpus 기반 RAG release gate를 확인해야 한다. 자격증명 없는 결정적 fake 테스트는 live provider 검증을 대신하지 않는다.
 
 확정된 기본 스택은 TypeScript, Node runtime 위의 Elysia, Redis + BullMQ, SvelteKit, pnpm workspaces, Turborepo, PostgreSQL + pgvector, Drizzle ORM + Drizzle Kit, Playwright, Docker다.
 
-- ADR-0006은 chat/embedding provider 선택을 반영한다. 현재 embedding model과 dimensions는 `.env.example`에 고정돼 있다.
+- ADR-0006의 embedding 선택(`perplexity/pplx-embed-v1-0.6b`, 1024)은 EXP-003에서 검증됐지만 chat은 gate 실패로 미승인이다. 재검증안은 [ADR-0012](./docs/adr/0012-chat-provider-revalidation.md)에 있다. embedding model과 dimensions는 `.env.example`에 고정돼 있다.
 - `experiments/` 아래 코드는 폐기 전제의 spike다. production 경로에 섞지 않는다.
 
 작업 규칙은 [AGENTS.md](./AGENTS.md)에 있다.
+
+## 빠른 시작
+
+```bash
+corepack enable
+corepack prepare pnpm@10.32.1 --activate
+pnpm install --frozen-lockfile
+cp .env.example .env
+docker compose --profile stack up -d --wait
+pnpm --filter @techpulse/database run db:migrate
+```
+
+- Web UI: `http://127.0.0.1:5173`
+- Public API: `http://127.0.0.1:3000`
+- 상태 확인: `http://127.0.0.1:3000/health/ready`
+
+### 검증
+
+```bash
+pnpm run static
+pnpm run test
+pnpm --filter @techpulse/web test:e2e:install
+pnpm --filter @techpulse/web test:e2e
+```
+
+수집·replay·질의·secret rotation·backup/restore 절차와 알려진 제약은 [운영 Runbook](./docs/RUNBOOK.md)을 따른다.
 
 ## 문서 지도
 
@@ -50,8 +77,9 @@
 ## 운영 전제와 제한
 
 - 로컬 전체 stack은 [docs/RUNBOOK.md](./docs/RUNBOOK.md)의 Compose quickstart로 실행한다.
-- `DISC-002`: GitHub, Stack Exchange, Hugging Face credential을 배포 환경에 주입한 뒤 인증 rate 측정을 수행한다.
-- `EVAL-002`/`TST-002`: seeded PostgreSQL과 fake model로 regression 및 Chromium E2E를 실행한다.
+- `DISC-002`: GitHub/Stack Exchange/Hugging Face credential을 로컬 stack에 주입해 3개 승인 source 수집을 검증했다(측정 artifact: `docs/experiments/disc-002/auth-rate-measurement.json`).
+- `TST-002`: seeded PostgreSQL과 fake model로 결정적 API regression 및 Chromium E2E 실행 완료.
+- `EVAL-002`: RAG release gate는 BLOCKED. production 수집 corpus·승인 chat provider 없이 end-to-end gate를 통과하지 못했다(실패 artifact: `docs/experiments/exp-003/eval-report.json`).
 - source rights와 citation provenance는 [docs/SOURCE_RIGHTS.md](./docs/SOURCE_RIGHTS.md), [docs/RAG.md](./docs/RAG.md)에 따른다.
 - provider key, database URL, cookie, raw secret은 저장소와 로그에 기록하지 않는다.
 

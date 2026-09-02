@@ -7,6 +7,7 @@
     "build": "tsc --noEmit",
     "format": "pnpm --dir ../.. exec prettier --check apps/api",
     "lint": "eslint .",
+    "ops": "node --import=tsx/esm src/ops-cli.ts",
     "start": "node --env-file=.env --import=tsx/esm src/index.ts",
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
     "test": "vitest run",
@@ -19,7 +20,9 @@
     "@techpulse/domain": "workspace:*",
     "@techpulse/observability": "workspace:*",
     "@techpulse/rag": "workspace:*",
-    "elysia": "^1.4.0"
+    "bullmq": "^6.3.3",
+    "elysia": "^1.4.0",
+    "ioredis": "^6.0.0"
   },
   "devDependencies": {
     "tsx": "^4.20.5"

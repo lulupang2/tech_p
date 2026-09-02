@@ -230,7 +230,7 @@ live canary와 유료 LLM 평가는 이 blocking pipeline 밖에서 실행하고
 1. **`basic-ci` (`install → static → unit`)**: Branch protection에 등록할 필수 check 이름은 정확히 `CI / install → static → unit`이다. Clean checkout, Node.js 22, pnpm 10.32.1을 사용하고 `pnpm install --frozen-lockfile` → `pnpm run static` → `pnpm run test` 순으로 실행된다.
 2. **`integration` (`integration: Postgres/pgvector`)**: `needs: [basic-ci]`. 실제 PostgreSQL+pgvector(`@techpulse/database`) integration suite를 실행한다. 격리된 Neon branch/database의 `DATABASE_URL` secret 또는 `TECHPULSE_CI_ENABLE_INTEGRATION` 설정 시 활성화된다. 자격증명이 없는 기본 CI 환경에서는 실패를 성공으로 위장하지 않고 건너뜀(skip) 처리된다.
 3. **`contract` (`API contract`)**: `needs: [integration]`. `@techpulse/contracts` 및 API OpenAPI/runtime contract suite를 검증한다. `API-001`~`API-004` 완료 전까지는 미등록/조건부(`TECHPULSE_CI_ENABLE_CONTRACT`) 상태로 유지되며, 더미 빈 통과 스텝을 두지 않는다.
-4. **`e2e` (`Playwright E2E`)**: `needs: [contract]`. `@techpulse/web` Playwright SvelteKit E2E suite를 검증한다. `TST-002` 완료 전까지는 미등록/조건부(`TECHPULSE_CI_ENABLE_E2E`) 상태로 유지된다.
+4. **`e2e` (`Playwright E2E`)**: `needs: [contract]`. `TST-002` 완료에 따라 optional contract/integration job이 `skipped`여도 `always()` 조건으로 Chromium UI smoke를 실행한다. SvelteKit production preview와 결정적 API/fake-model fixture를 사용하며 `pnpm --filter @techpulse/web test:e2e`가 locale persistence, topic empty state, summary/comparison, no-data, citation 흐름을 검증한다.
 5. **`security` (`security scans`)**: `needs: [e2e]`. 의존성 보안 취약점 및 정적 보안 검사를 수행한다. `SEC-001`~`SEC-003` 완료 전까지는 미등록/조건부(`TECHPULSE_CI_ENABLE_SECURITY`) 상태로 유지된다.
 
 ### 11.2 Non-blocking 파이프라인
@@ -240,7 +240,7 @@ live canary와 유료 LLM 평가는 이 blocking pipeline 밖에서 실행하고
 
 ### 11.3 미구현 suite 처리 원칙
 
-아직 구현되지 않은 suite는 항상 통과하는 빈 더미 단계(`echo "pass"` 등)로 만들지 않고, 조건부 미등록(`if` guard)으로 남겨 둔 뒤 해당 task(`API-004`, `TST-002`, `SEC-003`, `EVAL-002`) 구현 완료 시 실제 실행 명령으로 등록한다.
+아직 구현되지 않은 suite는 항상 통과하는 빈 더미 단계(`echo "pass"` 등)로 만들지 않고 조건부 미등록(`if` guard)으로 유지한다. `TST-002`는 실제 Playwright suite와 CI 명령으로 활성화됐으며, 남은 조건부 suite는 해당 task 완료 시 같은 방식으로 실제 명령을 등록한다.
 ## 12. 완료 정의
 
 각 TASK는 다음을 만족해야 완료다.

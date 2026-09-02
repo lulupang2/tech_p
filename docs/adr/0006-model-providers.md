@@ -3,6 +3,8 @@
 - 상태: Accepted (DEC-007)
 - 작성일: 2026-09-01
 - 결정: RunInfra OpenAI-compatible chat model 및 OpenRouter embedding model (`perplexity/pplx-embed-v1-0.6b`, 1024 dimensions)
+
+> 2026-09-02 검증 주의: 뒤늦게 실행한 EXP-003에서 embedding 후보는 gate를 통과했지만 두 chat 후보는 citation·security gate를 통과하지 못했다. 기존 결정을 조용히 운영 적용하지 않으며, chat 재결정안은 [ADR-0012](./0012-chat-provider-revalidation.md)에서 Proposed 상태로 검토한다.
 ## Context
 
 질의 구조화·답변 생성용 chat model과 document/query embedding model이 필요하다. 비용, 한국어, structured output, latency, 데이터 처리 조건이 provider마다 다르다.

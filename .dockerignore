@@ -1,0 +1,15 @@
+**/.env
+**/.env.*
+!.env.example
+**/node_modules
+**/dist
+**/.git
+**/.svn
+**/.hg
+**/*.log
+**/coverage
+**/test-results
+**/playwright-report
+**/.turbo
+**/.svelte-kit
+.docker
