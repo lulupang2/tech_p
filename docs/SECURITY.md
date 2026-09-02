@@ -87,6 +87,8 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 ## 6. API 보안
 
 - production은 TLS를 강제하고 trusted proxy 설정을 명시한다.
+- production 배포는 [ADR-0012](./adr/0012-production-deployment.md)의 GitHub `production` Environment 승인 뒤에만 실행한다. GHCR 이미지는 commit SHA로 고정하고, SSH는 저장소에 커밋하지 않은 private key와 pinned `PRODUCTION_KNOWN_HOSTS`를 사용한다.
+- Caddy는 `signal.jisung.lol`에서 TLS를 종료하며 `/api/*`와 `/health/*`만 API로 전달하고 나머지는 web으로 전달한다. DNS·인증서·서버 변경은 이 저장소나 workflow가 수행하지 않는다.
 - CORS는 실제 web origin allowlist만 허용한다.
 - public answer API는 인증이 없더라도 rate limit과 abuse monitoring을 적용한다.
 - operations endpoint는 public routing에서 분리하는 것을 우선 추천한다.
@@ -178,11 +180,17 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 - backup/restore 및 credential rotation 절차 문서화
 - raw/query retention job의 dry-run과 삭제 검증
 
-## 12. 미결정 사항
+## 12. 운영 배포 통제
+
+- 운영 서버의 `/opt/signal-archive/.env`는 서버에서만 관리한다. `DATABASE_URL`은 runtime pooled URL, `DATABASE_URL_DIRECT`는 migration direct URL이며 둘 다 `sslmode=require`를 사용한다.
+- 배포는 migration을 먼저 실행하고 Compose healthcheck와 `https://signal.jisung.lol/health/live`를 확인한다. 실패 시 마지막 성공 SHA로 application image를 되돌리며 forward-only migration 자체는 되돌리지 않는다.
+- 운영자가 확인해야 할 사전조건은 DNS가 이 서버를 가리키는지, TCP 80/443이 열려 있는지, Caddy가 인증서를 발급·갱신할 수 있는지다.
+
+## 13. 미결정 사항
 
 - 공개 데모 인증과 quota 식별자
 - ops interface를 HTTP/CLI 중 어디에 둘지
-- secret manager와 production hosting
+- secret manager의 구체 제품 및 서버 hardening 세부값
 - 사용자 질문·답변 보존 여부
 - provider 데이터 처리 조건
 - 라이선스 귀속을 UI·API에서 표시하는 방식

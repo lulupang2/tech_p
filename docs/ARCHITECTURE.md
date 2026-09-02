@@ -93,7 +93,7 @@ sequenceDiagram
 ```
 
 ## 5. 권장 배포 토폴로지
-MVP 로컬 환경은 Docker Compose에서 `web`, `api`, `worker`, `postgres`, `redis`를 분리한다. 공유·운영 환경의 PostgreSQL provider는 Neon Serverless Postgres다([ADR-0011](./adr/0011-neon-serverless-postgresql.md)). API와 worker는 동일한 도메인 패키지를 재사용하되 프로세스는 분리하며, API·worker hosting과 전체 production topology는 별도 결정으로 남긴다.
+MVP 로컬 환경은 Docker Compose에서 `web`, `api`, `worker`, `postgres`, `redis`를 분리한다. 공유·운영 환경의 PostgreSQL provider는 Neon Serverless Postgres다([ADR-0011](./adr/0011-neon-serverless-postgresql.md)). production은 [ADR-0012](./adr/0012-production-deployment.md)에 따라 별도 `compose.production.yaml`에서 GHCR의 commit SHA 이미지를 사용한다. Caddy가 `signal.jisung.lol`의 TLS를 종료하고 `/api/*`, `/health/*`를 API로, 나머지를 web으로 reverse proxy한다.
 
 ## 6. 기술 선택 상태
 
@@ -105,6 +105,7 @@ MVP 로컬 환경은 Docker Compose에서 `web`, `api`, `worker`, `postgres`, `r
 | AI workflow | LangChain.js, LangGraph.js | LangGraph.js deterministic workflow | **Accepted** — [ADR-0002](./adr/0002-ai-orchestration.md) |
 | Repository and orchestration | pnpm workspaces만 사용, npm workspaces, Nx | pnpm workspaces + Turborepo | **Accepted** — [ADR-0010](./adr/0010-turborepo-monorepo.md); [ADR-0007](./adr/0007-repository-layout.md)는 Superseded |
 | Database access, migrations, and hosting | Drizzle ORM + Drizzle Kit, Prisma + Prisma Migrate, Kysely + 수동 SQL; self-hosted PostgreSQL, Neon | Drizzle ORM + Drizzle Kit, 검토·커밋된 forward-only SQL migration, Neon Serverless Postgres. runtime pooled/WebSocket transaction과 migration direct endpoint를 분리 | **Accepted** — [ADR-0009](./adr/0009-drizzle-orm-migrations.md), [ADR-0011](./adr/0011-neon-serverless-postgresql.md) |
+| Production deployment | Compose + GHCR + SSH, managed container platform, host-local build | Docker Compose + GHCR + SSH, GitHub production approval, Caddy TLS/reverse proxy, SHA image rollback | **Accepted** — [ADR-0012](./adr/0012-production-deployment.md) |
 | LLM/Embedding | 복수 상용 API, 로컬 모델 | provider-neutral adapter 후 실험으로 선정 | Proposed — [ADR-0006](./adr/0006-model-providers.md) |
 
 `작업 전달 계층`은 Redis + BullMQ로 확정됐다. §2의 다이어그램에서 그 계층이 이에 해당한다.
