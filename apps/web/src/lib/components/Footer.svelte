@@ -3,84 +3,52 @@
 </script>
 
 <footer class="app-footer">
-  <div class="footer-container">
-    <div class="footer-col">
-      <h3 class="footer-heading">TechPulse Intelligence</h3>
-      <p class="footer-text">
-        Developer Technology Trend Intelligence portfolio project. Synthesizing insights strictly
-        backed by verifiable public technical sources.
-      </p>
-    </div>
-
-    <div class="footer-col">
-      <h3 class="footer-heading">Contract &amp; Boundaries</h3>
-      <p class="footer-text">
-        Schema Contract Version: <code>v{CONTRACT_VERSION}</code>
-      </p>
-      <p class="footer-text">
-        Web frontend strictly consumes <code>@techpulse/contracts</code> without direct DB/provider coupling.
-      </p>
-    </div>
-
-    <div class="footer-col">
-      <h3 class="footer-heading">Source Rights &amp; Attribution</h3>
-      <p class="footer-text">
-        All ingested data respects upstream licenses (CC BY-SA, MIT, Apache-2.0, Open Access) with
-        mandatory attribution. Personal data is strictly stripped prior to persistence.
-      </p>
-    </div>
+  <div>
+    <strong>TechPulse</strong>
+    <p>검증 가능한 공개 기술 출처를 바탕으로 변화를 읽습니다.</p>
   </div>
-
-  <div class="footer-bottom">
-    <p>&copy; 2026 TechPulse. Built with SvelteKit &amp; Elysia on Node.</p>
+  <div class="footer-meta">
+    <span>계약 버전 v{CONTRACT_VERSION}</span><span>출처 추적 가능</span><span>UTC 기준</span>
   </div>
 </footer>
 
 <style>
   .app-footer {
-    background: #090d16;
-    border-top: 1px solid #1e293b;
-    color: #94a3b8;
-    padding: 32px 24px 20px;
-    margin-top: auto;
-  }
-
-  .footer-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 24px;
+    padding: 28px 6px 0;
+    color: #7a8781;
   }
-
-  .footer-heading {
-    margin: 0 0 8px 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #f8fafc;
+  .app-footer strong {
+    font-family: 'DM Sans', sans-serif;
+    color: #163b30;
   }
-
-  .footer-text {
-    margin: 0 0 6px 0;
-    font-size: 12px;
-    line-height: 1.5;
-    color: #94a3b8;
-  }
-
-  .footer-text code {
-    background: #1e293b;
-    color: #38bdf8;
-    padding: 2px 6px;
-    border-radius: 4px;
-  }
-
-  .footer-bottom {
-    max-width: 1200px;
-    margin: 24px auto 0;
-    padding-top: 16px;
-    border-top: 1px solid #1e293b;
+  .app-footer p {
     font-size: 11px;
-    color: #64748b;
-    text-align: center;
+    margin: 3px 0 0;
+  }
+  .footer-meta {
+    display: flex;
+    gap: 18px;
+    font-size: 10px;
+  }
+  .footer-meta span {
+    position: relative;
+  }
+  .footer-meta span + span:before {
+    content: '·';
+    position: absolute;
+    left: -11px;
+  }
+  @media (max-width: 650px) {
+    .app-footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .footer-meta {
+      flex-wrap: wrap;
+    }
   }
 </style>

@@ -20,7 +20,7 @@
   let selectedStatusFilter = $state<StatusFilter>('all');
 
   function formatUtcDateTime(isoString: string | null | undefined): string {
-    if (!isoString) return 'None / Not collected';
+    if (!isoString) return '수집 기록 없음';
     try {
       const d = new Date(isoString);
       if (Number.isNaN(d.getTime())) return isoString;
@@ -105,36 +105,34 @@
 <section class="sources-panel" aria-labelledby="sources-heading" id="panel-sources">
   <div class="panel-header">
     <div>
-      <h2 id="sources-heading" class="panel-title">Approved Data Sources</h2>
-      <p class="panel-description">
-        Catalog of verified technical data sources, rights profiles, and collection freshness.
-      </p>
+      <h2 id="sources-heading" class="panel-title">검증된 데이터 소스</h2>
+      <p class="panel-description">수집 중인 기술 데이터의 권리 정책과 최신 상태를 확인합니다.</p>
     </div>
     <div class="filter-box" role="search">
-      <label for="source-filter" class="visually-hidden">Filter data sources</label>
+      <label for="source-filter" class="visually-hidden">데이터 소스 필터</label>
       <input
         id="source-filter"
         type="search"
-        placeholder="Filter sources (e.g. github, npm, arxiv)..."
+        placeholder="소스 검색 — GitHub, npm, arXiv"
         bind:value={filterTerm}
         class="filter-input"
-        aria-label="Filter data sources"
+        aria-label="데이터 소스 필터"
       />
     </div>
   </div>
 
   <!-- Freshness and Health Summary Bar -->
-  <div class="freshness-overview-bar" aria-label="Source Ingestion Freshness &amp; Health Overview">
+  <div class="freshness-overview-bar" aria-label="소스 수집 최신성 및 상태 요약">
     <button
       type="button"
       class="overview-filter-btn total"
       class:active={selectedStatusFilter === 'all'}
       onclick={() => (selectedStatusFilter = 'all')}
-      aria-label={`Show all ${statusCounts.total} sources`}
       aria-pressed={selectedStatusFilter === 'all'}
     >
-      <span class="overview-num">{statusCounts.total}</span>
-      <span class="overview-label">Total Sources</span>
+      <span class="overview-num">{statusCounts.total}</span><span class="overview-label"
+        >전체 소스</span
+      >
     </button>
     <button
       type="button"
@@ -142,22 +140,22 @@
       class:active={selectedStatusFilter === 'healthy'}
       onclick={() =>
         (selectedStatusFilter = selectedStatusFilter === 'healthy' ? 'all' : 'healthy')}
-      aria-label={`Filter to ${statusCounts.healthy} healthy sources`}
       aria-pressed={selectedStatusFilter === 'healthy'}
     >
-      <span class="overview-num">{statusCounts.healthy}</span>
-      <span class="overview-label">Healthy</span>
+      <span class="overview-num">{statusCounts.healthy}</span><span class="overview-label"
+        >정상</span
+      >
     </button>
     <button
       type="button"
       class="overview-filter-btn stale"
       class:active={selectedStatusFilter === 'stale'}
       onclick={() => (selectedStatusFilter = selectedStatusFilter === 'stale' ? 'all' : 'stale')}
-      aria-label={`Filter to ${statusCounts.stale} stale sources`}
       aria-pressed={selectedStatusFilter === 'stale'}
     >
-      <span class="overview-num">{statusCounts.stale}</span>
-      <span class="overview-label">Stale</span>
+      <span class="overview-num">{statusCounts.stale}</span><span class="overview-label"
+        >갱신 지연</span
+      >
     </button>
     <button
       type="button"
@@ -165,11 +163,11 @@
       class:active={selectedStatusFilter === 'degraded'}
       onclick={() =>
         (selectedStatusFilter = selectedStatusFilter === 'degraded' ? 'all' : 'degraded')}
-      aria-label={`Filter to ${statusCounts.degraded} degraded sources`}
       aria-pressed={selectedStatusFilter === 'degraded'}
     >
-      <span class="overview-num">{statusCounts.degraded}</span>
-      <span class="overview-label">Degraded</span>
+      <span class="overview-num">{statusCounts.degraded}</span><span class="overview-label"
+        >성능 저하</span
+      >
     </button>
     <button
       type="button"
@@ -177,30 +175,30 @@
       class:active={selectedStatusFilter === 'disabled'}
       onclick={() =>
         (selectedStatusFilter = selectedStatusFilter === 'disabled' ? 'all' : 'disabled')}
-      aria-label={`Filter to ${statusCounts.disabled} disabled sources`}
       aria-pressed={selectedStatusFilter === 'disabled'}
     >
-      <span class="overview-num">{statusCounts.disabled}</span>
-      <span class="overview-label">Disabled</span>
+      <span class="overview-num">{statusCounts.disabled}</span><span class="overview-label"
+        >비활성</span
+      >
     </button>
   </div>
   {#if loading}
     <div class="state-container loading-state" role="status" aria-busy="true" aria-live="polite">
       <div class="spinner" aria-hidden="true"></div>
-      <span>Loading approved data source catalog...</span>
+      <span>데이터 소스를 불러오는 중입니다.</span>
     </div>
   {:else if errorMessage}
     <div class="state-container error-state" role="alert" aria-live="assertive">
       <div class="error-badge" aria-hidden="true">!</div>
       <div class="error-content">
-        <strong>Error Loading Sources</strong>
+        <strong>소스를 불러오지 못했습니다</strong>
         <p>{errorMessage}</p>
-        <button type="button" class="retry-btn" onclick={loadSources}>Retry</button>
+        <button type="button" class="retry-btn" onclick={loadSources}>다시 시도</button>
       </div>
     </div>
   {:else if filteredSources.length === 0}
-    <div class="state-container empty-state" role="region" aria-label="No data sources found">
-      <p>No data sources match the filter <strong>"{filterTerm}"</strong>.</p>
+    <div class="state-container empty-state" role="region" aria-label="데이터 소스 없음">
+      <p><strong>"{filterTerm}"</strong>와 일치하는 데이터 소스가 없습니다.</p>
     </div>
   {:else}
     <div class="source-grid" role="list">
@@ -254,30 +252,30 @@
             {/if}
 
             <div class="info-row">
-              <span class="info-label">Kind:</span>
+              <span class="info-label">유형</span>
               <span class="info-value">{source.kind}</span>
             </div>
             <div class="info-row">
-              <span class="info-label">Fresh Through:</span>
+              <span class="info-label">최신 데이터</span>
               <span class="info-value">
                 {#if source.freshThrough}
                   <time datetime={source.freshThrough}
                     >{formatUtcDateTime(source.freshThrough)}</time
                   >
                 {:else}
-                  <span class="muted">Not collected yet</span>
+                  <span class="muted">아직 수집되지 않음</span>
                 {/if}
               </span>
             </div>
             <div class="info-row">
-              <span class="info-label">Last Successful:</span>
+              <span class="info-label">최근 성공</span>
               <span class="info-value">
                 {#if source.lastSuccessfulCollectionAt}
                   <time datetime={source.lastSuccessfulCollectionAt}
                     >{formatUtcDateTime(source.lastSuccessfulCollectionAt)}</time
                   >
                 {:else}
-                  <span class="muted">None</span>
+                  <span class="muted">기록 없음</span>
                 {/if}
               </span>
             </div>
@@ -301,7 +299,7 @@
               aria-expanded={selectedSourceKey === source.key}
               aria-controls={`details-${source.key}`}
             >
-              {selectedSourceKey === source.key ? 'Hide Details' : 'View Details'}
+              {selectedSourceKey === source.key ? '상세 닫기' : '상세 보기'}
             </button>
           </div>
 

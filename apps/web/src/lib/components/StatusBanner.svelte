@@ -58,10 +58,8 @@
 <section class="status-panel" aria-labelledby="status-heading" id="panel-status">
   <div class="panel-header">
     <div>
-      <h2 id="status-heading" class="panel-title">System Health &amp; Readiness</h2>
-      <p class="panel-description">
-        Real-time API live loop and Neon PostgreSQL dependency readiness check.
-      </p>
+      <h2 id="status-heading" class="panel-title">시스템 상태와 준비 여부</h2>
+      <p class="panel-description">API 응답과 PostgreSQL 의존성의 실시간 준비 상태를 확인합니다.</p>
     </div>
     <button
       type="button"

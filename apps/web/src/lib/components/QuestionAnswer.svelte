@@ -262,10 +262,9 @@
 <section class="qa-panel" aria-labelledby="qa-heading">
   <div class="panel-header">
     <div>
-      <h2 id="qa-heading" class="panel-title">Natural-Language Q&amp;A Engine</h2>
+      <h2 id="qa-heading" class="panel-title">근거 기반 AI 질문</h2>
       <p class="panel-description">
-        Ask questions about developer technologies, compare adoption trends, and inspect
-        evidence-backed citations from indexed sources.
+        개발 기술의 변화와 비교 흐름을 질문하고, 색인된 출처와 인용 근거를 함께 확인하세요.
       </p>
     </div>
     <span class="status-badge live" aria-label="Feature Status: Operational">
@@ -278,7 +277,7 @@
     <div class="form-group">
       <div class="label-row">
         <label for="qa-question-input" class="form-label">
-          Question / Query <span class="required" aria-hidden="true">*</span>
+          질문 <span class="required" aria-hidden="true">*</span>
         </label>
         <span
           class="char-counter"
@@ -292,7 +291,7 @@
       <textarea
         id="qa-question-input"
         class="form-textarea"
-        placeholder="e.g. 최근 한 달간 Bun과 Node.js에 대한 관심 변화를 비교해줘."
+        placeholder="예: 최근 한 달간 Bun과 Node.js의 관심 변화를 비교해줘."
         bind:value={question}
         rows={3}
         maxlength={MAX_QUESTION_LENGTH}
@@ -301,7 +300,7 @@
         required
       ></textarea>
       <p id="qa-question-help" class="form-help">
-        Enter a natural language query in Korean or English. Questions must be 1–2,000 characters.
+        한국어 또는 영어로 2,000자 이내의 질문을 입력하세요.
       </p>
     </div>
 
@@ -434,7 +433,7 @@
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <span>Ask Question</span>
+          <span>근거와 함께 답변받기</span>
         {/if}
       </button>
 

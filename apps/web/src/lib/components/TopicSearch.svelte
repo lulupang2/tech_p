@@ -78,10 +78,8 @@
 <section class="topics-panel" aria-labelledby="topics-heading" id="panel-topics">
   <div class="panel-header">
     <div>
-      <h2 id="topics-heading" class="panel-title">Canonical Topic Taxonomy</h2>
-      <p class="panel-description">
-        Curated topic catalog with deterministic alias mapping and hierarchical domains.
-      </p>
+      <h2 id="topics-heading" class="panel-title">기술 토픽 카탈로그</h2>
+      <p class="panel-description">결정적 별칭과 계층 구조로 정리된 표준 기술 토픽을 탐색합니다.</p>
     </div>
 
     <form class="search-form" role="search" onsubmit={handleSearch}>
