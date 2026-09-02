@@ -145,7 +145,11 @@ describe('OPS-004 production deployment configuration', () => {
   it('defines SHA-tagged GHCR images and TLS reverse proxy routing', () => {
     const compose = readRootFile('compose.production.yaml');
     const caddy = readRootFile('Caddyfile');
+    const normalizedCompose = compose.replace(/\r\n/gu, '\n');
+    const apiService = normalizedCompose.match(/^( {2})api:\n.*?(?=^ {2}worker:)/ms)?.[0];
 
+    expect(apiService).toBeDefined();
+    expect(apiService).toContain('REDIS_URL: redis://redis:6379');
     expect(compose).toContain('image: ${IMAGE_PREFIX}/api:${IMAGE_TAG}');
     expect(compose).toContain('image: ${IMAGE_PREFIX}/web:${IMAGE_TAG}');
     expect(compose).toContain('image: ${IMAGE_PREFIX}/worker:${IMAGE_TAG}');
