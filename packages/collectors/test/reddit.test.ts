@@ -6,7 +6,7 @@ import {
   RedditSecurityError,
   RedditLoginOrCaptchaDetectedError,
   RedditRobotsDisallowedError,
-  type PlaywrightBrowser,
+  RedditLoginRedirectError,
   type PlaywrightBrowserContext,
   type PlaywrightPage,
   type PlaywrightLocator,
@@ -355,19 +355,26 @@ class FakePage implements PlaywrightPage {
   private htmlContent: string = '';
   private popupListeners: Array<(popup: PlaywrightPage) => void> = [];
   private downloadListeners: Array<(download: unknown) => void> = [];
+  private redirectOnFirstGoto?: string | undefined;
+  private gotoCount = 0;
 
-  constructor(htmlFixture: string, initialUrl?: string) {
+  constructor(htmlFixture: string, initialUrl?: string, redirectOnFirstGoto?: string) {
     this.htmlContent = htmlFixture;
     this.domElements = parseSimpleHtml(htmlFixture);
     if (initialUrl) this.currentUrl = initialUrl;
+    this.redirectOnFirstGoto = redirectOnFirstGoto;
   }
-
   url(): string {
     return this.currentUrl;
   }
 
   async goto(url: string): Promise<PlaywrightResponse | null> {
-    this.currentUrl = url;
+    this.gotoCount++;
+    if (this.redirectOnFirstGoto && this.gotoCount === 1) {
+      this.currentUrl = this.redirectOnFirstGoto;
+    } else {
+      this.currentUrl = url;
+    }
     return {
       status: () => 200,
       url: () => this.currentUrl,
@@ -457,8 +464,12 @@ class FakeBrowser implements PlaywrightBrowser {
   async close(): Promise<void> {}
 }
 
-function createFakeEnvironment(html: string, url = 'https://www.reddit.com/r/typescript/') {
-  const fakePage = new FakePage(html, url);
+function createFakeEnvironment(
+  html: string,
+  url = 'https://www.reddit.com/r/typescript/',
+  redirectOnFirstGoto?: string,
+) {
+  const fakePage = new FakePage(html, url, redirectOnFirstGoto);
   const fakeContext = new FakeBrowserContext(fakePage);
   const fakeBrowser = new FakeBrowser(fakeContext);
   return { fakePage, fakeContext, fakeBrowser };
@@ -706,6 +717,140 @@ describe('Reddit Playwright ArticleCollector (COL-005 Pattern)', () => {
       assert.equal(result.items.length, 1);
       assert.equal(result.items[0]!.externalId, 'reddit-post-abc123');
       assert.ok(result.nextCursor);
+    });
+  });
+
+  describe('Bypass & Gateway Redirects (antigravity strategies)', () => {
+    test('handles reason=lor2 redirect by falling back to old.reddit.com and continues collection', async () => {
+      const lor2Url =
+        'https://www.reddit.com/login/?dest=https%3A%2F%2Fwww.reddit.com%2Fr%2Ftypescript%2F&reason=lor2';
+      const { fakeBrowser } = createFakeEnvironment(
+        REDDIT_PAGE_HTML_FIXTURE,
+        'https://www.reddit.com/r/typescript/',
+        lor2Url,
+      );
+
+      const collector = new RedditCollector({
+        browser: fakeBrowser,
+        config: {
+          subreddit: 'typescript',
+          bypass: {
+            fallbackToOldRedditOnLor2: true,
+            allowRobotsBypass: true,
+          },
+        },
+      });
+
+      const result = await collector.collect({
+        runId: 'run-lor2-fallback',
+        sourceKey: 'reddit',
+        cursor: null,
+      });
+
+      assert.equal(result.items.length, 2);
+      const firstItem = result.items[0]!;
+      const bypassMeta = (firstItem.metadata?.['bypass'] as Record<string, unknown>) ?? {};
+      assert.equal(bypassMeta['lor2RedirectHandled'], true);
+      assert.equal(bypassMeta['usedUrl'], 'https://old.reddit.com/r/typescript/');
+    });
+
+    test('throws RedditLoginRedirectError when reason=lor2 redirect occurs and fallback is disabled', async () => {
+      const lor2Url =
+        'https://www.reddit.com/login/?dest=https%3A%2F%2Fwww.reddit.com%2Fr%2Ftypescript%2F&reason=lor2';
+      const { fakeBrowser } = createFakeEnvironment(
+        REDDIT_PAGE_HTML_FIXTURE,
+        'https://www.reddit.com/r/typescript/',
+        lor2Url,
+      );
+
+      const collector = new RedditCollector({
+        browser: fakeBrowser,
+        config: {
+          subreddit: 'typescript',
+          bypass: {
+            fallbackToOldRedditOnLor2: false,
+          },
+        },
+      });
+
+      await assert.rejects(
+        collector.collect({
+          runId: 'run-lor2-error',
+          sourceKey: 'reddit',
+          cursor: null,
+        }),
+        (err: unknown) => {
+          assert.ok(err instanceof RedditLoginRedirectError);
+          assert.equal(err.reason, 'lor2');
+          return true;
+        },
+      );
+    });
+
+    test('catches REDDIT_ROBOTS_DISALLOWED and continues collection when allowRobotsBypass is enabled', async () => {
+      const { fakeBrowser } = createFakeEnvironment(REDDIT_PAGE_HTML_FIXTURE);
+
+      const collector = new RedditCollector({
+        browser: fakeBrowser,
+        config: {
+          bypass: {
+            allowRobotsBypass: true,
+          },
+        },
+      });
+
+      const result = await collector.collect({
+        runId: 'run-robots-bypass',
+        sourceKey: 'reddit',
+        cursor: null,
+      });
+
+      assert.equal(result.items.length, 2);
+      const firstItem = result.items[0]!;
+      const bypassMeta = (firstItem.metadata?.['bypass'] as Record<string, unknown>) ?? {};
+      assert.equal(bypassMeta['robotsDisallowedBypassed'], false); // no error occurred
+    });
+
+    test('throws RedditRobotsDisallowedError when allowRobotsBypass is disabled', async () => {
+      const { fakeBrowser } = createFakeEnvironment(REDDIT_PAGE_HTML_FIXTURE);
+
+      const collector = new RedditCollector({
+        browser: fakeBrowser,
+        config: {
+          bypass: {
+            allowRobotsBypass: false,
+          },
+        },
+      });
+
+      await assert.rejects(
+        collector.collect({
+          runId: 'run-robots-error',
+          sourceKey: 'reddit',
+          cursor: null,
+        }),
+        RedditRobotsDisallowedError,
+      );
+    });
+
+    test('merges custom bypass headers (user-agent, referer, cookie, accept-language)', () => {
+      const collector = new RedditCollector({
+        config: {
+          bypass: {
+            userAgent: 'CustomUA/1.0',
+            referer: 'https://duckduckgo.com/',
+            cookie: 'session_token=secret_123',
+            acceptLanguage: 'ko-KR,ko;q=0.9',
+          },
+        },
+      });
+
+      const headers = collector.getEffectiveBypassHeaders();
+      assert.equal(headers['user-agent'], 'CustomUA/1.0');
+      assert.equal(headers['referer'], 'https://duckduckgo.com/');
+      assert.equal(headers['cookie'], 'session_token=secret_123');
+      assert.equal(headers['accept-language'], 'ko-KR,ko;q=0.9');
+      assert.equal(headers['sec-ch-ua-platform'], '"Windows"');
     });
   });
 });

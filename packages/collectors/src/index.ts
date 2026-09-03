@@ -160,11 +160,14 @@ export {
 } from './huggingface.js';
 export {
   RedditCollector,
-  RedditRobotsDisallowedError,
   REDDIT_LICENSE,
+  DEFAULT_REDDIT_BYPASS_HEADERS,
   RedditCollectorError,
   RedditSecurityError,
+  RedditRobotsDisallowedError,
+  RedditLoginRedirectError,
   RedditLoginOrCaptchaDetectedError,
+  type RedditBypassConfig,
   type RedditCollectorConfig,
   type RedditCollectorOptions,
   type DiscoveredRedditPost,

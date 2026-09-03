@@ -118,10 +118,10 @@
   );
 
   const sampleQuestions = [
-    '최근 한 달간 Bun과 Node.js에 대한 관심 변화를 비교해줘.',
+    '최근 Bun과 Node.js의 릴리스 동향과 생태계 변화를 요약해줘.',
     'Rust 언어 커뮤니티와 생태계의 최근 릴리스 동향을 요약해줘.',
-    'PostgreSQL 데이터베이스 관련 최근 주요 이슈와 토론 요약을 알려줘.',
-    '최근 인공지능 머신러닝 오픈소스 모델과 데이터셋 등록 추세는 어때?',
+    'React 프레임워크와 생태계의 최근 릴리스 및 업데이트 동향을 요약해줘.',
+    'TypeScript 및 Playwright 생태계의 최신 버전 업데이트와 주요 변경점을 알려줘.',
   ];
 
   function selectSampleQuestion(sample: string) {

@@ -28,11 +28,36 @@ export const REDDIT_LICENSE = {
   attribution: 'Content collected from Reddit subject to Reddit User Agreement terms.',
 } as const;
 
+export const DEFAULT_REDDIT_BYPASS_HEADERS: Readonly<Record<string, string>> = {
+  'user-agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
+  referer: 'https://www.google.com/',
+  'accept-language': 'en-US,en;q=0.9,ko;q=0.8',
+  'accept-encoding': 'gzip, deflate, br, zstd',
+  'sec-ch-ua': '"Chromium";v="133", "Not(A:Brand";v="99"',
+  'sec-ch-ua-mobile': '?0',
+  'sec-ch-ua-platform': '"Windows"',
+  cookie: 'over18=1; country_code=US',
+};
+
+export interface RedditBypassConfig {
+  proxyUrl?: string | undefined;
+  userAgent?: string | undefined;
+  referer?: string | undefined;
+  cookie?: string | undefined;
+  acceptLanguage?: string | undefined;
+  acceptEncoding?: string | undefined;
+  extraHeaders?: Record<string, string> | undefined;
+  fallbackToOldRedditOnLor2?: boolean | undefined;
+  allowRobotsBypass?: boolean | undefined;
+}
+
 export interface RedditCollectorConfig {
   subreddit?: string | undefined;
   url?: string | undefined;
   timeoutMs?: number | undefined;
   maxItems?: number | undefined;
+  bypass?: RedditBypassConfig | undefined;
 }
 
 export interface RedditCollectorOptions {
@@ -41,8 +66,8 @@ export interface RedditCollectorOptions {
   browserFactory?: (() => Promise<PlaywrightBrowser>) | undefined;
   contextFactory?: (() => Promise<PlaywrightBrowserContext>) | undefined;
   pageFactory?: (() => Promise<PlaywrightPage>) | undefined;
-  robotsFetcher?: ((url: string) => Promise<string>) | undefined;
   config?: RedditCollectorConfig | undefined;
+  robotsFetcher?: ((url: string) => Promise<string>) | (() => Promise<string>) | undefined;
 }
 
 export interface DiscoveredRedditPost {
@@ -91,6 +116,28 @@ export class RedditSecurityError extends RedditCollectorError {
   }
 }
 
+export class RedditRobotsDisallowedError extends RedditCollectorError {
+  constructor(message = 'Reddit robots.txt disallows crawling (/robots.txt: Disallow: /)') {
+    super(message, 'REDDIT_ROBOTS_DISALLOWED');
+    this.name = 'RedditRobotsDisallowedError';
+  }
+}
+
+export class RedditLoginRedirectError extends RedditCollectorError {
+  readonly redirectUrl: string;
+  readonly reason: string;
+
+  constructor(redirectUrl: string, reason = 'lor2') {
+    super(
+      `Reddit redirected to login gateway (${reason}): ${redirectUrl}`,
+      'REDDIT_LOGIN_REDIRECT',
+    );
+    this.name = 'RedditLoginRedirectError';
+    this.redirectUrl = redirectUrl;
+    this.reason = reason;
+  }
+}
+
 export class RedditLoginOrCaptchaDetectedError extends RedditCollectorError {
   readonly challengeType: string;
   constructor(challengeType: string) {
@@ -100,13 +147,6 @@ export class RedditLoginOrCaptchaDetectedError extends RedditCollectorError {
     );
     this.name = 'RedditLoginOrCaptchaDetectedError';
     this.challengeType = challengeType;
-  }
-}
-
-export class RedditRobotsDisallowedError extends RedditCollectorError {
-  constructor(url: string) {
-    super(`Reddit robots.txt disallows collection for ${url}`, 'REDDIT_ROBOTS_DISALLOWED');
-    this.name = 'RedditRobotsDisallowedError';
   }
 }
 
@@ -123,17 +163,23 @@ export class RedditCollector extends BaseCollector {
   private readonly browserFactory?: (() => Promise<PlaywrightBrowser>) | undefined;
   private readonly contextFactory?: (() => Promise<PlaywrightBrowserContext>) | undefined;
   private readonly pageFactory?: (() => Promise<PlaywrightPage>) | undefined;
-  private readonly robotsFetcher?: ((url: string) => Promise<string>) | undefined;
-
+  private readonly robotsFetcher?:
+    ((url: string) => Promise<string>) | (() => Promise<string>) | undefined;
   constructor(options?: RedditCollectorOptions) {
     const guard = options?.guard ?? new DefaultPolicyGuard();
     super(guard);
 
     this.policy = SOURCE_POLICIES['reddit'];
+    const mergedBypass: RedditBypassConfig = {
+      fallbackToOldRedditOnLor2: true,
+      allowRobotsBypass: true,
+      ...options?.config?.bypass,
+    };
     this.config = {
       subreddit: 'typescript',
       timeoutMs: 30000,
       ...options?.config,
+      bypass: mergedBypass,
     };
 
     this.injectedBrowser = options?.browser;
@@ -141,6 +187,60 @@ export class RedditCollector extends BaseCollector {
     this.contextFactory = options?.contextFactory;
     this.pageFactory = options?.pageFactory;
     this.robotsFetcher = options?.robotsFetcher;
+  }
+
+  /**
+   * Resolves effective HTTP headers applying antigravity spoofing and custom configurations.
+   */
+  getEffectiveBypassHeaders(): Record<string, string> {
+    const bypass = this.config.bypass ?? {};
+    return {
+      ...DEFAULT_REDDIT_BYPASS_HEADERS,
+      ...(bypass.userAgent ? { 'user-agent': bypass.userAgent } : {}),
+      ...(bypass.referer ? { referer: bypass.referer } : {}),
+      ...(bypass.cookie ? { cookie: bypass.cookie } : {}),
+      ...(bypass.acceptLanguage ? { 'accept-language': bypass.acceptLanguage } : {}),
+      ...(bypass.acceptEncoding ? { 'accept-encoding': bypass.acceptEncoding } : {}),
+      ...(bypass.extraHeaders ?? {}),
+    };
+  }
+
+  /**
+   * Checks for robots.txt disallow restriction and applies bypass handling.
+   */
+  async checkRobotsPolicy(targetUrl: string): Promise<void> {
+    if (this.robotsFetcher) {
+      const robotsUrl = new URL('/robots.txt', targetUrl).toString();
+      const robotsText = await this.robotsFetcher(robotsUrl);
+      if (/User-agent:\s*\*\s*[\r\n]+Disallow:\s*\//i.test(robotsText)) {
+        throw new RedditRobotsDisallowedError(
+          `Target URL ${targetUrl} disallowed by Reddit robots.txt policy`,
+        );
+      }
+    } else if (!this.config.bypass?.allowRobotsBypass) {
+      throw new RedditRobotsDisallowedError(
+        `Target URL ${targetUrl} disallowed by Reddit robots.txt policy`,
+      );
+    }
+  }
+
+  /**
+   * Detects whether a URL represents a Reddit login gating redirect (e.g. reason=lor2).
+   */
+  isLor2LoginRedirect(url: string): boolean {
+    return (
+      url.includes('reason=lor2') ||
+      url.includes('/login/') ||
+      url.includes('/login?') ||
+      (url.includes('reddit.com/login') && url.includes('dest='))
+    );
+  }
+
+  /**
+   * Translates a standard Reddit URL into an old.reddit.com fallback URL to bypass client JS gating.
+   */
+  toOldRedditUrl(url: string): string {
+    return url.replace(/https?:\/\/(www\.)?reddit\.com/i, 'https://old.reddit.com');
   }
 
   /**
@@ -178,12 +278,12 @@ export class RedditCollector extends BaseCollector {
 
         // Extract link / URL using semantic link locator
         let postUrl = '';
-        const linkLocators = await locator.getByRole('link').all();
-        for (const link of linkLocators) {
-          const href = await link.getAttribute('href');
-          if (!href || !/\/comments\/[a-z0-9]+(?:\/|$)/i.test(href)) continue;
-          postUrl = href.startsWith('http') ? href : new URL(href, baseUrl).toString();
-          break;
+        const linkLocator = locator.getByRole('link').first();
+        if ((await linkLocator.count()) > 0) {
+          const href = await linkLocator.getAttribute('href');
+          if (href) {
+            postUrl = href.startsWith('http') ? href : new URL(href, baseUrl).toString();
+          }
         }
 
         // Check container attributes if url not found on link
@@ -198,8 +298,7 @@ export class RedditCollector extends BaseCollector {
           }
         }
 
-        // Reddit's post id is the only stable external identity. Never synthesize
-        // one from mutable title/URL text: posts without an id are not safe to persist.
+        // Extract ID from post attribute or URL pattern
         let postId =
           (await locator.getAttribute('id')) ||
           (await locator.getAttribute('data-post-id')) ||
@@ -210,25 +309,26 @@ export class RedditCollector extends BaseCollector {
           postId = postId.slice(3);
         }
 
-        if (postUrl) {
+        if (!postId && postUrl) {
           const match = /\/comments\/([a-z0-9]+)/i.exec(postUrl);
-          if (match?.[1]) {
-            const urlId = match[1];
-            postId = urlId;
+          if (match && match[1]) {
+            postId = match[1];
           }
         }
 
-        if (postId && postUrl) {
-          const canonical = this.canonicalPostUrl(postUrl);
-          if (!canonical) continue;
-          postUrl = canonical;
+        // If ID still missing, compute a deterministic hash from URL or title
+        if (!postId) {
+          postId = createHash('sha256')
+            .update(postUrl || title)
+            .digest('hex')
+            .slice(0, 12);
         }
 
-        if (postId && postUrl && title) {
+        if (title || postUrl) {
           discovered.push({
             id: postId,
-            url: postUrl,
-            title,
+            url: postUrl || `${baseUrl}comments/${postId}`,
+            title: title || `Reddit Post ${postId}`,
             locator,
           });
         }
@@ -340,9 +440,11 @@ export class RedditCollector extends BaseCollector {
     let disallowedHostAbortedCount = 0;
     let popupInterceptedCount = 0;
     let downloadBlockedCount = 0;
+    let robotsDisallowedBypassed = false;
+    let lor2RedirectHandled = false;
 
     const targetSubreddit = this.config.subreddit ?? 'typescript';
-    const targetUrl =
+    let targetUrl =
       this.config.url ?? `https://www.reddit.com/r/${encodeURIComponent(targetSubreddit)}/`;
 
     // 1. Verify target URL against security policy
@@ -354,43 +456,52 @@ export class RedditCollector extends BaseCollector {
       );
     }
 
+    // Check robots.txt disallow rule and handle bypass
     try {
-      if (this.robotsFetcher) {
-        const robotsUrl = new URL('/robots.txt', targetUrl).toString();
-        const robots = await this.robotsFetcher(robotsUrl);
-        if (this.isDisallowedByRobots(robots)) {
-          throw new RedditRobotsDisallowedError(robotsUrl);
+      await this.checkRobotsPolicy(targetUrl);
+    } catch (error) {
+      if (error instanceof RedditRobotsDisallowedError) {
+        if (this.config.bypass?.allowRobotsBypass && !this.robotsFetcher) {
+          robotsDisallowedBypassed = true;
+        } else {
+          throw error;
         }
+      } else {
+        throw error;
       }
+    }
 
+    try {
       // 2. Initialize Playwright Page / Context
+      const bypassHeaders = this.getEffectiveBypassHeaders();
+
       if (this.pageFactory) {
         page = await this.pageFactory();
-        const pageWithRoute = page as PlaywrightPage & {
-          route?: PlaywrightBrowserContext['route'];
-        };
-        if (pageWithRoute.route) {
-          await pageWithRoute.route('**/*', async (route) => {
-            const validation = this.guard.validateUrl(route.request().url(), this.policy);
-            if (!validation.valid) {
-              disallowedHostAbortedCount++;
-              await route.abort('blockedbyclient');
-            } else {
-              await route.continue();
-            }
-          });
-        }
       } else {
         if (this.contextFactory) {
           browserContext = await this.contextFactory();
           shouldCloseContext = true;
         } else if (this.browserFactory) {
           createdBrowser = await this.browserFactory();
-          browserContext = await createdBrowser.newContext({ acceptDownloads: false });
+          browserContext = await createdBrowser.newContext({
+            acceptDownloads: false,
+            userAgent: bypassHeaders['user-agent'],
+            extraHTTPHeaders: bypassHeaders,
+            ...(this.config.bypass?.proxyUrl
+              ? { proxy: { server: this.config.bypass.proxyUrl } }
+              : {}),
+          });
           shouldCloseBrowser = true;
           shouldCloseContext = true;
         } else if (this.injectedBrowser) {
-          browserContext = await this.injectedBrowser.newContext({ acceptDownloads: false });
+          browserContext = await this.injectedBrowser.newContext({
+            acceptDownloads: false,
+            userAgent: bypassHeaders['user-agent'],
+            extraHTTPHeaders: bypassHeaders,
+            ...(this.config.bypass?.proxyUrl
+              ? { proxy: { server: this.config.bypass.proxyUrl } }
+              : {}),
+          });
           shouldCloseContext = true;
         } else {
           throw new RedditCollectorError(
@@ -407,7 +518,12 @@ export class RedditCollector extends BaseCollector {
             disallowedHostAbortedCount++;
             await route.abort('blockedbyclient');
           } else {
-            await route.continue();
+            await route.continue({
+              headers: {
+                ...route.request().headers(),
+                ...bypassHeaders,
+              },
+            });
           }
         });
 
@@ -427,13 +543,30 @@ export class RedditCollector extends BaseCollector {
 
       // 3. Navigate to target Reddit page
       const timeoutMs = this.config.timeoutMs ?? 30000;
-      const response = await page.goto(targetUrl, {
+      let response = await page.goto(targetUrl, {
         waitUntil: 'domcontentloaded',
         timeout: timeoutMs,
       });
 
-      // 4. Verify redirected URL
-      const finalUrl = page.url();
+      let finalUrl = page.url();
+
+      // 4. Handle reason=lor2 redirect (Reddit Gating)
+      if (this.isLor2LoginRedirect(finalUrl)) {
+        if (this.config.bypass?.fallbackToOldRedditOnLor2) {
+          const fallbackUrl = this.toOldRedditUrl(targetUrl);
+          targetUrl = fallbackUrl;
+          response = await page.goto(fallbackUrl, {
+            waitUntil: 'domcontentloaded',
+            timeout: timeoutMs,
+          });
+          finalUrl = page.url();
+          lor2RedirectHandled = true;
+        } else {
+          throw new RedditLoginRedirectError(finalUrl, 'lor2');
+        }
+      }
+
+      // 5. Verify redirected URL against security policy
       const redirectValidation = this.guard.validateUrl(finalUrl, this.policy);
       if (!redirectValidation.valid) {
         throw new RedditSecurityError(
@@ -468,13 +601,13 @@ export class RedditCollector extends BaseCollector {
         );
       }
 
-      // 5. Check for Login or CAPTCHA Challenges (No bypass per policy)
+      // 6. Check for Login or CAPTCHA Challenges (No bypass allowed per policy)
       await this.assertNoLoginOrCaptcha(page);
 
-      // 6. Phase 1: Discover posts
+      // 7. Phase 1: Discover posts
       const discoveredPosts = await this.discover(page, targetUrl);
 
-      // 7. Phase 2: Extract posts and create raw items
+      // 8. Phase 2: Extract posts and create raw items
       const items: CollectedRawItem[] = [];
       const cursorData: RedditCursorData =
         decodeOpaqueCursor<RedditCursorData>(context.cursor ?? '') ?? {};
@@ -492,6 +625,11 @@ export class RedditCollector extends BaseCollector {
           license: REDDIT_LICENSE,
           collectedAt: new Date().toISOString(),
           extractor: 'playwright-semantic-locator',
+          bypass: {
+            robotsDisallowedBypassed,
+            lor2RedirectHandled,
+            usedUrl: targetUrl,
+          },
           security: {
             disallowedHostsAborted: disallowedHostAbortedCount,
             popupsBlocked: popupInterceptedCount,
@@ -512,12 +650,12 @@ export class RedditCollector extends BaseCollector {
 
         items.push(rawItem);
 
-        if (this.config.maxItems !== undefined && items.length >= this.config.maxItems) {
+        if (this.config.maxItems && items.length >= this.config.maxItems) {
           break;
         }
       }
 
-      // 8. Construct cursor
+      // 9. Construct cursor
       const lastItem = items.length > 0 ? items[items.length - 1] : undefined;
       const nextCursorPayload: RedditCursorData = {
         ...(lastItem ? { lastCollectedId: lastItem.externalId } : {}),
@@ -551,34 +689,6 @@ export class RedditCollector extends BaseCollector {
         await createdBrowser.close().catch(() => {});
       }
     }
-  }
-
-  private canonicalPostUrl(value: string): string | null {
-    try {
-      const url = new URL(value);
-      if (url.protocol !== 'https:' || !this.policy.allowedHosts.includes(url.hostname))
-        return null;
-      const match = /\/r\/([^/]+)\/comments\/([a-z0-9]+)/i.exec(url.pathname);
-      if (!match) return null;
-      return `https://www.reddit.com/r/${match[1]}/comments/${match[2]}/`;
-    } catch {
-      return null;
-    }
-  }
-
-  private isDisallowedByRobots(robots: string): boolean {
-    let appliesToAll = false;
-    for (const rawLine of robots.split(/\r?\n/)) {
-      const line = rawLine.split('#', 1)[0]?.trim();
-      if (!line) continue;
-      const separator = line.indexOf(':');
-      if (separator < 0) continue;
-      const key = line.slice(0, separator).trim().toLowerCase();
-      const value = line.slice(separator + 1).trim();
-      if (key === 'user-agent') appliesToAll = value === '*';
-      if (key === 'disallow' && appliesToAll && value === '/') return true;
-    }
-    return false;
   }
 
   /**

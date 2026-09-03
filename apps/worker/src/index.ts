@@ -69,10 +69,13 @@ export {
   REDDIT_COLLECTION_SCHEDULE,
   createRedditScheduleWindow,
   enqueueRedditScheduleJob,
+  resolveWorkerRedditBypassConfig,
+  DEFAULT_REDDIT_BYPASS_HEADERS,
   type EnqueueRedditJobOptions,
   type EnqueueRedditJobResult,
   type RedditCollectorOptions,
   type RedditCollectorConfig,
+  type RedditBypassConfig,
 } from './collectors/reddit.js';
 import {
   createChunkRepository,

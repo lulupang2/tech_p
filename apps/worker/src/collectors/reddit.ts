@@ -1,8 +1,10 @@
 import type { Queue, Job } from 'bullmq';
 import {
   RedditCollector,
+  DEFAULT_REDDIT_BYPASS_HEADERS,
   type RedditCollectorOptions,
   type RedditCollectorConfig,
+  type RedditBypassConfig,
 } from '@techpulse/collectors';
 import {
   createCollectionJobData,
@@ -45,10 +47,39 @@ export interface EnqueueRedditJobResult {
 // ============================================================================
 
 /**
- * Exports Reddit collector instance configured for worker ingestion.
+ * Resolves worker environment bypass configurations (proxy, UA, cookies, lor2 fallback).
+ */
+export function resolveWorkerRedditBypassConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): RedditBypassConfig {
+  return {
+    proxyUrl: env['REDDIT_PROXY_URL'] || undefined,
+    userAgent: env['REDDIT_USER_AGENT'] || undefined,
+    cookie: env['REDDIT_COOKIE'] || undefined,
+    referer: env['REDDIT_REFERER'] || 'https://www.google.com/',
+    allowRobotsBypass: env['REDDIT_ALLOW_ROBOTS_BYPASS'] !== 'false',
+    fallbackToOldRedditOnLor2: env['REDDIT_FALLBACK_OLD_ON_LOR2'] !== 'false',
+  };
+}
+
+/**
+ * Exports Reddit collector instance configured for worker ingestion, injecting bypass settings.
  */
 export function createRedditCollector(options?: RedditCollectorOptions): RedditCollector {
-  return new RedditCollector(options);
+  const envBypass = resolveWorkerRedditBypassConfig();
+  const mergedConfig: RedditCollectorConfig = {
+    subreddit: REDDIT_COLLECTION_SCHEDULE.defaultSubreddit,
+    ...options?.config,
+    bypass: {
+      ...envBypass,
+      ...options?.config?.bypass,
+    },
+  };
+
+  return new RedditCollector({
+    ...options,
+    config: mergedConfig,
+  });
 }
 
 /**
@@ -124,4 +155,10 @@ export async function enqueueRedditScheduleJob(
   };
 }
 
-export { RedditCollector, type RedditCollectorOptions, type RedditCollectorConfig };
+export {
+  RedditCollector,
+  DEFAULT_REDDIT_BYPASS_HEADERS,
+  type RedditCollectorOptions,
+  type RedditCollectorConfig,
+  type RedditBypassConfig,
+};
