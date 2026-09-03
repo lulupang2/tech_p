@@ -118,10 +118,10 @@
   );
 
   const sampleQuestions = [
-    '최근 Bun과 Node.js의 릴리스 동향과 생태계 변화를 요약해줘.',
-    'Rust 언어 커뮤니티와 생태계의 최근 릴리스 동향을 요약해줘.',
-    'React 프레임워크와 생태계의 최근 릴리스 및 업데이트 동향을 요약해줘.',
-    'TypeScript 및 Playwright 생태계의 최신 버전 업데이트와 주요 변경점을 알려줘.',
+    'Playwright 최신 릴리스의 버전과 주요 변경점을 알려줘.',
+    'TypeScript 최신 릴리스의 버전과 주요 변경점을 알려줘.',
+    'React 최신 릴리스와 공식 업데이트 내용을 요약해줘.',
+    '최근 npm 다운로드 기준으로 React와 Playwright 사용량을 비교해줘.',
   ];
 
   function selectSampleQuestion(sample: string) {
