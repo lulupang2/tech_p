@@ -395,7 +395,7 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
             timeoutMs: 3500,
           });
           if (liveHits.length > 0) {
-            effectiveHits = effectiveHits.length === 0 ? liveHits : [...liveHits, ...effectiveHits];
+            effectiveHits = liveHits;
             reqLogger.info('rag.live_search.fallback_success', {
               liveHitsCount: liveHits.length,
             });
