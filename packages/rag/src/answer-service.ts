@@ -250,12 +250,10 @@ function extractTechnicalTerms(question: string): string[] {
 function hasRelevantLocalEvidence(question: string, hits: readonly SearchHit[]): boolean {
   const terms = extractTechnicalTerms(question).map((term) => term.toLowerCase());
   if (terms.length === 0) return hits.length > 0;
-  return hits.some((hit) => {
-    const haystack = `${hit.title} ${hit.content}`.toLowerCase();
-    return terms.some((term) => haystack.includes(term));
-  });
+  return terms.every((term) =>
+    hits.some((hit) => `${hit.title} ${hit.content}`.toLowerCase().includes(term)),
+  );
 }
-
 export function createAnswerService(options: AnswerServiceOptions): AnswerServicePort {
   const logger = options.logger ?? createStructuredLogger({ service: 'rag' });
   const nowFn = options.now ?? (() => new Date());
