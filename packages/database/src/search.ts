@@ -137,8 +137,8 @@ export function createSearchService(db: NeonDatabase<typeof schema>): SearchServ
         WHERE dr.status = ${status}
           ${publishedAfter ? sql` AND (dr.published_at IS NOT NULL AND dr.published_at >= ${publishedAfter})` : sql``}
           ${publishedBefore ? sql` AND (dr.published_at IS NOT NULL AND dr.published_at < ${publishedBefore})` : sql``}
-          AND e.provider = ${params.provider}
-          AND e.model = ${params.model}
+          AND (e.provider = ${params.provider} OR e.provider IN ('openai', 'openrouter'))
+          AND (e.model = ${params.model} OR e.dimensions = ${params.dimensions})
           AND e.dimensions = ${params.dimensions}
         ORDER BY e.embedding <=> ${vectorLiteral}::vector ASC
         LIMIT ${limit};

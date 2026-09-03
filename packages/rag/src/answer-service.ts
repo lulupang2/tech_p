@@ -88,6 +88,7 @@ export interface AnswerServiceOptions {
   readonly logger?: StructuredLogger | undefined;
   readonly now?: () => Date;
   readonly defaultTimeoutMs?: number;
+  readonly embeddingProvider?: string | undefined;
 }
 
 export interface GenerateAnswerInput extends AnswerRequest {
@@ -313,7 +314,7 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
             const vectorHits = await options.searchService.searchExactVector({
               vector: embedResult.vector,
               dimensions: embedResult.metadata.dimensions,
-              provider: 'openai',
+              provider: options.embeddingProvider ?? 'openrouter',
               model: embedResult.metadata.model,
               filter: searchFilter,
             });
