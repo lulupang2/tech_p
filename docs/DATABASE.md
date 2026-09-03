@@ -17,9 +17,7 @@
 
 ```mermaid
 erDiagram
-    LICENSES ||--o{ SOURCE_RIGHTS : governs
     LICENSES ||--o{ DOCUMENT_REVISIONS : governs
-    SOURCES ||--o| SOURCE_RIGHTS : governed_by
     SOURCES ||--o{ COLLECTION_RUNS : executes
     COLLECTION_RUNS ||--o{ RAW_ITEMS : collects
     SOURCES ||--o{ RAW_ITEMS : owns
@@ -50,8 +48,7 @@ erDiagram
 | `raw_items` | id, source_id, run_id, external_id, canonical_url, payload, payload_hash, published_at, collected_at, http_metadata, rights_metadata | `(source_id, external_id, payload_hash)` unique |
 | `pipeline_events` | id, raw_item_id, stage, processor_version, status, attempt, error_code, occurred_at | append-only event 또는 동등한 이력 보존 |
 
-`source_rights`는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)의 검토 결과를 실행 시점에 강제하기 위한 테이블이다. 문서와 DB 값이 다르면 수집을 진행하지 않고 검토를 다시 한다. `allowed_to_fetch`가 false이거나 `reviewed_at`이 없으면 collector는 job을 생성하지 않는다.
-
+`source_rights`는 포트폴리오 비상업 운영 목적의 허용 상태를 관리하기 위한 테이블이다.
 raw payload column type과 압축·외부 object storage 전환 시점은 데이터 크기 실험 후 결정한다. MVP 추천은 작은 JSON/허용 text를 `jsonb`/`text`로 PostgreSQL에 보존하는 것이다.
 
 ### 3.2 정규화 문서

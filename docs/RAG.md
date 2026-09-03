@@ -126,7 +126,7 @@ MVP 초기 데이터가 작을 때는 exact vector search를 우선한다. HNSW/
 - 후처리기는 `verbatim_only` source의 citation에 대해 답변 텍스트가 원문 발췌를 변형 없이 포함하는지 검사한다.
 - 귀속 정보(작성자, 라이선스, 원문 링크)는 모델 출력이 아니라 저장된 metadata에서 주입한다.
 
-Stack Exchange가 이 규칙의 적용 대상이다. 근거는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md) §10.1에 있다.
+Stack Exchange가 이 규칙의 적용 대상이다.
 
 ## 7. 비교와 트렌드 계산
 
@@ -139,7 +139,7 @@ Stack Exchange가 이 규칙의 적용 대상이다. 근거는 [SOURCE_RIGHTS.md
 - release activity: 공개 release 수
 - paper activity: 기간별 arXiv 제출 수
 - model activity: Hugging Face 모델·데이터셋 생성 수와 다운로드 수
-- package downloads: 동일 단위·기간에서 가용한 경우의 다운로드 수. npm 공식 설명에 따르면 이 값은 tarball HTTP 200 응답 수이며 mirror, CI build server, 전수 분석 robot의 다운로드를 포함한다. 사용자 수가 아니고 절대값으로 쓰지 않으며 방향성 지표로만 제시한다. 하루 50건 미만 구간은 추세 판단에 사용하지 않고, publish 직후 spike는 별도로 표시한다. 근거는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md) §6에 있다
+- package downloads: 동일 단위·기간에서 가용한 경우의 다운로드 수. npm 공식 설명에 따르면 이 값은 tarball HTTP 200 응답 수이며 mirror, CI build server, 전수 분석 robot의 다운로드를 포함한다. 사용자 수가 아니고 절대값으로 쓰지 않으며 방향성 지표로만 제시한다. 하루 50건 미만 구간은 추세 판단에 사용하지 않고, publish 직후 spike는 별도로 표시한다.
 
 변화율에는 기준값, 절대값, 기간을 함께 표시한다. 기준값이 너무 작거나 관측이 누락되면 백분율을 숨긴다. 서로 다른 metric을 정규화해 하나의 composite score로 만드는 것은 MVP에서 제외한다.
 

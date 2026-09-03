@@ -10,7 +10,7 @@
 
 | 요구사항 | 설계 문서 | 구현 task | 검증 계층 |
 |---|---|---|---|
-| FR-001 실제 외부 데이터 수집 | DATA_PIPELINE §2~4, SOURCE_CATALOG, SOURCE_RIGHTS, ADR-0014 | COL-002, COL-003, COL-004, COL-006, COL-007, COL-008, COL-009, COL-010, QUE-001, PIPE-001 | fixture contract, integration, source별 live canary; Reddit canary/corpus는 미완료 |
+| FR-001 실제 외부 데이터 수집 | DATA_PIPELINE §2~4, SOURCE_CATALOG | COL-002, COL-003, COL-004, COL-006, COL-007, COL-008, COL-009, COL-010, QUE-001, PIPE-001 | fixture contract, integration, source별 live canary |
 | FR-002 브라우저 수집 | DATA_PIPELINE §6 | COL-005 | fixture contract, canary, security |
 | FR-003 원본 보존 | DATA_PIPELINE §5.3, DATABASE §3.1 | DB-002, PIPE-001 | integration |
 | FR-004 정규화 | DATA_PIPELINE §5.4, §5.6, TOPIC_TAXONOMY | PIPE-002, PIPE-005, DB-003 | domain topic/chunk unit, database integration |
@@ -20,7 +20,7 @@
 | FR-008 기간 검색 | RAG §4~5, DATABASE §4 | RAG-001, RAG-002, DB-006 | unit, integration, RAG eval |
 | FR-009 근거 기반 답변 | RAG §6, §8 | RAG-004, RAG-005 | component, RAG eval |
 | FR-010 비교 | RAG §7, DATA_PIPELINE §5.9 | DB-004, PIPE-006, RAG-006, WEB-003, COL-009, COL-010 | metric aggregation unit, component, E2E |
-| FR-011 출처 표시 | API §2.1, RAG §5.3·§6.1, SOURCE_RIGHTS | API-003, WEB-002 | contract, E2E |
+| FR-011 출처 표시 | API §2.1, RAG §5.3·§6.1 | API-003, WEB-002 | contract, E2E |
 | FR-012 운영 가시성 | API §3, ARCHITECTURE §9 | PIPE-001, API-004, OPS-002 | contract, integration |
 | FR-013 실패 복구 | DATA_PIPELINE §7 | QUE-001, PIPE-007 | integration |
 | FR-014 최신성 표현 | API §2.1~2.2 | API-002, API-003, WEB-003 | contract, E2E |

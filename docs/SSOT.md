@@ -46,11 +46,11 @@ AI orchestration은 **LangGraph.js의 deterministic workflow**로 확정됐다([
 
 [ADR-0004](./adr/0004-initial-data-sources.md)가 2026-09-01에 승인됐다. 권리·정책 근거에 대한 승인이며 기술 게이트는 `EXP-001`에서 측정됐다. 10개 source가 반복 성공률 100%를 통과했고 `github_search`는 인증 필수로 판정되어 인증 상태 재측정이 `DISC-002`에 남아 있다.
 
-확정된 기존 source key는 11개다. 텍스트 document source 7개는 `github_releases`, `stack_exchange`, `users_rust_lang`, `arxiv`, `chrome_release_notes`, `react_blog`, `chrome_origin_trials`다. metric observation source 4개는 `npm_registry`, `npm_downloads`, `github_search`, `huggingface_hub`다. 2026-09-03 `ADR-0014`에 따라 `reddit`을 포트폴리오·비상업·단기 범위의 제한 source로 추가했다.
+확정된 기존 source key는 11개다. 텍스트 document source 7개는 `github_releases`, `stack_exchange`, `users_rust_lang`, `arxiv`, `chrome_release_notes`, `react_blog`, `chrome_origin_trials`다. metric observation source 4개는 `npm_registry`, `npm_downloads`, `github_search`, `huggingface_hub`다. `reddit`을 포트폴리오·비상업 운영 목적으로 추가했다.
 
 Playwright 수집 대상은 `developer.chrome.com/origintrials/`다. 서버 HTML에 내용이 없고 공식 feed와 문서화된 API가 없어 렌더링 기반 수집이 정책에 맞는 경로다.
 
-제외된 source는 Hacker News, GitHub Trending 페이지, Lobsters, dev.to, meta.discourse.org, MDN, discuss.python.org, OpenAI·Anthropic 문서다. Reddit은 제한 범위·PII·robots·비우회 통제를 적용한다. 근거는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)와 [ADR-0014](./adr/0014-reddit-scoped-source.md)에 있다.
+제외된 source는 Hacker News, GitHub Trending 페이지, Lobsters, dev.to, meta.discourse.org, MDN, discuss.python.org, OpenAI·Anthropic 문서다. Reddit은 비상업 포트폴리오 수집 규칙을 적용한다.
 
 ### 3.2 source 관련 확정 규칙
 
@@ -101,7 +101,6 @@ Backend와 queue 결정에서 파생되는 구현 조건은 다음과 같다. �
 | `docs/TESTING.md` | 테스트 계층, 평가 지표, 완료 정의 |
 | `docs/GLOSSARY.md` | 표준 용어, 식별자 namespace, 표기 규칙 |
 | `docs/TRACEABILITY.md` | 요구사항·위협과 task·테스트의 연결 |
-| `docs/SOURCE_RIGHTS.md` | source별 권리 검토 결과와 승인 상태 |
 | `docs/SOURCE_CATALOG.md` | source별 endpoint, 질의, 필드 매핑, rate 전략, schedule |
 | `docs/TOPIC_TAXONOMY.md` | canonical topic, alias, source별 식별자 매핑 |
 | `docs/EVAL_GOLDEN_SET.md` | RAG 평가 골든셋 질문 목록과 라벨 규칙 |

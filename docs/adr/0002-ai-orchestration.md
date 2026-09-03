@@ -43,7 +43,7 @@ Signal Archive는 질의 해석, 문서/지표 검색, 근거 충분성 판단, 
 
 - graph state는 JSON-serializable contract로 정의한다.
 - 날짜 계산, SQL, citation 검증은 deterministic node로 둔다.
-- `verbatim_only` source 근거의 재서술 여부 검사와 라이선스·귀속 주입도 deterministic node로 둔다. 모델이 판단하게 하지 않는다. 근거는 [RAG §6.1](../RAG.md)과 [SOURCE_RIGHTS §10.1](../SOURCE_RIGHTS.md)에 있다.
+- `verbatim_only` source 근거의 재서술 여부 검사와 라이선스·귀속 주입도 deterministic node로 둔다. 모델이 판단하게 하지 않는다. 근거는 [RAG §6.1](../RAG.md)에 있다.
 - MVP에서는 장기 memory와 autonomous tool loop를 사용하지 않는다.
 - graph/checkpoint persistence 필요성은 API 응답 방식 결정 후 별도 평가한다.
 

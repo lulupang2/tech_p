@@ -127,7 +127,7 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 
 - 공개 기술 콘텐츠라 해도 작성자 ID, 댓글, 이메일 등 필요하지 않은 개인정보를 수집하지 않는다.
 
-검토된 source에 대한 구체 통제는 다음과 같다. 근거는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)에 있다.
+검토된 source에 대한 구체 통제는 다음과 같다.
 
 | source | 필수 통제 |
 |---|---|
@@ -144,7 +144,7 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 
 예외가 하나 있다. CC BY-SA 같은 라이선스는 귀속에 작성자 식별을 요구한다. 이 경우 개인정보 최소화와 라이선스 준수가 충돌하므로, **발췌를 표시하는 기능에 한해** 귀속 목적의 작성자명을 보관하고 그 목적 외 사용을 금지한다. 표시 기능이 없는 동안에는 보관하지 않는다.
 - 원문 전체 재배포보다 짧은 excerpt와 원문 링크를 우선한다.
-- source마다 `allowed_to_fetch`, `allowed_to_store`, `allowed_to_embed`, `allowed_to_display_excerpt`, retention을 기록한다. 기록 위치는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)이며 DB의 source rights 필드와 같은 값을 유지한다.
+- source마다 필요한 보존 정책과 권한을 관리한다.
 - robots와 약관 변경을 정기 확인하고 승인 상태가 만료되면 수집을 중단한다.
 - 삭제 요청과 upstream 삭제를 반영하는 tombstone/reindex 경로를 제공한다.
 
@@ -196,4 +196,4 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 - provider 데이터 처리 조건
 - 라이선스 귀속을 UI·API에서 표시하는 방식
 
-source별 rights matrix는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)로 확정됐고 [ADR-0004](./adr/0004-initial-data-sources.md)가 승인됐다.
+source 구성은 [ADR-0004](./adr/0004-initial-data-sources.md)를 따른다.

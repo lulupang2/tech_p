@@ -29,7 +29,7 @@ GitHub Releases, Hacker News, npm, Playwright 대상 후보가 MVP의 실제 데
 
 ## Method
 
-1. 각 source의 약관, robots, API 문서, 인증, rate limit, 저장·embedding·excerpt 허용을 표로 검토한다. 1차 검토는 완료되어 [SOURCE_RIGHTS.md](../SOURCE_RIGHTS.md)에 있으므로 이 실험은 그 문서의 §9 남은 확인 항목부터 시작한다.
+1. 각 source의 약관, API 문서, 인증, rate limit, 저장 가능 여부를 검토한다.
 2. 최소 7일, 가능하면 30일 범위에서 bounded sample을 수집한다.
 3. 외부 ID, canonical URL, 게시 시각, 수정 시각, 본문, pagination/cursor, ETag 존재율을 측정한다. npm 두 endpoint의 conditional request 지원 여부를 실제 응답 헤더로 확인한다.
 4. 같은 요청 재실행과 overlap window에서 중복/누락을 확인한다.
@@ -41,7 +41,7 @@ GitHub Releases, Hacker News, npm, Playwright 대상 후보가 MVP의 실제 데
 
 각 선택 source는 다음을 모두 충족해야 한다.
 
-- [SOURCE_RIGHTS.md](../SOURCE_RIGHTS.md)의 `decision`이 `no_blocker_found`이고 fetch·store·embed·excerpt 값에 `no`와 `unverified`가 없음
+- fetch·store·embed 시 명백한 기술적 차단 사유가 없음
 - 수집·필요 범위 저장·embedding·짧은 excerpt 표시에 명백한 차단 사유가 없음
 - 안정적 ID 또는 결정적 대체키와 canonical URL 확보율 ≥ 99%
 - 게시 시각 확보율 ≥ 95% 또는 해당 source를 최신 트렌드 집계에서 제외한다는 명확한 정책
@@ -144,7 +144,7 @@ fingerprint는 응답에서 추출한 핵심 필드의 결합값이다. 1이면 
 ### 실증된 설계 규칙
 
 - **`created_at`을 게시 시각으로 쓰면 안 된다는 규칙이 실증됐다.** 표본 40건 **전부** `created_at`과 `published_at`이 달랐다. `SOURCE_CATALOG §2`의 경고가 예외 사례가 아니라 일반 사례다.
-- **conditional request가 동작한다.** GitHub과 npm registry 모두 ETag 재요청에 **304**를 반환했다. `SOURCE_CATALOG §9`와 `SOURCE_RIGHTS §12`의 미확인 항목이 해소됐다.
+- **conditional request가 동작한다.** GitHub과 npm registry 모두 ETag 재요청에 **304**를 반환했다. `SOURCE_CATALOG §9`의 미확인 항목이 해소됐다.
 - **origin trials는 렌더링이 필요하다.** 응답 본문이 2,402바이트뿐이고 JS 요구 문구가 확인됐다. Playwright 사용 근거가 재확인됐다.
 - **npm 응답에 email이 항상 있다.** 4개 패키지 전부에서 발견됐다. 저장 전 제거가 선택이 아니라 필수임이 확인됐다.
 - **GitHub search 재현성이 확인됐다.** 동일 질의를 2.2초 간격으로 두 번 호출해 반환 순서가 일치했고 `incomplete_results`는 false였다. 다만 단일 시점 관측이므로 장기 안정성은 보장되지 않는다.
@@ -178,7 +178,7 @@ run 1에서 도출한 항목의 처리 위치는 다음과 같다.
 | 10회 반복 성공률 측정 | **run 2에서 완료** |
 | Stack Exchange API key 등록과 인증 quota 재측정 | `DISC-002` acceptance로 이관 |
 | 인증 상태 rate limit 재측정 | `DISC-002` acceptance로 이관 |
-| `content_license` 없는 게시물의 처리 정책 | [SOURCE_RIGHTS](../SOURCE_RIGHTS.md)에 반영 완료. 발췌 표시 제외, 언급 수 집계에만 사용 |
+| `content_license` 없는 게시물의 처리 정책 | 발췌 표시 제외, 언급 수 집계에만 사용 |
 | Chrome release notes 날짜 추출을 DOM 기반으로 | `COL-008` acceptance |
 | HF 갱신 감지 방식 확정 | `COL-010` acceptance |
 

@@ -2,7 +2,7 @@
 
 - 상태: 대상 source와 호출·저장 baseline은 `EXP-001`에서 검증됨(2026-09-01). **schedule 값은 여전히 제안**이며 [SSOT §5](./SSOT.md)의 미결정 항목이다
 - 작성일: 2026-09-01
-- 기준: [ADR-0004](./adr/0004-initial-data-sources.md) (Accepted), [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)
+- 기준: [ADR-0004](./adr/0004-initial-data-sources.md) (Accepted)
 
 `ADR-0004`가 어떤 source를 쓸지 정했다. 이 문서는 각 source를 **실제로 어떻게 호출하고 무엇을 저장할지** 정한다. `EXP-001`은 이 명세 없이 실행할 수 없고, `COL-002`~`COL-010`은 이 명세를 구현한다.
 

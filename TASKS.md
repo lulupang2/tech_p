@@ -22,11 +22,11 @@
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
-| DISC-001 | 초기 source rights matrix 작성 | - | DONE | [SOURCE_RIGHTS.md](./docs/SOURCE_RIGHTS.md)에 후보별 근거·인용·확인일이 기록됨; 채택 source key 11개(텍스트 7, 지표 4)와 제외·보류 10개가 결론과 함께 정리됨; Playwright 대상 확정; 사용자 확인 완료 2026-09-01 |
+| DISC-001 | 초기 source matrix 작성 | - | DONE | 후보별 근거·인용·확인일이 기록됨; 채택 source key 11개(텍스트 7, 지표 4)와 제외·보류 10개가 결론과 함께 정리됨; Playwright 대상 확정; 사용자 확인 완료 2026-09-01 |
 | DEC-001 | 초기 source set 승인 (권리 근거) | DISC-001 | DONE | ADR-0004가 Accepted(2026-09-01); Reddit 추가 전의 초기 set 근거를 기록; Reddit 변경은 ADR-0014로 별도 추적 |
 | DEC-010 | Reddit 제한적 source set 추가 승인 | DISC-001 | DONE | ADR-0014 Accepted(2026-09-03); 포트폴리오·비상업·단기 범위와 미완료 live/corpus/evaluation gate가 문서화됨 |
 | DISC-002 | source 자격증명 확보와 인증 rate 재측정 | EXP-001 | DONE | `.env.example` placeholder 등록·실제 값 비커밋 확인; 2026-09-02 인증 credential 주입 후 `github_releases`, `github_search`, `stack_exchange` 각 10회 반복 HTTP 200 성공; p50/max latency·rate/quota/backoff를 [`docs/experiments/disc-002/auth-rate-measurement.json`](./docs/experiments/disc-002/auth-rate-measurement.json)에 sanitized 기록 |
-| EXP-001 | source feasibility 실험 실행 | DISC-001 | DONE | run 1·2 측정 완료(2026-09-01). raw measurement: `experiments/exp-001/result.json`, `experiments/exp-001/repeat-result.json`. 11개 source 도달, 10개 source 10회 반복 100% 성공, `github_search` 미인증 5/10로 **인증 필수** 판정. 결과가 [SOURCE_CATALOG §14](./docs/SOURCE_CATALOG.md)와 [SOURCE_RIGHTS](./docs/SOURCE_RIGHTS.md)에 반영됨. 인증 상태 rate 재측정은 `DISC-002` acceptance로 이관 |
+| EXP-001 | source feasibility 실험 실행 | DISC-001 | DONE | run 1·2 측정 완료(2026-09-01). raw measurement: `experiments/exp-001/result.json`, `experiments/exp-001/repeat-result.json`. 11개 source 도달, 10개 source 10회 반복 100% 성공, `github_search` 미인증 5/10로 **인증 필수** 판정. 결과가 [SOURCE_CATALOG §14](./docs/SOURCE_CATALOG.md)에 반영됨. 인증 상태 rate 재측정은 `DISC-002` acceptance로 이관 |
 | DEC-002 | backend framework와 server runtime 승인 | EXP-005 | DONE | ADR-0001이 Accepted(2026-09-01); **Node runtime 위의 Elysia** 확정, Bun 미도입; 별도 schema library 없이 `t.*`가 단일 출처; 알 수 없는 필드 거부는 명시적 설정, 검증 실패는 400 매핑; SSOT §3.3·ARCHITECTURE §6 동기화 완료 |
 | DEC-003 | AI orchestration 승인 | - | DONE | ADR-0002가 Accepted(2026-09-01); LangGraph.js deterministic workflow 확정, agent loop·장기 memory 미사용 명시; SSOT §3.3·RAG §3·§12 동기화 완료 |
 | DEC-004 | queue/scheduler 승인 | EXP-005 | DONE | ADR-0003이 Accepted(2026-09-01); **Redis + BullMQ**를 전달·예약 계층으로 확정, business completion은 PostgreSQL에 기록; job은 멱등해야 하며 자연 키 unique + upsert로 확보; source별 상이한 주기·concurrency 요구 반영; SSOT §3.3·ARCHITECTURE §2·§6 동기화 완료 |

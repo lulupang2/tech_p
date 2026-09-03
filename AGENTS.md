@@ -90,7 +90,6 @@
 | component/technology 선택 | ADR, SSOT, ARCHITECTURE, TASKS |
 | 수집 source/schema | DATA_PIPELINE, SOURCE_CATALOG, DATABASE, SECURITY, TESTING |
 | source 대상·질의·주기 변경 | SOURCE_CATALOG, DATA_PIPELINE, TASKS |
-| source 권리·정책 검토 | SOURCE_RIGHTS, DATA_PIPELINE, SECURITY, DATABASE |
 | retrieval/prompt/model | RAG, DATABASE, TESTING, EVAL_GOLDEN_SET, experiment result |
 | topic·alias 추가·변경 | TOPIC_TAXONOMY, GLOSSARY, SOURCE_CATALOG |
 | 평가 질문·라벨 변경 | EVAL_GOLDEN_SET, TESTING, TASKS |

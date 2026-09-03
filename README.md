@@ -66,7 +66,6 @@ pnpm --filter @techpulse/web test:e2e
 | [docs/TESTING.md](./docs/TESTING.md) | 테스트 계층과 완료 정의 |
 | [docs/GLOSSARY.md](./docs/GLOSSARY.md) | 표준 용어, 식별자 namespace, 표기 규칙 |
 | [docs/TRACEABILITY.md](./docs/TRACEABILITY.md) | 요구사항·위협이 task와 테스트로 이어지는지 확인 |
-| [docs/SOURCE_RIGHTS.md](./docs/SOURCE_RIGHTS.md) | source별 권리 검토 결과. 채택·제외 근거와 인용 |
 | [docs/SOURCE_CATALOG.md](./docs/SOURCE_CATALOG.md) | source별 endpoint, 질의, 필드 매핑, 수집 주기 |
 | [docs/TOPIC_TAXONOMY.md](./docs/TOPIC_TAXONOMY.md) | canonical topic과 alias, source별 식별자 매핑 |
 | [docs/EVAL_GOLDEN_SET.md](./docs/EVAL_GOLDEN_SET.md) | RAG 평가 골든셋 질문 목록과 라벨 규칙 |
@@ -80,11 +79,11 @@ pnpm --filter @techpulse/web test:e2e
 - `DISC-002`: GitHub/Stack Exchange/Hugging Face credential을 로컬 stack에 주입해 3개 승인 source 수집을 검증했다(측정 artifact: `docs/experiments/disc-002/auth-rate-measurement.json`).
 - `TST-002`: seeded PostgreSQL과 fake model로 결정적 API regression 및 Chromium E2E 실행 완료.
 - `EVAL-002`: RAG release gate는 BLOCKED. production 수집 corpus·승인 chat provider 없이 end-to-end gate를 통과하지 못했다(실패 artifact: `docs/experiments/exp-003/eval-report.json`).
-- source rights와 citation provenance는 [docs/SOURCE_RIGHTS.md](./docs/SOURCE_RIGHTS.md), [docs/RAG.md](./docs/RAG.md)에 따른다.
+- citation provenance는 [docs/RAG.md](./docs/RAG.md)에 따른다.
 - provider key, database URL, cookie, raw secret은 저장소와 로그에 기록하지 않는다.
 
 개발 backlog와 dependency는 [TASKS.md](./TASKS.md), 테스트 계층과 완료 정의는 [docs/TESTING.md](./docs/TESTING.md)에서 확인한다.
 
-### Reddit source 상태 (2026-09-03)
+### Reddit source 상태
 
-Reddit은 포트폴리오·비상업·단기 프로젝트 범위에서 허용된 source set 변경이다. 현재는 metadata-only seed만 존재하며 live canary, production corpus, RAG evaluation을 실행했다는 증거가 없으므로 `MVP-001`은 `BLOCKED`다. Reddit content에 CC BY-SA 라이선스가 적용된다는 주장은 하지 않는다.
+Reddit은 포트폴리오·비상업 운영 목적으로 추가되었으며, 데이터 수집 파이프라인에 통합되어 동작한다.

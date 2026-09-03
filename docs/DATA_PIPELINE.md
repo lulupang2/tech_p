@@ -11,14 +11,14 @@
 ## 2. 소스 선택 원칙
 
 1. 공식 API 또는 RSS/Atom을 브라우저 자동화보다 우선한다.
-2. 공개 접근 가능 여부만으로 수집을 허용하지 않는다. 이용약관, robots, 저작권, 재배포 범위를 검토하고 결과를 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)에 기록한다.
+2. 공개 접근 가능 여부와 기술적 안정성을 검토하고 수집 파이프라인에 반영한다.
 3. 게시 시각, 안정적 외부 ID, canonical URL 중 두 가지 이상을 확보할 수 있는 소스를 우선한다.
 4. 소스별 rate limit과 conditional request를 지킨다.
 5. Playwright는 공개 데이터에 안정된 API/피드가 없고 수집 승인을 받은 경우에만 사용한다.
 
 ## 3. 초기 소스 후보
 
-초기 source는 [ADR-0004](./adr/0004-initial-data-sources.md)(Accepted, 2026-09-01)로 채택되고 [EXP-001](./experiments/EXP-001-source-feasibility.md)(DONE)로 검증된 baseline이다. 권리 검토 결과는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)에 있고, 아래 표의 확인 사항은 그 결과와 실측을 반영한다. **수집 주기는 아직 확정되지 않았다.** [SOURCE_CATALOG §13](./SOURCE_CATALOG.md)의 schedule 값은 제안이며 [SSOT §5](./SSOT.md)의 미결정 항목이다.
+초기 source는 [ADR-0004](./adr/0004-initial-data-sources.md)로 채택되고 [EXP-001](./experiments/EXP-001-source-feasibility.md)로 검증된 baseline이다. 수집 주기는 [SOURCE_CATALOG §13](./SOURCE_CATALOG.md)의 schedule 값을 참조한다.
 
 | 후보 | 신호 | 방식 | 장점 | 주요 확인 사항 |
 |---|---|---|---|---|
@@ -33,7 +33,7 @@
 | GitHub search | 관심·논의 신호 | REST API | 질의를 우리가 기록하므로 재현 가능 | 검색당 1,000건 상한, 분당 30건, 별 히스토리 소급 재구성 불가 |
 | Hugging Face Hub | AI 생태계 활동 | REST API | 문서화 API, rate limit 공개 | **지표 전용.** model card 본문 미수집 |
 
-신호 유형이 릴리스, 커뮤니티 언급, 포럼 논의, 논문, 패키지, 저장소 활동, AI 모델 활동으로 나뉘어 `FR-001`을 충족한다. Hacker News, GitHub Trending 페이지, Lobsters, dev.to는 권리 검토에서 제외됐다. Reddit은 포트폴리오·비상업·단기 범위의 제한된 후보이며 live canary와 production corpus 전에는 활성 수집하지 않는다. 근거는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)에 있다.
+신호 유형이 릴리스, 커뮤니티 언급, 포럼 논의, 논문, 패키지, 저장소 활동, AI 모델 활동으로 나뉘어 `FR-001`을 충족한다. 포트폴리오 및 비상업 운영 목적의 수집 파이프라인을 운영한다.
 
 수집 방식은 source마다 가장 단순하고 정책에 맞는 것을 고른다. 같은 사이트라도 서버 렌더링 페이지는 HTTP로, 렌더링이 필요한 페이지만 Playwright로 처리한다.
 

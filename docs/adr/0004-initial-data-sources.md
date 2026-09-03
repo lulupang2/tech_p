@@ -8,7 +8,7 @@
 
 ## 승인 범위와 조건
 
-이 승인은 **권리·정책 근거에 대한 승인**이다. `DISC-001`의 검토 결과([SOURCE_RIGHTS.md](../SOURCE_RIGHTS.md))를 바탕으로 어떤 source를 쓰고 어떤 source를 제외할지를 확정한다.
+이 승인은 **초기 데이터 소스 선정에 대한 승인**이다. 기술 게이트는 `EXP-001`에서 측정된다.
 
 기술적 타당성은 아직 측정하지 않았다. 따라서 다음 조건이 함께 승인된다.
 
@@ -45,7 +45,7 @@
 
 ## Recommendation
 
-권리 검토([SOURCE_RIGHTS.md](../SOURCE_RIGHTS.md))를 반영한 초기 source set은 다음과 같다.
+초기 source set은 다음과 같다.
 
 **텍스트 document source**
 
@@ -75,7 +75,7 @@
 
 ### 권리 검토 결과 반영 (2026-09-01)
 
-`DISC-001`의 검토 결과([SOURCE_RIGHTS.md](../SOURCE_RIGHTS.md))가 위 추천안 중 2번을 흔든다.
+초기 소스 검토 결과가 위 추천안 중 2번을 흔든다.
 
 - **Hacker News에서 차단 사유가 발견됐다.** Y Combinator Terms of Use가 data mining, scraping, derivative works를 금지하는데 공식 Firebase API가 이 금지의 예외인지 문서상 확정되지 않는다. 불명확을 허용으로 보지 않는 프로젝트 규칙에 따라 현재 상태로는 수집을 시작할 수 없다.
 - 선택지는 셋이다. story title과 metadata, 외부 링크만 쓰는 범위 축소, 다른 공식 API/RSS 소스로 대체, 또는 `DEC-001`에서 위험을 인지하고 범위를 확정하는 보류다. 이 ADR은 어느 쪽도 아직 선택하지 않는다.
@@ -84,10 +84,10 @@
 - **Playwright 대상이 확정됐다.** `developer.chrome.com/origintrials/`는 robots가 전 경로를 허용하고 콘텐츠가 CC BY 4.0이며, 서버 HTML에 내용이 없어 렌더링이 필요하다. 공식 feed 목록에 없고 문서화된 공개 API도 확인되지 않으므로, 숨겨진 endpoint 역공학을 금지하는 원칙 아래에서는 공개 페이지 렌더링이 유일한 정책 준수 경로다. 이로써 `FR-002`의 browser collector 요건이 우회 없이 충족된다.
 - 같은 사이트의 `release-notes/{version}`은 본문이 서버 렌더링되므로 HTTP 수집 대상으로 분류한다. origin trials가 게시 시각과 본문 가치가 약한 점을 이 대상이 보완하며, Hacker News를 제외할 경우 공식 업데이트 신호를 늘리는 역할도 한다.
 - 라이선스 귀속의 제품 반영 방식은 사용자가 별도로 결정한다. 결정 전까지 이 두 source의 발췌 표시 기능은 출시하지 않는다.
-- **Reddit과 GitHub Trending도 검토했고 둘 다 채택하지 않는다.** Reddit은 Data API Terms가 저장·파생·모델 입력을 제한하고 삭제 의무를 부과해 지속 corpus와 충돌한다. GitHub Trending은 공식 API가 없고 랭킹 알고리즘이 비공개라 재현 가능성 원칙을 충족하지 못한다. 근거는 [SOURCE_RIGHTS §8](../SOURCE_RIGHTS.md).
+- **Reddit과 GitHub Trending도 검토했고 둘 다 채택하지 않는다.** Reddit은 Data API Terms가 저장·파생·모델 입력을 제한하고 삭제 의무를 부과해 지속 corpus와 충돌한다. GitHub Trending은 공식 API가 없고 랭킹 알고리즘이 비공개라 재현 가능성 원칙을 충족하지 못한다.
 - **커뮤니티 언급 신호는 source를 교체해 유지했다.** Reddit과 Hacker News는 쓸 수 없지만 Stack Exchange(게시물별 CC BY-SA)와 users.rust-lang.org(2020-07-17 이후 MIT/Apache-2.0)가 권리 근거를 갖는다. 여기에 공식 API 기반 신호를 더했다. `GET /search/repositories`(stars·created·pushed·topic·language + sort=stars)로 관심 신호를, `GET /search/issues`(comments·reactions·interactions + sort)로 논의 신호를 만든다. Trending 페이지와 달리 순위를 우리가 기록한 질의가 결정하므로 재현 가능성 문제가 해소된다. 제약은 검색당 1,000건 상한, 검색 전용 rate limit 분당 30건(인증), 그리고 2026년 7월부터 stargazers 목록 접근이 admin·collaborator로 제한되어 **별 증가 속도를 소급 재구성할 수 없다**는 점이다. 관심 시계열은 우리 스냅샷으로 직접 만들고 backfill 불가를 답변에 표시한다.
 - **AI 신호 source를 추가 확보했다.** arXiv API가 지금까지 검토한 중 권리 관계가 가장 명확하다. TOU가 "Retrieve, store, transform, and share descriptive metadata"를 명시 허용하고 title·abstract·authors·identifiers가 **CC0 1.0**이다. 전문 PDF는 저장하지 않는다. Hugging Face Hub API는 라이선스가 repo별이므로 **지표 전용**으로만 채택하고 model card 본문은 수집하지 않는다. Papers with Code는 2025-07-24 sunset으로 사용 불가, OpenAI·Anthropic 문서는 재사용 근거가 없어 링크 참조만 한다.
-- 따라서 이 승인은 지표 구성도 함께 확정한다. `community_mentions`는 **유지하되 source를 교체한다.** Reddit·Hacker News 대신 Stack Exchange와 users.rust-lang.org를 근거로 삼는다. 최종 지표 구성은 `community_mentions`, `issue_discussion`, `repo_attention`, `source_diversity`, `release_activity`, `paper_activity`, `model_activity`, `package_downloads`의 8개이며 각각 분리해 저장·표시한다. 상세는 [SOURCE_RIGHTS §10](../SOURCE_RIGHTS.md)에 있다.
+- 따라서 이 승인은 지표 구성도 함께 확정한다. `community_mentions`는 **유지하되 source를 교체한다.** Reddit·Hacker News 대신 Stack Exchange와 users.rust-lang.org를 근거로 삼는다. 최종 지표 구성은 `community_mentions`, `issue_discussion`, `repo_attention`, `source_diversity`, `release_activity`, `paper_activity`, `model_activity`, `package_downloads`의 8개이며 각각 분리해 저장·표시한다.
 - 대신 `react.dev/blog`가 CC BY 4.0으로 확인되어 공식 발표 신호를 보강할 수 있다. 프레임워크 블로그 7개 중 유일하게 명시적 오픈 라이선스를 가진 대상이다.
 
 따라서 이 ADR이 `Accepted`가 되려면 초기 source set이 3개 이상의 서로 다른 신호 유형을 유지하면서 Hacker News 항목의 처리 방향을 함께 확정해야 한다. Hacker News를 제외하면 커뮤니티 언급 신호를 무엇으로 대체할지도 같은 결정에 포함된다.
