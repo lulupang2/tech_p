@@ -231,7 +231,12 @@ export async function fetchLiveTechEvidence(
     searchWikipedia(searchQuery, fetchFn, timeoutMs),
   ]);
 
-  const allItems = [...npmHits.slice(0, 3), ...ghHits.slice(0, 3), ...wikiHits.slice(0, 2)];
+  const relevantTerms = keywords.map((term) => term.toLowerCase());
+  const allItems = [...npmHits.slice(0, 3), ...ghHits.slice(0, 3), ...wikiHits.slice(0, 2)].filter(
+    (item) =>
+      relevantTerms.length === 0 ||
+      relevantTerms.some((term) => `${item.title} ${item.snippet}`.toLowerCase().includes(term)),
+  );
 
   return allItems.map((item, index) => ({
     chunkId: `live_chunk_${index + 1}_${Date.now()}`,
