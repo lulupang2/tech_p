@@ -110,6 +110,8 @@ export function start(env: Environment = process.env) {
       embeddingPort,
       logger: apiLogger,
       defaultTimeoutMs: 60000,
+      githubPat: env['GITHUB_PAT'],
+      enableLiveSearch: true,
     });
   }
 

@@ -24,6 +24,7 @@ import {
 } from '@techpulse/domain';
 import { createStructuredLogger, type StructuredLogger } from '@techpulse/observability';
 import { randomUUID } from 'node:crypto';
+import { fetchLiveTechEvidence } from './live-search.js';
 
 export class InvalidTimeRangeError extends Error {
   readonly code = 'INVALID_TIME_RANGE' as const;
@@ -89,6 +90,8 @@ export interface AnswerServiceOptions {
   readonly now?: () => Date;
   readonly defaultTimeoutMs?: number;
   readonly embeddingProvider?: string | undefined;
+  readonly enableLiveSearch?: boolean | undefined;
+  readonly githubPat?: string | undefined;
 }
 
 export interface GenerateAnswerInput extends AnswerRequest {
@@ -355,8 +358,28 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
             })
           : searchHits;
 
+      let effectiveHits = validHits;
+      if (effectiveHits.length === 0 && Boolean(options.enableLiveSearch)) {
+        try {
+          const liveHits = await fetchLiveTechEvidence(input.question, {
+            ...(options.githubPat ? { githubPat: options.githubPat } : {}),
+            timeoutMs: 3500,
+          });
+          if (liveHits.length > 0) {
+            effectiveHits = liveHits;
+            reqLogger.info('rag.live_search.fallback_success', {
+              liveHitsCount: liveHits.length,
+            });
+          }
+        } catch (liveErr) {
+          reqLogger.warn('rag.live_search.failed', {
+            error: liveErr instanceof Error ? liveErr.message : 'Unknown live search error',
+          });
+        }
+      }
+
       // 3. Check for insufficient evidence
-      if (validHits.length === 0) {
+      if (effectiveHits.length === 0) {
         reqLogger.info('rag.answer.insufficient_evidence', {
           reason: 'no_search_hits',
           considered: 0,
@@ -387,9 +410,8 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
       // 4. Assemble context with stable citation keys [C1], [C2], ...
       const contextChunks: ResolvedContextChunk[] = [];
       const chunkMap = new Map<string, ResolvedContextChunk>();
-
-      for (let i = 0; i < validHits.length; i += 1) {
-        const hit = validHits[i]!;
+      for (let i = 0; i < effectiveHits.length; i += 1) {
+        const hit = effectiveHits[i]!;
         const citationKey = `C${i + 1}`;
         const source = mapSourceKey(undefined);
         const canonicalUrl =

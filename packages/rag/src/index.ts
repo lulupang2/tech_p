@@ -15,3 +15,8 @@ export {
   type GenerateAnswerInput,
   type ResolvedContextChunk,
 } from './answer-service.js';
+export {
+  fetchLiveTechEvidence,
+  type LiveSearchOptions,
+  type LiveSearchResultItem,
+} from './live-search.js';
