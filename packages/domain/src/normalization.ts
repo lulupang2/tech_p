@@ -630,9 +630,13 @@ export function createNormalizationService(
         const rawHtml =
           typeof payload['html'] === 'string'
             ? payload['html']
-            : typeof payload['text'] === 'string'
-              ? payload['text']
-              : '';
+            : typeof payload['body'] === 'string'
+              ? payload['body']
+              : typeof payload['content'] === 'string'
+                ? payload['content']
+                : typeof payload['text'] === 'string'
+                  ? payload['text']
+                  : '';
         const bodyText = sanitizeHtml(rawHtml);
 
         const pubRaw =
@@ -698,9 +702,13 @@ export function createNormalizationService(
         const rawContent =
           typeof payload['html'] === 'string'
             ? payload['html']
-            : typeof payload['text'] === 'string'
-              ? payload['text']
-              : '';
+            : typeof payload['body'] === 'string'
+              ? payload['body']
+              : typeof payload['content'] === 'string'
+                ? payload['content']
+                : typeof payload['text'] === 'string'
+                  ? payload['text']
+                  : '';
         const bodyText = sanitizeHtml(rawContent);
 
         const pubRaw = payload['published_at'] ?? rawItem.publishedAt;
