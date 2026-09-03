@@ -10,7 +10,7 @@
 
 | 요구사항 | 설계 문서 | 구현 task | 검증 계층 |
 |---|---|---|---|
-| FR-001 실제 외부 데이터 수집 | DATA_PIPELINE §2~4, SOURCE_CATALOG, SOURCE_RIGHTS | COL-002, COL-003, COL-004, COL-006, COL-007, COL-008, COL-009, COL-010, QUE-001, PIPE-001 | fixture contract, integration, live canary |
+| FR-001 실제 외부 데이터 수집 | DATA_PIPELINE §2~4, SOURCE_CATALOG, SOURCE_RIGHTS, ADR-0014 | COL-002, COL-003, COL-004, COL-006, COL-007, COL-008, COL-009, COL-010, QUE-001, PIPE-001 | fixture contract, integration, source별 live canary; Reddit canary/corpus는 미완료 |
 | FR-002 브라우저 수집 | DATA_PIPELINE §6 | COL-005 | fixture contract, canary, security |
 | FR-003 원본 보존 | DATA_PIPELINE §5.3, DATABASE §3.1 | DB-002, PIPE-001 | integration |
 | FR-004 정규화 | DATA_PIPELINE §5.4, §5.6, TOPIC_TAXONOMY | PIPE-002, PIPE-005, DB-003 | domain topic/chunk unit, database integration |

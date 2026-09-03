@@ -12,12 +12,12 @@ import { decodeOpaqueCursor, encodeOpaqueCursor } from './cursor.js';
 import { createHardenedFetch } from './guard.js';
 
 export interface GitHubReleasesConfig {
-  owner: string;
-  repo: string;
+  owner?: string;
+  repo?: string;
+  repositories?: ReadonlyArray<{ owner: string; repo: string }>;
   pat?: string;
   perPage?: number;
 }
-
 export interface GitHubRateLimit extends Record<string, unknown> {
   limit?: number | undefined;
   remaining?: number | undefined;
@@ -29,8 +29,18 @@ export interface GitHubReleaseCursor extends Record<string, unknown> {
   etag?: string | undefined;
   page?: number | undefined;
   rateLimit?: GitHubRateLimit | undefined;
+  repoIndex?: number | undefined;
+  repositoryCursors?:
+    | Record<
+        string,
+        {
+          lastPublishedAt?: string | undefined;
+          etag?: string | undefined;
+          page?: number | undefined;
+        }
+      >
+    | undefined;
 }
-
 export interface GitHubReleasePayload {
   id: number;
   tag_name: string;
@@ -79,14 +89,41 @@ export class GitHubReleasesCollector extends BaseCollector implements CollectorP
       cursorData = decodeOpaqueCursor<GitHubReleaseCursor>(context.cursor) ?? {};
     }
 
-    const url = new URL(
-      `https://api.github.com/repos/${this.config.owner}/${this.config.repo}/releases`,
-    );
-    url.searchParams.set('per_page', perPage.toString());
-    if (cursorData.page) {
-      url.searchParams.set('page', cursorData.page.toString());
-    }
+    const repos: ReadonlyArray<{ owner: string; repo: string }> =
+      this.config.repositories && this.config.repositories.length > 0
+        ? this.config.repositories
+        : [
+            {
+              owner: this.config.owner ?? 'microsoft',
+              repo: this.config.repo ?? 'playwright',
+            },
+          ];
 
+    const repoIndex =
+      typeof cursorData.repoIndex === 'number' && cursorData.repoIndex < repos.length
+        ? cursorData.repoIndex
+        : 0;
+    const currentRepo = repos[repoIndex]!;
+    const repoKey = `${currentRepo.owner}/${currentRepo.repo}`;
+    const repoCursor =
+      cursorData.repositoryCursors?.[repoKey] ??
+      (repos.length > 1
+        ? {}
+        : {
+            lastPublishedAt: cursorData.lastPublishedAt,
+            etag: cursorData.etag,
+            page: cursorData.page,
+          });
+
+    const targetOwner = currentRepo.owner;
+    const targetRepo = currentRepo.repo;
+    const effectivePage = repoCursor.page ?? cursorData.page ?? 1;
+
+    const url = new URL(`https://api.github.com/repos/${targetOwner}/${targetRepo}/releases`);
+    url.searchParams.set('per_page', perPage.toString());
+    if (effectivePage > 1) {
+      url.searchParams.set('page', effectivePage.toString());
+    }
     // SSRF URL Validation
     const urlValidation = this.guard.validateUrl(url.toString(), this.policy);
     if (!urlValidation.valid) {
@@ -103,8 +140,9 @@ export class GitHubReleasesCollector extends BaseCollector implements CollectorP
       headers['Authorization'] = `Bearer ${pat}`;
     }
 
-    if (cursorData.etag) {
-      headers['If-None-Match'] = cursorData.etag;
+    const effectiveEtag = repoCursor.etag ?? cursorData.etag;
+    if (effectiveEtag) {
+      headers['If-None-Match'] = effectiveEtag;
     }
 
     const request: RequestInit = { method: 'GET', headers };
@@ -117,11 +155,29 @@ export class GitHubReleasesCollector extends BaseCollector implements CollectorP
 
     // Handle 304 Not Modified
     if (response.status === 304) {
+      const nextRepoIndex = (repoIndex + 1) % repos.length;
+      const updatedCursors = {
+        ...(cursorData.repositoryCursors ?? {}),
+        [repoKey]: {
+          etag: effectiveEtag,
+          lastPublishedAt: repoCursor.lastPublishedAt,
+          page: 1,
+        },
+      };
       return {
         sourceKey: this.sourceKey,
         items: [],
-        nextCursor: context.cursor,
-        hasMore: false,
+        nextCursor:
+          repos.length > 1
+            ? encodeOpaqueCursor({
+                ...cursorData,
+                repoIndex: nextRepoIndex,
+                repositoryCursors: updatedCursors,
+                etag: effectiveEtag,
+                rateLimit,
+              })
+            : context.cursor,
+        hasMore: repos.length > 1,
         metrics: {
           itemsFetched: 0,
           bytesFetched: 0,
@@ -144,7 +200,11 @@ export class GitHubReleasesCollector extends BaseCollector implements CollectorP
       : releases.length === perPage;
 
     const items: CollectedRawItem[] = [];
-    let latestPublishedAt = cursorData.lastPublishedAt;
+    const effectiveLastPublishedAt =
+      repos.length > 1
+        ? repoCursor.lastPublishedAt
+        : (repoCursor.lastPublishedAt ?? cursorData.lastPublishedAt);
+    let latestPublishedAt = effectiveLastPublishedAt;
 
     for (const release of releases) {
       // Exclude draft releases
@@ -162,9 +222,9 @@ export class GitHubReleasesCollector extends BaseCollector implements CollectorP
 
       // Filter by cursor incremental window if present
       if (
-        cursorData.lastPublishedAt &&
+        effectiveLastPublishedAt &&
         publishedAtStr &&
-        publishedAtStr <= cursorData.lastPublishedAt
+        publishedAtStr <= effectiveLastPublishedAt
       ) {
         continue;
       }
@@ -180,18 +240,29 @@ export class GitHubReleasesCollector extends BaseCollector implements CollectorP
         metadata: {
           canonicalUrl: release.html_url,
           tagName: release.tag_name,
-          repository: `${this.config.owner}/${this.config.repo}`,
+          repository: `${targetOwner}/${targetRepo}`,
         },
       });
 
       items.push(rawItem);
     }
 
+    const nextRepoIndex = hasNextPage ? repoIndex : (repoIndex + 1) % repos.length;
+    const updatedCursors = {
+      ...(cursorData.repositoryCursors ?? {}),
+      [repoKey]: {
+        ...(latestPublishedAt ? { lastPublishedAt: latestPublishedAt } : {}),
+        ...(responseEtag ? { etag: responseEtag } : {}),
+        ...(hasNextPage ? { page: effectivePage + 1 } : { page: 1 }),
+      },
+    };
+
     const nextCursorData: GitHubReleaseCursor = {
       rateLimit,
       ...(latestPublishedAt ? { lastPublishedAt: latestPublishedAt } : {}),
       ...(responseEtag ? { etag: responseEtag } : {}),
-      ...(hasNextPage ? { page: (cursorData.page ?? 1) + 1 } : {}),
+      ...(hasNextPage ? { page: effectivePage + 1 } : {}),
+      ...(repos.length > 1 ? { repoIndex: nextRepoIndex, repositoryCursors: updatedCursors } : {}),
     };
 
     const nextCursor = encodeOpaqueCursor(nextCursorData);

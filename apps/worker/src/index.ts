@@ -63,6 +63,17 @@ export {
   type DeduplicationExecutionResult,
   type DeduplicationOperation,
 } from './deduplication.js';
+export {
+  RedditCollector,
+  createRedditCollector,
+  REDDIT_COLLECTION_SCHEDULE,
+  createRedditScheduleWindow,
+  enqueueRedditScheduleJob,
+  type EnqueueRedditJobOptions,
+  type EnqueueRedditJobResult,
+  type RedditCollectorOptions,
+  type RedditCollectorConfig,
+} from './collectors/reddit.js';
 import {
   createChunkRepository,
   createCollectionRunRepository,
@@ -77,10 +88,20 @@ import {
   documentRevisions,
 } from '@techpulse/database';
 import {
+  ArticleCollector,
+  ArxivCollector,
+  ChromeOriginTrialsCollector,
+  DiscourseCollector,
   GitHubReleasesCollector,
   GitHubSearchCollector,
+  HuggingFaceCollector,
+  NpmDownloadsCollector,
+  NpmRegistryCollector,
+  RedditCollector,
   StackExchangeCollector,
+  type PlaywrightBrowser,
 } from '@techpulse/collectors';
+import type { CollectorPort, SourceKey } from '@techpulse/domain';
 import {
   createEnrichmentService,
   createNormalizationService,
@@ -104,6 +125,137 @@ import {
   type StructuredEvent,
 } from '@techpulse/observability';
 import { pathToFileURL } from 'node:url';
+import { chromium } from 'playwright';
+
+/** Node-only Playwright factory; the collector owns browser lifecycle. */
+export function createWorkerChromiumFactory(): () => Promise<PlaywrightBrowser> {
+  return async () =>
+    (await chromium.launch({
+      headless: true,
+    })) as unknown as PlaywrightBrowser;
+}
+
+export interface CreateCollectorOptions {
+  readonly browserFactory?: () => Promise<PlaywrightBrowser>;
+  readonly robotsFetcher?: (url: string) => Promise<string>;
+}
+
+/**
+ * Dynamic collector factory resolving any supported sourceKey with scheduleConfig.
+ * Supports multi-target bounded collection for Bun, Node.js, Playwright, TypeScript, React.
+ */
+export function createCollectorForSource(
+  sourceKey: SourceKey,
+  scheduleConfig?: Record<string, unknown>,
+  options?: CreateCollectorOptions,
+): CollectorPort | undefined {
+  const browserFactory = options?.browserFactory ?? createWorkerChromiumFactory();
+
+  switch (sourceKey) {
+    case 'github_releases': {
+      const repos = Array.isArray(scheduleConfig?.['repositories'])
+        ? (scheduleConfig!['repositories'] as Array<{ owner: string; repo: string }>)
+        : undefined;
+      const owner =
+        typeof scheduleConfig?.['owner'] === 'string' ? scheduleConfig['owner'] : 'microsoft';
+      const repo =
+        typeof scheduleConfig?.['repo'] === 'string' ? scheduleConfig['repo'] : 'playwright';
+      return new GitHubReleasesCollector({
+        owner,
+        repo,
+        ...(repos ? { repositories: repos } : {}),
+      });
+    }
+    case 'github_search': {
+      const queries = Array.isArray(scheduleConfig?.['queries'])
+        ? (scheduleConfig!['queries'] as string[])
+        : undefined;
+      const query =
+        typeof scheduleConfig?.['query'] === 'string'
+          ? scheduleConfig['query']
+          : 'topic:typescript stars:>500';
+      return new GitHubSearchCollector({
+        query,
+        ...(queries ? { queries } : {}),
+      });
+    }
+    case 'stack_exchange': {
+      const tags = Array.isArray(scheduleConfig?.['tags'])
+        ? (scheduleConfig!['tags'] as string[])
+        : undefined;
+      const tag =
+        typeof scheduleConfig?.['tag'] === 'string' ? scheduleConfig['tag'] : 'typescript';
+      const site =
+        typeof scheduleConfig?.['site'] === 'string' ? scheduleConfig['site'] : 'stackoverflow';
+      return new StackExchangeCollector({
+        defaultSite: site,
+        defaultTag: tag,
+        ...(tags ? { defaultTags: tags } : {}),
+      });
+    }
+    case 'npm_registry': {
+      const packages = Array.isArray(scheduleConfig?.['packages'])
+        ? (scheduleConfig!['packages'] as string[])
+        : undefined;
+      return new NpmRegistryCollector({
+        ...(packages ? { defaultPackages: packages } : {}),
+      });
+    }
+    case 'npm_downloads': {
+      const packages = Array.isArray(scheduleConfig?.['packages'])
+        ? (scheduleConfig!['packages'] as string[])
+        : undefined;
+      return new NpmDownloadsCollector({
+        ...(packages ? { defaultPackages: packages } : {}),
+      });
+    }
+    case 'react_blog': {
+      return new ArticleCollector('react_blog');
+    }
+    case 'chrome_release_notes': {
+      return new ArticleCollector('chrome_release_notes');
+    }
+    case 'arxiv': {
+      const categories = Array.isArray(scheduleConfig?.['categories'])
+        ? (scheduleConfig!['categories'] as string[])
+        : undefined;
+      return new ArxivCollector({
+        ...(categories ? { defaultCategories: categories } : {}),
+      });
+    }
+    case 'users_rust_lang': {
+      return new DiscourseCollector();
+    }
+    case 'huggingface_hub': {
+      return new HuggingFaceCollector();
+    }
+    case 'chrome_origin_trials': {
+      return new ChromeOriginTrialsCollector({
+        browserFactory,
+      });
+    }
+    case 'reddit': {
+      const subreddit =
+        typeof scheduleConfig?.['subreddit'] === 'string'
+          ? scheduleConfig['subreddit']
+          : 'typescript';
+      const robotsFetcher =
+        options?.robotsFetcher ??
+        (async (url: string) => {
+          const response = await fetch(url);
+          if (!response.ok) throw new Error(`robots.txt request failed: ${response.status}`);
+          return response.text();
+        });
+      return new RedditCollector({
+        browserFactory,
+        robotsFetcher,
+        config: { subreddit },
+      });
+    }
+    default:
+      return undefined;
+  }
+}
 
 export const workerLogger = createStructuredLogger({ service: 'worker' });
 
@@ -197,11 +349,11 @@ async function runWorkerProcess(env: Environment = process.env): Promise<void> {
           .where(eq(documentRevisions.id, revisionId));
       }
     : undefined;
-  const collectors = {
-    github_releases: new GitHubReleasesCollector({ owner: 'microsoft', repo: 'playwright' }),
-    github_search: new GitHubSearchCollector({ query: 'topic:typescript stars:>500' }),
-    stack_exchange: new StackExchangeCollector({}),
-  };
+  // Multi-target collector resolver for expanded public corpus
+  const collectorResolver = (
+    sourceKey: SourceKey,
+    source?: { scheduleConfig?: Record<string, unknown> },
+  ): CollectorPort | undefined => createCollectorForSource(sourceKey, source?.scheduleConfig);
   const redis = new Redis(config.redisUrl, { maxRetriesPerRequest: null });
   const normalizationQueue = new Queue('techpulse-normalization', { connection: redis });
   const normalizationHandler = createNormalizationJobHandler({
@@ -223,7 +375,7 @@ async function runWorkerProcess(env: Environment = process.env): Promise<void> {
     sourceRepository,
     collectionRunRepository,
     rawItemRepository,
-    collectorResolver: (sourceKey) => collectors[sourceKey as keyof typeof collectors],
+    collectorResolver,
     stageJobPublisher: {
       publishStageJob: async (payload) => {
         const data = createNormalizationJobData({

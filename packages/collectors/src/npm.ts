@@ -23,6 +23,7 @@ export const DEFAULT_NPM_PACKAGES: readonly string[] = [
   'elysia',
   'playwright',
   '@playwright/test',
+  'bun-types',
   'langchain',
   '@langchain/langgraph',
   'pg',

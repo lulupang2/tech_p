@@ -30,16 +30,16 @@ export interface GitHubSearchRateLimit extends Record<string, unknown> {
  * Opaque cursor data payload for stateful GitHub search pagination.
  */
 export interface GitHubSearchCursor extends Record<string, unknown> {
-  endpoint: GitHubSearchEndpoint;
-  query: string;
-  queryVersion: string;
-  page: number;
-  totalFetched: number;
-  lastCollectedAt: string;
+  endpoint?: GitHubSearchEndpoint | undefined;
+  query?: string | undefined;
+  queryIndex?: number | undefined;
+  queryVersion?: string | undefined;
+  page?: number | undefined;
+  totalFetched?: number | undefined;
+  lastCollectedAt?: string | undefined;
   rateLimit?: GitHubSearchRateLimit | undefined;
   incompleteResults?: boolean | undefined;
 }
-
 /**
  * Configuration for GitHubSearchCollector.
  */
@@ -47,6 +47,7 @@ export interface GitHubSearchCollectorConfig {
   pat?: string;
   endpoint?: GitHubSearchEndpoint;
   query?: string;
+  queries?: readonly string[];
   queryVersion?: string;
   sort?: string;
   order?: 'asc' | 'desc';
@@ -193,13 +194,25 @@ export class GitHubSearchCollector extends BaseCollector implements CollectorPor
       cursorData = decodeOpaqueCursor<GitHubSearchCursor>(context.cursor);
     }
 
+    const queries: readonly string[] =
+      this.config.queries && this.config.queries.length > 0
+        ? this.config.queries
+        : [this.config.query ?? 'topic:typescript stars:>50'];
+
+    const queryIndex =
+      typeof cursorData?.queryIndex === 'number' && cursorData.queryIndex < queries.length
+        ? cursorData.queryIndex
+        : 0;
+
     const endpoint: GitHubSearchEndpoint =
       cursorData?.endpoint ?? this.config.endpoint ?? 'repositories';
-    const query = cursorData?.query ?? this.config.query ?? 'topic:typescript stars:>50';
+    const query =
+      cursorData?.query !== undefined && queries.length === 1
+        ? cursorData.query
+        : queries[queryIndex]!;
     const queryVersion = cursorData?.queryVersion ?? this.config.queryVersion ?? 'v1';
     const page = cursorData?.page ?? 1;
     const totalFetched = cursorData?.totalFetched ?? 0;
-
     // 3. Enforce result cap (1,000 max total results across search)
     const maxResultsCap = Math.min(
       GITHUB_SEARCH_MAX_RESULTS,
@@ -394,6 +407,7 @@ export class GitHubSearchCollector extends BaseCollector implements CollectorPor
       const nextCursorData: GitHubSearchCursor = {
         endpoint,
         query,
+        ...(queries.length > 1 ? { queryIndex } : {}),
         queryVersion,
         page: page + 1,
         totalFetched: newTotalFetched,
@@ -402,13 +416,30 @@ export class GitHubSearchCollector extends BaseCollector implements CollectorPor
         incompleteResults,
       };
       nextCursor = encodeOpaqueCursor(nextCursorData);
+    } else if (queries.length > 1) {
+      const nextQueryIndex = (queryIndex + 1) % queries.length;
+      const nextCursorData: GitHubSearchCursor = {
+        endpoint,
+        query: queries[nextQueryIndex]!,
+        queryIndex: nextQueryIndex,
+        queryVersion,
+        page: 1,
+        totalFetched: 0,
+        lastCollectedAt: collectedAt,
+        rateLimit,
+        incompleteResults: false,
+      };
+      nextCursor = encodeOpaqueCursor(nextCursorData);
     }
+
+    const hasMoreOutput =
+      hasMore || (queries.length > 1 && (queryIndex + 1) % queries.length !== 0);
 
     return {
       sourceKey: this.sourceKey,
       items,
       nextCursor,
-      hasMore,
+      hasMore: hasMoreOutput,
       metrics: {
         itemsFetched: items.length,
         bytesFetched: parseContentLength(response.headers.get('content-length')),

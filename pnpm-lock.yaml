@@ -133,6 +133,9 @@ importers:
       ioredis:
         specifier: ^6.0.0
         version: 6.0.0
+      playwright:
+        specifier: 1.62.1
+        version: 1.62.1
     devDependencies:
       tsx:
         specifier: ^4.20.5

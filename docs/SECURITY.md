@@ -137,7 +137,8 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 | `users_rust_lang` | `username`, `name`(실명 가능), `user_id`, `avatar_template`을 저장 전에 제거한다 |
 | `arxiv` | 저자명은 CC0 metadata에 포함되지만 필요 최소 범위로 저장하고 소속·연락처는 저장하지 않는다 |
 | `huggingface_hub` | 지표만 저장한다. namespace가 개인 사용자명일 수 있으므로 집계 목적 외에는 보관하지 않는다 |
-| `hacker_news`, `reddit` | 권리 검토에서 제외됐다. 수집하지 않는다 |
+| `hacker_news` | 권리 검토에서 제외됐다. 수집하지 않는다 |
+| `reddit` | 포트폴리오·비상업·단기 범위의 제한된 후보. host allowlist, PII 최소화, 삭제/tombstone와 gate 전 production 비활성화가 필수다 |
 
 개인정보 제거는 정규화 단계가 아니라 raw 저장 이전에 수행한다. raw revision은 불변이므로 저장 후에는 되돌릴 수 없다.
 

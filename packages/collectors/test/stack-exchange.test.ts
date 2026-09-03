@@ -527,4 +527,54 @@ describe('COL-003 Stack Exchange Collector Adapter Contract', () => {
       );
     });
   });
+
+  describe('9. Multi-target Tags for Public Corpus', () => {
+    test('supports rotating across Bun, Node, Playwright, TS, React tags', async () => {
+      const requestedUrls: string[] = [];
+      const customFetch: typeof fetch = async (url: string | URL | Request) => {
+        requestedUrls.push(url.toString());
+        return new Response(
+          JSON.stringify({
+            items: [
+              {
+                question_id: 991,
+                link: 'https://stackoverflow.com/questions/991',
+                creation_date: 1700000000,
+                content_license: 'CC BY-SA 4.0',
+              },
+            ],
+            has_more: false,
+            quota_remaining: 9999,
+          }),
+          { status: 200 },
+        );
+      };
+
+      const collector = new StackExchangeCollector({
+        fetchFn: customFetch,
+        defaultTags: ['typescript', 'bun'],
+      });
+
+      // Run 1: first tag (typescript)
+      const run1 = await collector.collect({ sourceKey: 'stack_exchange', cursor: null });
+      assert.match(requestedUrls[0]!, /tagged=typescript/);
+      assert.equal(run1.items.length, 1);
+      assert.ok(run1.nextCursor);
+
+      const cursor1 = decodeOpaqueCursor<{ tagIndex: number; tag: string }>(run1.nextCursor!);
+      assert.equal(cursor1.tagIndex, 1);
+      assert.equal(cursor1.tag, 'bun');
+
+      // Run 2: second tag (bun)
+      const run2 = await collector.collect({
+        sourceKey: 'stack_exchange',
+        cursor: run1.nextCursor,
+      });
+      assert.match(requestedUrls[1]!, /tagged=bun/);
+      assert.equal(run2.items.length, 1);
+
+      const cursor2 = decodeOpaqueCursor<{ tagIndex: number }>(run2.nextCursor!);
+      assert.equal(cursor2.tagIndex, 0); // rotated back to 0
+    });
+  });
 });

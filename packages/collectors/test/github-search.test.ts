@@ -563,4 +563,44 @@ describe('COL-009 GitHub Search Collector', () => {
       );
     });
   });
+
+  describe('Multi-target Queries for Public Corpus', () => {
+    test('executes queries across Bun, Node, Playwright, TS, React and rotates cursors', async () => {
+      const requestedUrls: string[] = [];
+      const collector = new GitHubSearchCollector(
+        {
+          pat: 'ghp_test_token',
+          queries: ['topic:typescript stars:>500', 'topic:bun stars:>100'],
+        },
+        {
+          fetch: (async (url: string | URL) => {
+            requestedUrls.push(url.toString());
+            return createJsonResponse({
+              total_count: 1,
+              incomplete_results: false,
+              items: [SAMPLE_REPO_ITEM],
+            });
+          }) as typeof fetch,
+        },
+      );
+
+      // Run 1: first query (typescript)
+      const run1 = await collector.collect(baseContext);
+      assert.match(requestedUrls[0]!, /q=topic%3Atypescript\+stars%3A%3E500/);
+      assert.equal(run1.items.length, 1);
+      assert.ok(run1.nextCursor);
+
+      const cursor1 = decodeOpaqueCursor<GitHubSearchCursor>(run1.nextCursor!);
+      assert.equal(cursor1?.queryIndex, 1);
+      assert.equal(cursor1?.query, 'topic:bun stars:>100');
+
+      // Run 2: second query (bun)
+      const run2 = await collector.collect({ ...baseContext, cursor: run1.nextCursor });
+      assert.match(requestedUrls[1]!, /q=topic%3Abun\+stars%3A%3E100/);
+      assert.equal(run2.items.length, 1);
+
+      const cursor2 = decodeOpaqueCursor<GitHubSearchCursor>(run2.nextCursor!);
+      assert.equal(cursor2?.queryIndex, 0); // rotated back to 0
+    });
+  });
 });

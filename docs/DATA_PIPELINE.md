@@ -33,7 +33,7 @@
 | GitHub search | 관심·논의 신호 | REST API | 질의를 우리가 기록하므로 재현 가능 | 검색당 1,000건 상한, 분당 30건, 별 히스토리 소급 재구성 불가 |
 | Hugging Face Hub | AI 생태계 활동 | REST API | 문서화 API, rate limit 공개 | **지표 전용.** model card 본문 미수집 |
 
-신호 유형이 릴리스, 커뮤니티 언급, 포럼 논의, 논문, 패키지, 저장소 활동, AI 모델 활동으로 나뉘어 `FR-001`을 충족한다. Hacker News, Reddit, GitHub Trending 페이지, Lobsters, dev.to는 권리 검토에서 제외됐다. 근거는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)에 있다.
+신호 유형이 릴리스, 커뮤니티 언급, 포럼 논의, 논문, 패키지, 저장소 활동, AI 모델 활동으로 나뉘어 `FR-001`을 충족한다. Hacker News, GitHub Trending 페이지, Lobsters, dev.to는 권리 검토에서 제외됐다. Reddit은 포트폴리오·비상업·단기 범위의 제한된 후보이며 live canary와 production corpus 전에는 활성 수집하지 않는다. 근거는 [SOURCE_RIGHTS.md](./SOURCE_RIGHTS.md)에 있다.
 
 수집 방식은 source마다 가장 단순하고 정책에 맞는 것을 고른다. 같은 사이트라도 서버 렌더링 페이지는 HTTP로, 렌더링이 필요한 페이지만 Playwright로 처리한다.
 

@@ -23,7 +23,8 @@
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
 | DISC-001 | 초기 source rights matrix 작성 | - | DONE | [SOURCE_RIGHTS.md](./docs/SOURCE_RIGHTS.md)에 후보별 근거·인용·확인일이 기록됨; 채택 source key 11개(텍스트 7, 지표 4)와 제외·보류 10개가 결론과 함께 정리됨; Playwright 대상 확정; 사용자 확인 완료 2026-09-01 |
-| DEC-001 | 초기 source set 승인 (권리 근거) | DISC-001 | DONE | ADR-0004가 Accepted(2026-09-01); 제외·포함 근거 기록; `verbatim_only`와 게시물별 license 규칙이 설계에 반영됨; SSOT §3.1·§3.2 동기화 완료 |
+| DEC-001 | 초기 source set 승인 (권리 근거) | DISC-001 | DONE | ADR-0004가 Accepted(2026-09-01); Reddit 추가 전의 초기 set 근거를 기록; Reddit 변경은 ADR-0014로 별도 추적 |
+| DEC-010 | Reddit 제한적 source set 추가 승인 | DISC-001 | DONE | ADR-0014 Accepted(2026-09-03); 포트폴리오·비상업·단기 범위와 미완료 live/corpus/evaluation gate가 문서화됨 |
 | DISC-002 | source 자격증명 확보와 인증 rate 재측정 | EXP-001 | DONE | `.env.example` placeholder 등록·실제 값 비커밋 확인; 2026-09-02 인증 credential 주입 후 `github_releases`, `github_search`, `stack_exchange` 각 10회 반복 HTTP 200 성공; p50/max latency·rate/quota/backoff를 [`docs/experiments/disc-002/auth-rate-measurement.json`](./docs/experiments/disc-002/auth-rate-measurement.json)에 sanitized 기록 |
 | EXP-001 | source feasibility 실험 실행 | DISC-001 | DONE | run 1·2 측정 완료(2026-09-01). raw measurement: `experiments/exp-001/result.json`, `experiments/exp-001/repeat-result.json`. 11개 source 도달, 10개 source 10회 반복 100% 성공, `github_search` 미인증 5/10로 **인증 필수** 판정. 결과가 [SOURCE_CATALOG §14](./docs/SOURCE_CATALOG.md)와 [SOURCE_RIGHTS](./docs/SOURCE_RIGHTS.md)에 반영됨. 인증 상태 rate 재측정은 `DISC-002` acceptance로 이관 |
 | DEC-002 | backend framework와 server runtime 승인 | EXP-005 | DONE | ADR-0001이 Accepted(2026-09-01); **Node runtime 위의 Elysia** 확정, Bun 미도입; 별도 schema library 없이 `t.*`가 단일 출처; 알 수 없는 필드 거부는 명시적 설정, 검증 실패는 400 매핑; SSOT §3.3·ARCHITECTURE §6 동기화 완료 |
@@ -219,7 +220,7 @@
 
 | OPS-004 | GHCR SHA image와 SSH production deployment | OPS-001, DEC-009, API-001, DB-001 | DONE | production Compose는 Caddy 없이 API/web을 `127.0.0.1:3000`/`127.0.0.1:5173`에 publish하고, host-owned Caddy snippet이 `signal.jisung.lol` TLS와 routing을 정의; workflow/script가 production approval·concurrency·GHCR SHA push·pinned known_hosts SSH·Caddy validate/reload·migration-before-rollout·healthcheck·previous-SHA rollback을 수행; secret/.env 미커밋 |
 
-| MVP-001 | end-to-end MVP acceptance | TST-002, EVAL-002, SEC-003, OPS-001, OPS-002, DOC-001, FND-006 | BLOCKED | 승인 source 3개 이상 예약 수집; raw→normalize→dedup→embed→query 흐름; 사용자 예시 4개 결과·출처; 테스트/보안/RAG gate와 freshness/cost 보고서 통과 |
+| MVP-001 | end-to-end MVP acceptance | TST-002, EVAL-002, SEC-003, OPS-001, OPS-002, DOC-001, FND-006 | BLOCKED | 승인 source 3개 이상 예약 수집; raw→normalize→dedup→embed→query 흐름; 사용자 예시 4개 결과·출처; 테스트/보안/RAG gate와 freshness/cost 보고서 통과. Reddit corpus/evaluation은 아직 증명되지 않음 |
 
 ## 9. Dependency graph
 

@@ -22,6 +22,7 @@ export const SOURCE_RAW_RETENTION_DAYS: Readonly<Record<SourceKey, number>> = {
   npm_downloads: 30,
   github_search: 30,
   huggingface_hub: 30,
+  reddit: 30,
 };
 
 export const CONFIRM_IRREVERSIBLE_PURGE_TOKEN = 'CONFIRM_IRREVERSIBLE_RETENTION_PURGE' as const;

@@ -84,3 +84,7 @@ pnpm --filter @techpulse/web test:e2e
 - provider key, database URL, cookie, raw secret은 저장소와 로그에 기록하지 않는다.
 
 개발 backlog와 dependency는 [TASKS.md](./TASKS.md), 테스트 계층과 완료 정의는 [docs/TESTING.md](./docs/TESTING.md)에서 확인한다.
+
+### Reddit source 상태 (2026-09-03)
+
+Reddit은 포트폴리오·비상업·단기 프로젝트 범위에서 허용된 source set 변경이다. 현재는 metadata-only seed만 존재하며 live canary, production corpus, RAG evaluation을 실행했다는 증거가 없으므로 `MVP-001`은 `BLOCKED`다. Reddit content에 CC BY-SA 라이선스가 적용된다는 주장은 하지 않는다.

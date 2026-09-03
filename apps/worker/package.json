@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
-    "format": "pnpm --dir ../.. exec prettier --check apps/worker",
+    "format": "pnpm --dir ../.. exec prettier --check apps/worker/src apps/worker/test apps/worker/package.json",
     "lint": "eslint .",
     "start": "tsx src/index.ts",
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
@@ -20,7 +20,8 @@
     "@techpulse/observability": "workspace:*",
     "bullmq": "^6.3.3",
     "drizzle-orm": "^0.45.2",
-    "ioredis": "^6.0.0"
+    "ioredis": "^6.0.0",
+    "playwright": "1.62.1"
   },
   "devDependencies": {
     "tsx": "^4.20.5"

@@ -16,6 +16,7 @@ const sourceKeys = [
   'npm_downloads',
   'github_search',
   'huggingface_hub',
+  'reddit',
 ] as const;
 
 const metricTypes = [

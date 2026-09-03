@@ -234,28 +234,67 @@ docker compose --profile persistent down --volumes
 운영 변경 명령은 public API와 분리된 operations API를 사용하며 `OPS_API_KEY`가 필요하다. 비밀값을 명령행 인자나 shell history에 남기지 말고 환경 변수 또는 secret manager로 주입한다.
 
 ```bash
-# 상태 확인
+# 1. Seed or update all 12 supported sources with multi-target configurations (Bun, Node, Playwright, TS, React)
+DATABASE_URL="$DATABASE_URL_DIRECT" pnpm --filter @techpulse/database run db:seed:mvp
+
+# 2. 상태 확인
 pnpm --filter @techpulse/api ops status
 
-# 변경 없이 수집 범위와 권한 확인
+# 3. 변경 없이 수집 범위와 권한 확인 (dry-run)
 pnpm --filter @techpulse/api ops collect \
   --source github_releases \
   --limit 50 \
   --dry-run
 
-# 실제 bounded 수집
+# 4. 실제 bounded 수집 (다중 타겟 순환 및 멱등키 보장)
+# 4.1 GitHub Releases (Playwright, TypeScript, Node.js, Bun, React 순환)
 pnpm --filter @techpulse/api ops collect \
   --source github_releases \
   --limit 50 \
-  --idempotency-key collect-github-releases-2026-09-02
+  --idempotency-key collect-github-releases-2026-09-03
 
-# 실패 run의 정규화 단계만 replay
+# 4.2 GitHub Search (TypeScript, Node.js, Bun, Playwright, React 쿼리 순환)
+pnpm --filter @techpulse/api ops collect \
+  --source github_search \
+  --limit 30 \
+  --idempotency-key collect-github-search-2026-09-03
+
+# 4.3 Stack Exchange (TypeScript, Node.js, Bun, Playwright, React 태그 순환)
+pnpm --filter @techpulse/api ops collect \
+  --source stack_exchange \
+  --limit 30 \
+  --idempotency-key collect-stack-exchange-2026-09-03
+
+# 4.4 npm Registry & Downloads (TypeScript, React, Playwright, bun-types 등)
+pnpm --filter @techpulse/api ops collect \
+  --source npm_registry \
+  --limit 5 \
+  --idempotency-key collect-npm-registry-2026-09-03
+
+pnpm --filter @techpulse/api ops collect \
+  --source npm_downloads \
+  --limit 5 \
+  --idempotency-key collect-npm-downloads-2026-09-03
+
+# 4.5 React Blog (공식 블로그 RSS / CC-BY-4.0)
+pnpm --filter @techpulse/api ops collect \
+  --source react_blog \
+  --limit 20 \
+  --idempotency-key collect-react-blog-2026-09-03
+
+# 4.6 Chrome Release Notes
+pnpm --filter @techpulse/api ops collect \
+  --source chrome_release_notes \
+  --limit 10 \
+  --idempotency-key collect-chrome-release-notes-2026-09-03
+
+# 5. 실패 run의 정규화 단계만 replay
 pnpm --filter @techpulse/api ops replay \
   --scope stage \
   --target <raw-or-run-id> \
   --idempotency-key replay-normalization-<target-id>
 
-# 최근 run과 단일 run 확인
+# 6. 최근 run과 단일 run 확인
 pnpm --filter @techpulse/api ops runs --limit 20
 pnpm --filter @techpulse/api ops run <run-id>
 ```

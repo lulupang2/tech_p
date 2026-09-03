@@ -120,7 +120,10 @@ export interface RawIngestionResult {
   readonly isTransientError?: boolean;
 }
 
-export type CollectorResolver = (sourceKey: SourceKey) => CollectorPort | undefined;
+export type CollectorResolver = (
+  sourceKey: SourceKey,
+  source?: SourceRecord,
+) => CollectorPort | undefined;
 
 export interface StructuredEventLoggerLike {
   info(event: string, data?: Record<string, unknown>): void;
@@ -285,7 +288,7 @@ export function createRawIngestionService(
       });
 
       // 3. Resolve Collector and collect items
-      const collector = options.collectorResolver(request.sourceKey);
+      const collector = options.collectorResolver(request.sourceKey, source);
       if (!collector) {
         const errorMsg = `No collector registered for source '${request.sourceKey}'`;
         await options.collectionRunRepository.update(run.id, {

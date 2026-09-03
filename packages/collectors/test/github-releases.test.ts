@@ -131,4 +131,65 @@ describe('COL-002 GitHub Releases collector', () => {
       '2026-09-01T12:00:00Z',
     );
   });
+
+  test('supports multi-target repositories (Bun, Node, Playwright, TS, React) and cycles cursors across repos', async () => {
+    const requestedUrls: string[] = [];
+    const collector = new GitHubReleasesCollector(
+      {
+        repositories: [
+          { owner: 'microsoft', repo: 'playwright' },
+          { owner: 'oven-sh', repo: 'bun' },
+        ],
+      },
+      {
+        fetch: async (url) => {
+          requestedUrls.push(url.toString());
+          if (url.toString().includes('bun')) {
+            return response([
+              {
+                ...release,
+                id: 456,
+                tag_name: 'bun-v1.1.27',
+                html_url: 'https://github.com/oven-sh/bun/releases/tag/bun-v1.1.27',
+              },
+            ]);
+          }
+          return response([
+            {
+              ...release,
+              id: 123,
+              tag_name: 'v1.47.0',
+              html_url: 'https://github.com/microsoft/playwright/releases/tag/v1.47.0',
+            },
+          ]);
+        },
+      },
+    );
+
+    // First run: microsoft/playwright
+    const run1 = await collector.collect({ sourceKey: 'github_releases', cursor: null });
+    assert.equal(
+      requestedUrls[0],
+      'https://api.github.com/repos/microsoft/playwright/releases?per_page=30',
+    );
+    assert.equal(run1.items.length, 1);
+    assert.equal(run1.items[0]?.metadata?.repository, 'microsoft/playwright');
+    assert.ok(run1.nextCursor);
+
+    const decoded1 = decodeOpaqueCursor<{
+      repoIndex: number;
+      repositoryCursors: Record<string, unknown>;
+    }>(run1.nextCursor!);
+    assert.equal(decoded1?.repoIndex, 1);
+
+    // Second run: oven-sh/bun
+    const run2 = await collector.collect({ sourceKey: 'github_releases', cursor: run1.nextCursor });
+    assert.equal(requestedUrls[1], 'https://api.github.com/repos/oven-sh/bun/releases?per_page=30');
+    assert.equal(run2.items.length, 1);
+    assert.equal(run2.items[0]?.metadata?.repository, 'oven-sh/bun');
+    assert.ok(run2.nextCursor);
+
+    const decoded2 = decodeOpaqueCursor<{ repoIndex: number }>(run2.nextCursor!);
+    assert.equal(decoded2?.repoIndex, 0); // cycled back to 0
+  });
 });

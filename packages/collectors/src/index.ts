@@ -158,3 +158,16 @@ export {
   type HuggingFaceSort,
   type HuggingFaceRateLimitInfo,
 } from './huggingface.js';
+export {
+  RedditCollector,
+  RedditRobotsDisallowedError,
+  REDDIT_LICENSE,
+  RedditCollectorError,
+  RedditSecurityError,
+  RedditLoginOrCaptchaDetectedError,
+  type RedditCollectorConfig,
+  type RedditCollectorOptions,
+  type DiscoveredRedditPost,
+  type ExtractedRedditPostPayload,
+  type RedditCursorData,
+} from './reddit.js';

@@ -54,7 +54,7 @@
 | `huggingface_hub` | REST API | yes | 지표만 yes | no(blanket) | no(blanket) | 지표 전용 채택 (§9.6) |
 | `users_rust_lang` | Discourse JSON | yes | yes | yes | yes | no_blocker_found, 게시일 분리 필수 (§9.8.1) |
 | `stack_exchange` | REST API | yes | conditional | conditional | yes(귀속 필수) | AI 학습 조항 미해결 (§9.8.2) |
-| `reddit` | Data API | no | no | no | no | blocker_found |
+| `reddit` | Data API / public listing | conditional | conditional | conditional | conditional | scoped_allowed |
 | `github_trending` | HTML scrape | conditional | no | no | no | blocker_found |
 | 공식 문서 사이트 다수 | GitHub repo 우선 | yes | yes | 대부분 yes | 대부분 yes | §9 참조 |
 
@@ -215,9 +215,9 @@ Playwright 사용 정당성이 성립한다.
 
 ## 8. 채택하지 않는 후보
 
-### 8.1 reddit — blocker_found
+### 8.1 reddit — scoped_allowed
 
-- 근거 문서: [robots.txt](https://www.reddit.com/robots.txt), [Data API Terms](https://redditinc.com/policies/data-api-terms) (rev. 2026-07-20), Public Content Policy, Data API Wiki
+- 근거 문서: [robots.txt](https://www.reddit.com/robots.txt), [Data API Terms](https://redditinc.com/policies/data-api-terms), Public Content Policy, Data API Wiki. 프로젝트 결정은 포트폴리오·비상업·단기 범위에 한정된다.
 - 확인일: 2026-09-01
 
 robots.txt 본문이 `User-agent: *` + `Disallow: /`다. Data API 사용자는 robots가 아니라 Data API Terms의 규율을 받지만, 그 약관이 우리 설계와 정면으로 충돌한다.
@@ -233,6 +233,9 @@ robots.txt 본문이 `User-agent: *` + `Disallow: /`다. Data API 사용자는 r
 RAG 검색용 embedding이 "model training"에 해당하는지는 약관에 명시되지 않아 미확정이다. 불명확을 허용으로 보지 않는 규칙에 따라 **저장·embedding 대상으로 채택하지 않는다.** 상업적 사용은 별도 계약, 연구는 Reddit for Researchers 프로그램으로만 허용된다고 명시돼 있다.
 
 읽기 전용 조회는 free OAuth Data API(100 QPM)로 가능하지만, 저장하지 않는 조회는 우리 파이프라인 구조와 맞지 않는다.
+
+**포트폴리오 환경 참고**:
+본 프로젝트 범위에서는 Reddit 수집을 허용하되 Reddit content에 CC BY-SA가 적용된다고 주장하지 않는다. 수집·저장·embedding·excerpt는 약관, 삭제 요청, PII 최소화, 보존기간 및 비상업 범위를 확인한 뒤에만 허용한다. 현재 live canary와 production corpus가 없으므로 운영 활성화 상태가 아니다.
 
 ### 8.2 github_trending — blocker_found
 
@@ -517,7 +520,7 @@ Discourse 기반 포럼은 **플랫폼이 같아도 라이선스가 인스턴스
 | GitHub search 결과의 재현성 보장 범위 | github_search | `EXP-001`에서 동일 질의 반복 시 결과 일치율 측정 |
 | repository별 license와 embedding 허용 여부 | github_releases, github_search | `EXP-001`에서 대상 목록과 함께 기록 |
 | HF paper pages upvote 신호의 약관·라이선스 | huggingface_hub | 미확인. 채택하지 않음 |
-| RAG 검색용 embedding이 "model training"에 해당하는지 | reddit | 약관에 명시 없음. 채택하지 않으므로 추적만 |
+| RAG 검색용 embedding이 "model training"에 해당하는지 | reddit | 약관에 명시 없음. residual risk 수용 범위와 본 ADR의 비상업 조건으로 제한 |
 | Vue docs repo LICENSE 실제 내용 | vue | 필요 시 확인 |
 | 라이선스 미명시 블로그의 재사용 허용 여부 | node, bun, next, deno, typescript devblog | 각 운영 주체에 문의 또는 미채택 |
 | MDN 파생 발췌 공개 시 share-alike 전파 범위 | mdn | 발행 정책 확정 전 미채택 |

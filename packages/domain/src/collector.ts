@@ -12,7 +12,8 @@ export type SourceKey =
   | 'npm_registry'
   | 'npm_downloads'
   | 'github_search'
-  | 'huggingface_hub';
+  | 'huggingface_hub'
+  | 'reddit';
 
 /**
  * Common raw item output contract produced by collectors before persistence.

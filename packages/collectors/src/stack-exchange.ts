@@ -20,6 +20,7 @@ export interface StackExchangeCollectorOptions {
   readonly accessToken?: string;
   readonly defaultSite?: string;
   readonly defaultTag?: string;
+  readonly defaultTags?: readonly string[];
   readonly defaultFilter?: string;
 }
 
@@ -29,6 +30,7 @@ export interface StackExchangeCollectorOptions {
 export interface StackExchangeCursorPayload {
   readonly site: string;
   readonly tag?: string | null;
+  readonly tagIndex?: number;
   readonly page: number;
   readonly fromdate?: number;
   readonly todate?: number;
@@ -123,11 +125,25 @@ export class StackExchangeCollector extends BaseCollector {
       ? decodeOpaqueCursor<StackExchangeCursorPayload>(context.cursor)
       : null;
 
+    const tags: readonly string[] =
+      this.options.defaultTags && this.options.defaultTags.length > 0
+        ? this.options.defaultTags
+        : this.options.defaultTag
+          ? [this.options.defaultTag]
+          : [];
+
+    const tagIndex =
+      typeof cursorData?.tagIndex === 'number' && cursorData.tagIndex < tags.length
+        ? cursorData.tagIndex
+        : 0;
+
     const site = cursorData?.site ?? this.options.defaultSite ?? 'stackoverflow';
     const tag =
-      cursorData?.tag !== undefined
+      cursorData?.tag !== undefined && tags.length <= 1
         ? (cursorData.tag ?? undefined)
-        : (this.options.defaultTag ?? undefined);
+        : tags.length > 0
+          ? tags[tagIndex]
+          : (this.options.defaultTag ?? undefined);
     const page = cursorData?.page ?? 1;
     const limit = context.limit ? Math.min(Math.max(context.limit, 1), 100) : 30;
 
@@ -268,7 +284,26 @@ export class StackExchangeCollector extends BaseCollector {
       const nextCursorPayload: StackExchangeCursorPayload = {
         site,
         tag: tag ?? null,
+        ...(tags.length > 1 ? { tagIndex } : {}),
         page: page + 1,
+        ...(fromdate !== undefined ? { fromdate } : {}),
+        ...(todate !== undefined ? { todate } : {}),
+        ...(backoffSeconds !== undefined
+          ? {
+              backoffSeconds,
+              ...(backoffUntil !== undefined ? { backoffUntil } : {}),
+            }
+          : {}),
+        ...(body.quota_remaining !== undefined ? { quotaRemaining: body.quota_remaining } : {}),
+      };
+      nextCursor = encodeOpaqueCursor(nextCursorPayload);
+    } else if (tags.length > 1) {
+      const nextTagIndex = (tagIndex + 1) % tags.length;
+      const nextCursorPayload: StackExchangeCursorPayload = {
+        site,
+        tag: tags[nextTagIndex] ?? null,
+        tagIndex: nextTagIndex,
+        page: 1,
         ...(fromdate !== undefined ? { fromdate } : {}),
         ...(todate !== undefined ? { todate } : {}),
         ...(backoffSeconds !== undefined
@@ -293,12 +328,13 @@ export class StackExchangeCollector extends BaseCollector {
     }
 
     const durationMs = Date.now() - startTime;
+    const hasMoreOutput = hasMore || (tags.length > 1 && (tagIndex + 1) % tags.length !== 0);
 
     return {
       sourceKey: this.sourceKey,
       items,
       nextCursor,
-      hasMore,
+      hasMore: hasMoreOutput,
       metrics: {
         itemsFetched: items.length,
         bytesFetched,
@@ -306,7 +342,6 @@ export class StackExchangeCollector extends BaseCollector {
       },
     };
   }
-
   /**
    * Re-fetches specific questions by IDs to verify active state and identify absence-based deletions.
    * Rate limits and errors throw, guaranteeing that errors are NEVER misinterpreted as deletions.

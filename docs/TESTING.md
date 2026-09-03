@@ -235,7 +235,7 @@ live canary와 유료 LLM 평가는 이 blocking pipeline 밖에서 실행하고
 
 ### 11.2 Non-blocking 파이프라인
 
-1. **`live-canary` (`live canary`)**: 승인된 외부 source(예: `COL-005` Chrome Origin Trials)에 대한 live canary suite는 blocking pipeline 밖에서 `workflow_dispatch` 또는 `TECHPULSE_CI_ENABLE_LIVE_CANARY`로 실행되며, `continue-on-error: true`로 설정되어 외부 네트워크/rate-limit으로 인한 PR merge 차단을 방지한다.
+1. **`live-canary` (`live canary`)**: 승인된 외부 source(예: `COL-005` Chrome Origin Trials; Reddit은 아직 미실행)에 대한 live canary suite는 blocking pipeline 밖에서 `workflow_dispatch` 또는 `TECHPULSE_CI_ENABLE_LIVE_CANARY`로 실행되며, `continue-on-error: true`로 설정되어 외부 네트워크/rate-limit으로 인한 PR merge 차단을 방지한다.
 2. **`rag-evaluation` (`RAG evaluation`)**: 유료 LLM 기반 골든셋 평가(`EVAL-002`)는 blocking pipeline 밖에서 `workflow_dispatch` 또는 `TECHPULSE_CI_ENABLE_RAG_EVAL`로 실행되며, `continue-on-error: true`로 릴리스 검토용 증빙으로만 활용된다.
 
 ### 11.3 미구현 suite 처리 원칙

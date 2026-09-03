@@ -222,7 +222,24 @@ tag 목록은 [TOPIC_TAXONOMY §4](./TOPIC_TAXONOMY.md)의 `stackoverflow tag` �
 | 개인정보 | namespace가 개인 사용자명일 수 있으므로 집계 목적 외 보관하지 않는다 |
 | schedule 제안 | 1일 |
 
-## 13. schedule 요약 (제안)
+## 13. reddit
+
+| 항목 | 값 |
+|---|---|
+| endpoint | `https://www.reddit.com/r/{subreddit}/` |
+| 수집 방식 | Playwright 브라우저 렌더링 + semantic locator (`getByRole('article')`, `getByRole('heading')`, `getByRole('paragraph')` 등, COL-005 패턴) |
+| 인증 | 미인증 공개 페이지 렌더링 (로그인·CAPTCHA 우회 금지, 발생 시 즉시 중단) |
+| rate 전략 | 6시간 주기 및 host allowlist 라우팅 필터링, 동시성 제한 |
+| cursor | 마지막 externalId 및 snapshot SHA256 해시 |
+| external_id | `reddit-post-{id}` (t3 접두사 제거) |
+| canonical_url | `https://www.reddit.com/r/{subreddit}/comments/{id}/...` |
+| published_at | `<time datetime="...">` UTC |
+| 본문 | post title 및 paragraph 본문 텍스트 |
+| 제거 필드 | `author`, `username`, `avatar`, `author_fullname`, `author_flair_text` 등 개인식별정보 전체 제거 |
+| license | CC BY-SA로 주장하지 않음. Reddit User Agreement & Content Policy와 프로젝트 범위를 확인해야 함 |
+| schedule 제안 | 6시간 |
+
+## 14. schedule 요약 (제안)
 
 | source | 주기 | 근거 |
 |---|---|---|
@@ -230,6 +247,7 @@ tag 목록은 [TOPIC_TAXONOMY §4](./TOPIC_TAXONOMY.md)의 `stackoverflow tag` �
 | stack_exchange | 1시간 | 일 10,000 quota 안에서 tag별 incremental |
 | users_rust_lang | 1시간 | 분당 200 여유 |
 | react_blog | 6시간 | 발행 빈도가 낮다 |
+| reddit | 6시간 (제안) | seed는 `enabled=false`; live canary·production corpus 전 production 비활성 |
 | arxiv | 1일 | TOU가 동일 질의 1일 1회를 권고 |
 | chrome_release_notes | 1일 | 버전 주기가 수 주 |
 | chrome_origin_trials | 1일 | 변경이 느리다 |
@@ -240,7 +258,7 @@ tag 목록은 [TOPIC_TAXONOMY §4](./TOPIC_TAXONOMY.md)의 `stackoverflow tag` �
 
 동일 source의 활성 run은 하나만 허용하고, 지연 시 backlog를 무한히 쌓지 않고 coalescing한다.
 
-## 14. `EXP-001` 측정 결과 반영 (2026-09-01)
+## 15. `EXP-001` 측정 결과 반영 (2026-09-01)
 
 [EXP-001 run 1](./experiments/EXP-001-source-feasibility.md)에서 11개 source를 실측했다. 해소된 항목과 새로 발견한 항목은 다음과 같다.
 
