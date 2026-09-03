@@ -306,20 +306,6 @@
                 {/if}
               </span>
             </div>
-            {#if source.coverageNotes.length > 0}
-              <div class="notes-section">
-                <span class="info-label"
-                  >{currentLocale === 'ko'
-                    ? '수집 범위 및 권리 안내:'
-                    : 'Coverage & Rights Notes:'}</span
-                >
-                <ul class="notes-list">
-                  {#each source.coverageNotes as note, idx (idx)}
-                    <li>{note}</li>
-                  {/each}
-                </ul>
-              </div>
-            {/if}
           </div>
 
           <div class="card-footer">
