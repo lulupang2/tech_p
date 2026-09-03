@@ -107,7 +107,7 @@ export class ApiClient {
       Accept: 'application/json',
       ...options.defaultHeaders,
     };
-    this.defaultTimeoutMs = options.timeoutMs ?? 15_000;
+    this.defaultTimeoutMs = options.timeoutMs ?? 30_000;
   }
 
   /**
@@ -215,6 +215,7 @@ export class ApiClient {
   async createAnswer(request: AnswerRequest, options?: RequestOptions): Promise<AnswerResponse> {
     const url = this.buildUrl('/api/v1/answers');
     const json = await this.request(url, {
+      timeoutMs: options?.timeoutMs ?? 90_000,
       ...options,
       method: 'POST',
       body: request,
