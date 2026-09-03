@@ -229,6 +229,32 @@ function mapSourceKey(value: string | undefined): SourceKey {
   }
   return 'github_releases';
 }
+const GENERIC_TECH_TERMS: Record<string, true> = {
+  and: true,
+  are: true,
+  latest: true,
+  release: true,
+  releases: true,
+  recent: true,
+  trend: true,
+  trends: true,
+  what: true,
+};
+
+function extractTechnicalTerms(question: string): string[] {
+  return [...new Set(question.match(/[A-Za-z][A-Za-z0-9@._/-]*/gu) ?? [])].filter(
+    (term) => !GENERIC_TECH_TERMS[term.toLowerCase()],
+  );
+}
+
+function hasRelevantLocalEvidence(question: string, hits: readonly SearchHit[]): boolean {
+  const terms = extractTechnicalTerms(question).map((term) => term.toLowerCase());
+  if (terms.length === 0) return hits.length > 0;
+  return hits.some((hit) => {
+    const haystack = `${hit.title} ${hit.content}`.toLowerCase();
+    return terms.some((term) => haystack.includes(term));
+  });
+}
 
 export function createAnswerService(options: AnswerServiceOptions): AnswerServicePort {
   const logger = options.logger ?? createStructuredLogger({ service: 'rag' });
@@ -359,14 +385,17 @@ export function createAnswerService(options: AnswerServiceOptions): AnswerServic
           : searchHits;
 
       let effectiveHits = validHits;
-      if (effectiveHits.length === 0 && Boolean(options.enableLiveSearch)) {
+      if (
+        Boolean(options.enableLiveSearch) &&
+        (effectiveHits.length === 0 || !hasRelevantLocalEvidence(input.question, effectiveHits))
+      ) {
         try {
           const liveHits = await fetchLiveTechEvidence(input.question, {
             ...(options.githubPat ? { githubPat: options.githubPat } : {}),
             timeoutMs: 3500,
           });
           if (liveHits.length > 0) {
-            effectiveHits = liveHits;
+            effectiveHits = effectiveHits.length === 0 ? liveHits : [...liveHits, ...effectiveHits];
             reqLogger.info('rag.live_search.fallback_success', {
               liveHitsCount: liveHits.length,
             });

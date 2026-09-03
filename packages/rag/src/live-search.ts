@@ -206,27 +206,24 @@ export async function fetchLiveTechEvidence(
   const timeoutMs = options.timeoutMs ?? 3500;
   const githubPat = options.githubPat ?? process.env['GITHUB_PAT'];
 
-  // Extract core keywords from question
-  const keywords = question
-    .replace(/[?.,!~^]/gu, ' ')
-    .split(/\s+/)
-    .filter(
-      (w) =>
-        w.length >= 2 &&
-        ![
-          '최근',
-          '대한',
-          '관련',
-          '동향',
-          '요약해줘',
-          '알려줘',
-          '어때',
-          '비교해줘',
-          '설명해줘',
-        ].includes(w),
-    );
-
-  const searchQuery = keywords.length > 0 ? keywords.slice(0, 3).join(' ') : question;
+  const genericTerms: Record<string, true> = {
+    and: true,
+    are: true,
+    latest: true,
+    release: true,
+    releases: true,
+    recent: true,
+    trend: true,
+    trends: true,
+    what: true,
+  };
+  const keywords = [...new Set(question.match(/[A-Za-z][A-Za-z0-9@._/-]*/gu) ?? [])].filter(
+    (term) => !genericTerms[term.toLowerCase()],
+  );
+  const searchQuery =
+    keywords.length > 0
+      ? keywords.slice(0, 3).join(' ')
+      : question.replace(/[?.,!~^]/gu, ' ').trim();
 
   const [npmHits, ghHits, wikiHits] = await Promise.all([
     searchNpmRegistry(searchQuery, fetchFn, timeoutMs),
