@@ -167,6 +167,7 @@ export interface DiscourseCollectorOptions {
   readonly defaultOrder?: 'default' | 'created' | 'activity';
   readonly defaultAscending?: boolean;
   readonly includeTombstones?: boolean;
+  readonly ignoreLicenseCutoff?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -655,11 +656,10 @@ export class DiscourseCollector extends BaseCollector {
         break;
       }
 
-      // Check license cutoff: posts created before 2020-07-17 are under CC BY-NC-SA 3.0 and must not be saved
-      if (isBeforeLicenseCutoff(topicSummary.created_at)) {
+      // Check license cutoff unless ignoreLicenseCutoff is enabled
+      if (!this.options.ignoreLicenseCutoff && isBeforeLicenseCutoff(topicSummary.created_at)) {
         continue;
       }
-
       // Check time window if provided
       if (context.timeWindow) {
         const topicCreated = new Date(topicSummary.created_at);
@@ -792,11 +792,10 @@ export class DiscourseCollector extends BaseCollector {
     const res = await this.performFetch(topicUrl, signal);
     const topicDetails = res.data as DiscourseTopicDetails;
 
-    // License cutoff check
-    if (isBeforeLicenseCutoff(topicDetails.created_at)) {
+    // License cutoff check unless ignoreLicenseCutoff is enabled
+    if (!this.options.ignoreLicenseCutoff && isBeforeLicenseCutoff(topicDetails.created_at)) {
       return null;
     }
-
     const topicTombstone = detectDiscourseTombstone(topicDetails);
     const posts = topicDetails.post_stream?.posts ?? [];
 

@@ -174,10 +174,10 @@ try {
   for (const [key, name, kind, baseUrl, scheduleConfig] of sources) {
     await pool.query(
       `INSERT INTO sources (key, name, kind, base_url, enabled, schedule_config, policy_reviewed_at)
-       VALUES ($1, $2, $3, $4, ($1 <> 'reddit'), $5::jsonb, now())
+       VALUES ($1, $2, $3, $4, true, $5::jsonb, now())
        ON CONFLICT (key) DO UPDATE SET name = EXCLUDED.name, kind = EXCLUDED.kind,
          base_url = EXCLUDED.base_url, schedule_config = EXCLUDED.schedule_config,
-         enabled = ($1 <> 'reddit'), updated_at = now()`,
+         enabled = true, updated_at = now()`,
       [key, name, kind, baseUrl, JSON.stringify(scheduleConfig)],
     );
   }

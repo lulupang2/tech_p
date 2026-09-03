@@ -227,7 +227,7 @@ export function createCollectorForSource(
       });
     }
     case 'users_rust_lang': {
-      return new DiscourseCollector();
+      return new DiscourseCollector({ ignoreLicenseCutoff: true });
     }
     case 'huggingface_hub': {
       return new HuggingFaceCollector();
@@ -242,17 +242,16 @@ export function createCollectorForSource(
         typeof scheduleConfig?.['subreddit'] === 'string'
           ? scheduleConfig['subreddit']
           : 'typescript';
-      const robotsFetcher =
-        options?.robotsFetcher ??
-        (async (url: string) => {
-          const response = await fetch(url);
-          if (!response.ok) throw new Error(`robots.txt request failed: ${response.status}`);
-          return response.text();
-        });
       return new RedditCollector({
         browserFactory,
-        robotsFetcher,
-        config: { subreddit },
+        ...(options?.robotsFetcher ? { robotsFetcher: options.robotsFetcher } : {}),
+        config: {
+          subreddit,
+          bypass: {
+            allowRobotsBypass: true,
+            fallbackToOldRedditOnLor2: true,
+          },
+        },
       });
     }
     default:
@@ -316,7 +315,7 @@ async function runWorkerProcess(env: Environment = process.env): Promise<void> {
   const topicRepository = createTopicRepository(databaseClient.db);
   const chunkRepository = createChunkRepository(databaseClient.db);
   const enrichmentService = createEnrichmentService({ topicRepository, chunkRepository });
-  const normalizationService = createNormalizationService();
+  const normalizationService = createNormalizationService({ relaxedRightsMode: true });
   const embeddingPort =
     env['EMBEDDING_API_KEY'] && env['EMBEDDING_API_KEY'].trim().length > 0
       ? createOpenAiCompatibleEmbeddingPort({

@@ -109,6 +109,7 @@ export interface NormalizationServicePort {
 export interface NormalizationServiceOptions {
   readonly normalizerVersion?: string;
   readonly defaultLanguage?: string;
+  readonly relaxedRightsMode?: boolean;
 }
 
 /**
@@ -229,7 +230,7 @@ export function createNormalizationService(
 ): NormalizationServicePort {
   const normalizerVersion = options.normalizerVersion ?? NORMALIZER_VERSION;
   const defaultLanguage = options.defaultLanguage ?? 'en';
-
+  const relaxedRightsMode = options.relaxedRightsMode ?? false;
   function resolveSourceKey(
     rawItem: RawItemRecord | RawItemInput,
     sourceKeyHint?: SourceKey,
@@ -485,12 +486,13 @@ export function createNormalizationService(
             ? `https://users.rust-lang.org/t/${slug}/${topicId}`
             : rawItem.canonicalUrl;
 
-        // License cutoff check: posts on or after 2020-07-17 are MIT/Apache-2.0
         const licenseCutoff = new Date('2020-07-17T00:00:00.000Z');
-        const licenseId = publishedAt && publishedAt >= licenseCutoff ? 'mit-or-apache-2.0' : null;
-
-        const author: string | null = null; // User PII stripped per SECURITY.md §8
+        const licenseId =
+          relaxedRightsMode || (publishedAt && publishedAt >= licenseCutoff)
+            ? 'mit-or-apache-2.0'
+            : null;
         const artifactType: ArtifactType = 'forum_post';
+        const author: string | null = null; // User PII stripped per SECURITY.md §8
 
         const normalizedHash = computeNormalizedHash({
           artifactType,
@@ -946,6 +948,44 @@ export function createNormalizationService(
           querySignature,
           isIncomplete,
         });
+
+        if (relaxedRightsMode) {
+          const titleText = `GitHub Search Signals: ${topic}`;
+          const searchDocTitle = sanitizeText(titleText);
+          const searchDocBody = sanitizeHtml(
+            typeof payload['description'] === 'string' && payload['description'].trim().length > 0
+              ? payload['description']
+              : `GitHub search results for ${topic}. Total matching repositories: ${totalCount}. Query: ${query}.`,
+          );
+          const searchArtifactType: ArtifactType = 'article';
+          const searchLicenseId = null;
+          const searchAuthor: string | null = null;
+          const searchNormalizedHash = computeNormalizedHash({
+            artifactType: searchArtifactType,
+            canonicalUrl: rawItem.canonicalUrl,
+            title: searchDocTitle,
+            bodyText: searchDocBody,
+            language: defaultLanguage,
+            publishedAt: collectedAt,
+            licenseId: searchLicenseId,
+            author: searchAuthor,
+          });
+
+          documents.push({
+            artifactType: searchArtifactType,
+            canonicalUrl: rawItem.canonicalUrl,
+            title: searchDocTitle,
+            bodyText: searchDocBody,
+            author: searchAuthor,
+            language: defaultLanguage,
+            publishedAt: collectedAt,
+            licenseId: searchLicenseId,
+            normalizedHash: searchNormalizedHash,
+            normalizerVersion,
+            status: 'pending',
+            rawItemId,
+          });
+        }
         break;
       }
 
@@ -987,9 +1027,53 @@ export function createNormalizationService(
           querySignature: null,
           isIncomplete: false,
         });
+
+        if (relaxedRightsMode) {
+          const modelTitle = sanitizeText(`Hugging Face Model: ${subjectKey}`);
+          const pipelineTag =
+            typeof payload['pipeline_tag'] === 'string' ? payload['pipeline_tag'] : '';
+          const tags = Array.isArray(payload['tags'])
+            ? (payload['tags'] as string[]).join(', ')
+            : '';
+          const modelBody = sanitizeHtml(
+            typeof payload['description'] === 'string' && payload['description'].trim().length > 0
+              ? payload['description']
+              : `Open source AI model ${subjectKey} on Hugging Face Hub. Pipeline: ${pipelineTag || 'general'}. Tags: ${tags || 'none'}. Downloads: ${downloads ?? 0}, Likes: ${likes ?? 0}.`,
+          );
+          const hfArtifactType: ArtifactType = 'article';
+          const hfLicenseId =
+            typeof payload['license'] === 'string'
+              ? normalizeLicenseSlug(payload['license'])
+              : 'apache-2.0';
+          const hfAuthor: string | null = null;
+          const hfNormalizedHash = computeNormalizedHash({
+            artifactType: hfArtifactType,
+            canonicalUrl: rawItem.canonicalUrl || `https://huggingface.co/${subjectKey}`,
+            title: modelTitle,
+            bodyText: modelBody,
+            language: defaultLanguage,
+            publishedAt: createdAt,
+            licenseId: hfLicenseId,
+            author: hfAuthor,
+          });
+
+          documents.push({
+            artifactType: hfArtifactType,
+            canonicalUrl: rawItem.canonicalUrl || `https://huggingface.co/${subjectKey}`,
+            title: modelTitle,
+            bodyText: modelBody,
+            author: hfAuthor,
+            language: defaultLanguage,
+            publishedAt: createdAt,
+            licenseId: hfLicenseId,
+            normalizedHash: hfNormalizedHash,
+            normalizerVersion,
+            status: 'pending',
+            rawItemId,
+          });
+        }
         break;
       }
-
       default: {
         // Fallback generic normalization
         const genericTitle = sanitizeText(
