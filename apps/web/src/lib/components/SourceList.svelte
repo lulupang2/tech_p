@@ -715,19 +715,6 @@
     color: #64748b;
   }
 
-  .notes-section {
-    margin-top: 4px;
-    padding-top: 8px;
-    border-top: 1px solid #33415580;
-  }
-
-  .notes-list {
-    margin: 4px 0 0 0;
-    padding-left: 16px;
-    color: #cbd5e1;
-    font-size: 12px;
-  }
-
   .card-footer {
     margin-top: 12px;
     padding-top: 8px;
