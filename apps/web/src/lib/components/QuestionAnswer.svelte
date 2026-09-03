@@ -72,8 +72,8 @@
 <script lang="ts">
   import { locale, type Locale } from '$lib/i18n.js';
   import { ApiClient, ApiClientError } from '../api-client.js';
+  import { renderMarkdown } from '../markdown.js';
   import type { AnswerResponse, ValidationIssue } from '@techpulse/contracts';
-
   interface Props {
     client: ApiClient;
     initialResponse?: AnswerResponse | null;
@@ -711,9 +711,35 @@
           <h3 class="answer-heading">
             {currentLocale === 'ko' ? '종합 답변' : 'Synthesized Answer'}
           </h3>
-          <div class="answer-text">
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+          <div
+            class="answer-text"
+            role="region"
+            aria-label="Synthesized Markdown Answer"
+            onclick={(e) => {
+              const target = (e.target as HTMLElement)?.closest?.('.md-citation-badge');
+              if (target) {
+                e.preventDefault();
+                const citId = target.getAttribute('data-citation-id');
+                if (citId) handleCitationFocus(citId);
+              }
+            }}
+            onkeydown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                const target = (e.target as HTMLElement)?.closest?.('.md-citation-badge');
+                if (target) {
+                  e.preventDefault();
+                  const citId = target.getAttribute('data-citation-id');
+                  if (citId) handleCitationFocus(citId);
+                }
+              }
+            }}
+          >
             {#if response.answer}
-              <p class="answer-paragraph">{response.answer}</p>
+              <div class="markdown-body">
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                {@html renderMarkdown(response.answer)}
+              </div>
             {/if}
           </div>
 
@@ -1639,12 +1665,125 @@
     color: var(--text-primary);
   }
 
-  .answer-paragraph {
-    margin: 0;
-    font-size: 1.05rem;
-    line-height: 1.7;
+  :global(.markdown-body) {
+    font-size: 1.02rem;
+    line-height: 1.75;
     color: var(--text-primary);
-    white-space: pre-line;
+  }
+
+  :global(.markdown-body .md-paragraph) {
+    margin: 0 0 14px 0;
+  }
+
+  :global(.markdown-body .md-paragraph:last-child) {
+    margin-bottom: 0;
+  }
+
+  :global(.markdown-body .md-heading) {
+    margin: 20px 0 10px 0;
+    font-weight: 700;
+    color: #f8fafc;
+    letter-spacing: -0.01em;
+  }
+
+  :global(.markdown-body .md-heading-1),
+  :global(.markdown-body .md-heading-2) {
+    font-size: 1.25rem;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  :global(.markdown-body .md-heading-3) {
+    font-size: 1.12rem;
+    color: #38bdf8;
+  }
+
+  :global(.markdown-body .md-heading-4),
+  :global(.markdown-body .md-heading-5) {
+    font-size: 1.02rem;
+    color: #94a3b8;
+  }
+
+  :global(.markdown-body .md-list) {
+    margin: 0 0 14px 0;
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  :global(.markdown-body .md-list li) {
+    line-height: 1.65;
+  }
+
+  :global(.markdown-body .md-blockquote) {
+    margin: 14px 0;
+    padding: 8px 16px;
+    border-left: 3px solid #38bdf8;
+    background: rgba(56, 189, 248, 0.05);
+    border-radius: 0 6px 6px 0;
+    color: #cbd5e1;
+    font-style: italic;
+  }
+
+  :global(.markdown-body .md-inline-code) {
+    background: rgba(148, 163, 184, 0.15);
+    color: #f472b6;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9em;
+  }
+
+  :global(.markdown-body .md-code-block) {
+    margin: 14px 0;
+    padding: 14px 18px;
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+
+  :global(.markdown-body .md-code-block code) {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.9em;
+    color: #e2e8f0;
+    line-height: 1.5;
+  }
+
+  :global(.markdown-body .md-divider) {
+    margin: 22px 0;
+    border: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  :global(.markdown-body strong) {
+    color: #f8fafc;
+    font-weight: 600;
+  }
+
+  :global(.markdown-body .md-citation-badge) {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 0 5px;
+    border-radius: 4px;
+    font-size: 0.82em;
+    font-weight: 700;
+    text-decoration: none;
+    margin: 0 2px;
+    cursor: pointer;
+    vertical-align: baseline;
+    transition: all 0.15s ease;
+  }
+
+  :global(.markdown-body .md-citation-badge:hover) {
+    background: rgba(56, 189, 248, 0.3);
+    border-color: #38bdf8;
+    color: #ffffff;
+    transform: translateY(-1px);
   }
 
   .citation-jump-bar {

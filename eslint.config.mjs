@@ -32,6 +32,10 @@ export default [
   {
     files: ['**/*.svelte', '**/*.svelte.{js,ts}'],
     languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
       parserOptions: {
         extraFileExtensions: ['.svelte'],
         parser: tseslint.parser,
