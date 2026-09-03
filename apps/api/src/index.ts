@@ -109,6 +109,7 @@ export function start(env: Environment = process.env) {
       searchService,
       embeddingPort,
       logger: apiLogger,
+      defaultTimeoutMs: 60000,
     });
   }
 

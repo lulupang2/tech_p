@@ -445,7 +445,7 @@ ${contextPrompt}
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt },
           ],
-          timeoutMs: input.timeoutMs ?? options.defaultTimeoutMs ?? 15000,
+          timeoutMs: input.timeoutMs ?? options.defaultTimeoutMs ?? 60000,
         });
         completionContent = chatResult.content;
       } catch (chatError: unknown) {

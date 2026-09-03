@@ -20,6 +20,8 @@ const sources = [
         { owner: 'nodejs', repo: 'node' },
         { owner: 'oven-sh', repo: 'bun' },
         { owner: 'facebook', repo: 'react' },
+        { owner: 'rust-lang', repo: 'rust' },
+        { owner: 'postgres', repo: 'postgres' },
       ],
     },
   ],
@@ -37,6 +39,8 @@ const sources = [
         'topic:bun stars:>100',
         'topic:playwright stars:>100',
         'topic:react stars:>500',
+        'topic:rust stars:>500',
+        'topic:postgresql stars:>500',
       ],
     },
   ],
@@ -49,7 +53,7 @@ const sources = [
       cadence: 'hourly',
       site: 'stackoverflow',
       tag: 'typescript',
-      tags: ['typescript', 'node.js', 'bun', 'playwright', 'react'],
+      tags: ['typescript', 'node.js', 'bun', 'playwright', 'react', 'rust', 'postgresql'],
     },
   ],
   [
@@ -175,6 +179,31 @@ try {
          base_url = EXCLUDED.base_url, schedule_config = EXCLUDED.schedule_config,
          enabled = ($1 <> 'reddit'), updated_at = now()`,
       [key, name, kind, baseUrl, JSON.stringify(scheduleConfig)],
+    );
+  }
+
+  console.log('Seeding standard licenses...');
+  const licenses = [
+    ['mit', 'MIT', 'MIT License'],
+    ['apache-2.0', 'Apache-2.0', 'Apache License 2.0'],
+    ['cc-by-4.0', 'CC-BY-4.0', 'Creative Commons Attribution 4.0'],
+    ['cc-by-sa-4.0', 'CC-BY-SA-4.0', 'Creative Commons Attribution-ShareAlike 4.0'],
+    ['cc-by-sa-3.0', 'CC-BY-SA-3.0', 'Creative Commons Attribution-ShareAlike 3.0'],
+    ['cc-by-sa-2.5', 'CC-BY-SA-2.5', 'Creative Commons Attribution-ShareAlike 2.5'],
+    ['cc0-1.0', 'CC0-1.0', 'Creative Commons Zero 1.0'],
+    ['bsd-2-clause', 'BSD-2-Clause', 'BSD 2-Clause'],
+    ['bsd-3-clause', 'BSD-3-Clause', 'BSD 3-Clause'],
+    ['isc', 'ISC', 'ISC License'],
+    ['unlicense', 'Unlicense', 'The Unlicense'],
+    ['mpl-2.0', 'MPL-2.0', 'Mozilla Public License 2.0'],
+    ['mit-or-apache-2.0', null, 'MIT or Apache-2.0 dual license'],
+  ];
+  for (const [id, spdx, name] of licenses) {
+    await pool.query(
+      `INSERT INTO licenses (id, spdx_id, name, allows_commercial)
+       VALUES ($1, $2, $3, true)
+       ON CONFLICT (id) DO NOTHING`,
+      [id, spdx, name],
     );
   }
   console.log(`seeded ${sources.length} MVP source metadata records`);
