@@ -432,13 +432,14 @@
   }
 
   .topic-card {
-    background: #1e293b80;
-    border: 1px solid #334155;
+    background: #ffffff;
+    border: 1px solid #d7e0db;
     border-radius: 8px;
     padding: 16px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    box-shadow: 0 4px 14px rgb(16 37 30 / 6%);
   }
 
   .topic-top {
@@ -451,8 +452,8 @@
   .topic-title {
     margin: 0;
     font-size: 15px;
-    font-weight: 600;
-    color: #f8fafc;
+    font-weight: 700;
+    color: #10251e;
   }
 
   .topic-slug code {
@@ -477,15 +478,16 @@
   }
 
   .meta-label {
-    color: #94a3b8;
+    color: #52635b;
   }
 
   .meta-val {
-    color: #e2e8f0;
+    color: #243b32;
   }
 
   .parent-tag {
-    background: #334155;
+    background: #dfeee4;
+    color: #204a35;
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 11px;
@@ -505,9 +507,9 @@
   }
 
   .alias-chip {
-    background: #0f172a;
-    color: #94a3b8;
-    border: 1px solid #334155;
+    background: #102a40;
+    color: #f4fbff;
+    border: 1px solid #102a40;
     border-radius: 4px;
     padding: 1px 6px;
     font-size: 11px;
