@@ -3,6 +3,7 @@
 - 상태: Draft (conceptual schema)
 - 작성일: 2026-09-01
 - 데이터베이스: PostgreSQL + pgvector (확정)
+- 2026-09-08: [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md) 확장 승인. [공통 계약](./COLLECTION_CONTRACTS.md)의 추가 테이블·readiness·transaction은 COV-002/COV-006 구현 전이며 기존 baseline과 구분한다.
 
 ## 1. 설계 원칙
 
@@ -44,7 +45,7 @@ erDiagram
 | `licenses` | id, spdx_id, name, url, requires_attribution, is_share_alike, allows_commercial, notes | `id`는 안정적 slug(`cc-by-4.0`, `cc-by-sa-4.0`, `cc0-1.0`, `mit`, `apache-2.0`, `psf-2.0`) |
 | `sources` | id, key, name, kind, base_url, enabled, schedule_config, policy_reviewed_at | `key` unique |
 | `source_rights` | source_id, allowed_to_fetch, allowed_to_store, allowed_to_embed, allowed_to_display_excerpt, verbatim_only, license_id, attribution_template, raw_retention_days, excerpt_max_chars, reviewed_at, reviewed_by, review_note_ref | source당 최신 1행, 값은 명시적 boolean으로 unknown을 허용으로 처리하지 않음 |
-| `collection_runs` | id, source_id, scheduled_at, started_at, ended_at, status, cursor_before/after, counts, error_summary | source/window 활성 run 중복 금지 |
+| `collection_runs` | id, source_id, partition/page/attempt reference, scheduled_at, started_at, ended_at, status, cursor_before/after, counts, error_summary | target revision/window partition 자연 키와 page lease로 활성 실행 중복 억제; 실패 attempt 보존 |
 | `raw_items` | id, source_id, run_id, external_id, canonical_url, payload, payload_hash, published_at, collected_at, http_metadata, rights_metadata | `(source_id, external_id, payload_hash)` unique |
 | `pipeline_events` | id, raw_item_id, stage, processor_version, status, attempt, error_code, occurred_at | append-only event 또는 동등한 이력 보존 |
 
@@ -114,6 +115,16 @@ PIPE-006 aggregation은 source observation row를 삭제하거나 덮어쓰지 �
 
 `audit_events`와 `pipeline_events`를 한 테이블로 합치지 않는다. 전자는 사람·운영 행위, 후자는 자동 처리 단계 이력이다.
 
+### 3.6 ADR-0015 target·coverage·budget 확장
+
+[COLLECTION_CONTRACTS §3](./COLLECTION_CONTRACTS.md)의 `collection_targets`, `collection_target_revisions`, `collection_partitions`, `collection_checkpoints`, `acquisition_memberships`, `delivery_outbox`, `observation_cohorts`, `observation_cohort_members`, `embedding_work_items`, `provider_budget_scopes`, `provider_budget_reservations`, `discovery_candidates`를 COV-002가 단독으로 migration한다. 기존 raw/revision/citation FK와 불변성을 보존한다.
+
+- partition 자연 키·page sequence·lease epoch CAS, outbox delivery ID와 업무 completion을 분리한다. Redis 유실 후 sent 행도 DB 미완료 상태에 따라 재전달한다.
+- raw의 최초 run reference를 새 취득으로 덮어쓰지 않는다. acquisition membership은 동일 raw의 정규/on-demand/cohort 경로를 append-only로 연결한다.
+- lexicalReadyAt은 revision/chunk/권리 준비 후 설정한다. vector readiness는 model profile별 필수 chunk completion에서 계산한다. tombstone은 어느 readiness보다 우선한다.
+- budget scope row를 lock/CAS하여 예약 합계를 원자적으로 제한한다. calling/unknown outcome의 예약은 재시작·UTC 날짜 변경에도 임의 반환하지 않는다.
+- retention·원문 삭제 정책은 별도 승인이다. 신규 FK를 무조건 cascade로 두거나 기간이 지났다는 이유로 citation lineage를 삭제하지 않는다.
+
 ## 4. 인덱스 전략
 
 ### 즉시 필요한 일반 인덱스
@@ -149,9 +160,9 @@ Replay uses immutable source/document artifacts and deterministic natural keys; 
 
 ## 6. 일관성과 트랜잭션
 
-- raw item upsert와 collection count는 한 transaction 또는 재계산 가능한 방식으로 처리한다.
-- document revision, chunks, embeddings가 모두 유효해진 뒤 searchable status를 전환한다.
-- queue를 도입하면 DB commit 이후 job 유실을 막기 위해 transactional outbox를 추천한다.
+- page raw upsert, acquisition, checkpoint, 미완료 stage/continuation outbox는 같은 transaction으로 처리한다.
+- 유효 revision·chunks·권리 확인 후 lexical readiness를 전환하고, 승인 model profile별 embedding 완료로 vector readiness를 추가한다.
+- transactional outbox는 ADR-0015에서 승인된 필수 경로다. 외부 I/O 없이 짧은 transaction에서 commit한다.
 - `current_revision_id` 변경과 publish는 원자적으로 처리한다.
 - 삭제는 즉시 hard delete보다 tombstone → 검색 제외 → 보존 정책에 따른 purge 순서를 따른다.
 
@@ -173,11 +184,11 @@ schema, normalizer, chunker, taxonomy, embedding, prompt, workflow 버전은 독
 
 ### 8.1 보존 정책과 Dry-run / 확인 보호 (Retention Runbook)
 
-보존 정책은 [DATA_PIPELINE.md](./DATA_PIPELINE.md §9)의 승인된 기준을 따른다.
-- **Raw Items**: 90일(`github_releases`, `users_rust_lang`, `arxiv`, `chrome_release_notes`, `chrome_origin_trials`, `react_blog`), 30일(`stack_exchange`, `npm_registry`, `npm_downloads`, `github_search`, `huggingface_hub`).
-- **Pipeline Events (실패/격리)**: 30일.
-- **Query Runs & Citations**: 30일.
-- **불변 보존 항목**: 정규화된 문서(`documents`, `document_revisions`), `chunks`, `embeddings`, `duplicate_clusters`, `metric_observations`, `audit_events`는 보존 작업으로 삭제되지 않으며 감사/출처 계보를 유지한다.
+보존 기간은 [DATA_PIPELINE §9](./DATA_PIPELINE.md)와 SSOT의 별도 승인 gate를 따른다. 아래 수치는 기존 runbook 후보값이며 승인된 운영 삭제 정책으로 취급하지 않는다.
+- **Raw Items 후보**: 90일(`github_releases`, `users_rust_lang`, `arxiv`, `chrome_release_notes`, `chrome_origin_trials`, `react_blog`), 30일(`stack_exchange`, `npm_registry`, `npm_downloads`, `github_search`, `huggingface_hub`).
+- **Pipeline Events (실패/격리) 후보**: 30일.
+- **Query Runs & Citations 후보**: 30일.
+- **보존 제약**: revision/chunk/embedding/acquisition/cohort/audit의 provenance를 임의 삭제하지 않는다. 삭제 의무·권리 철회는 승인된 tombstone/purge 정책으로 처리한다. 90일 backfill horizon은 retention 승인이 아니다.
 
 #### 실행 절차 및 안전 가드
 1. **Dry-Run (기본 모드)**:
@@ -197,7 +208,7 @@ schema, normalizer, chunker, taxonomy, embedding, prompt, workflow 버전은 독
 1. **대상 식별**: scope(`source`, `document`, `document_revision`, `raw_item`) 및 `targetKey`를 지정한다.
 2. **Tombstone 적용**:
    - `source` scope 지정 시 `sources.enabled = false`로 변경하고, 연결된 모든 `document_revisions.status`를 `'tombstoned'`로 갱신한다.
-   - 전문 검색(FTS) 및 벡터 검색은 `WHERE dr.status = 'searchable'` 조건을 강제하므로, tombstone 즉시 모든 검색 결과에서 제외된다.
+   - FTS는 lexical readiness, vector는 해당 model profile의 vector readiness를 추가 확인하며 양쪽 모두 현재 권리·tombstone 제외를 강제한다. 기존 `status = 'searchable'`만으로 새 경로의 허용 여부를 판단하지 않는다.
    - 원문 레코드(`raw_items`), 리비전 본문, 청크, 임베딩, 감사 이력은 물리적으로 삭제되지 않고 데이터베이스에 보존된다(`onDelete: set null` / append-only).
    - `tombstone_create` 감사 이벤트가 actor, target, reason과 함께 기록된다.
 

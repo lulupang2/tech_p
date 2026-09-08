@@ -1,3 +1,7 @@
+export * from './acquisition.js';
+export * from './collection-state.js';
+export * from './coverage.js';
+export * from './model-work.js';
 export {
   AiPortError,
   AiProviderError,

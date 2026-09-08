@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm';
+import type { TargetSelector, TargetPolicy, TargetCapability, ModelProfile, BudgetScope } from '@techpulse/domain';
 import {
   boolean,
+  bigint,
   check,
   foreignKey,
   index,
@@ -236,6 +238,7 @@ export const documentRevisions = pgTable(
     normalizerVersion: text('normalizer_version').notNull(),
     status: text('status').notNull().default('pending'),
     searchableAt: timestamp('searchable_at', { withTimezone: true, mode: 'date' }),
+    lexicalReadyAt: timestamp('lexical_ready_at', { withTimezone: true, mode: 'date' }),
     createdAt: utcTimestamp('created_at'),
   },
   (table) => [
@@ -380,16 +383,18 @@ export const embeddings = pgTable(
       .references(() => chunks.id, { onDelete: 'cascade', onUpdate: 'cascade' }),
     provider: text('provider').notNull(),
     model: text('model').notNull(),
+    profileHash: text('profile_hash').notNull().default('legacy'),
     dimensions: integer('dimensions').notNull(),
     embedding: customVector('embedding'),
     inputHash: text('input_hash').notNull(),
     createdAt: utcTimestamp('created_at'),
   },
   (table) => [
-    unique('embeddings_chunk_provider_model_hash_unique').on(
+    unique('embeddings_chunk_profile_hash_unique').on(
       table.chunkId,
       table.provider,
       table.model,
+      table.profileHash,
       table.inputHash,
     ),
     check('embeddings_dimensions_positive', sql`${table.dimensions} > 0`),
@@ -510,7 +515,229 @@ export const answerCitations = pgTable(
   ],
 );
 
+export const collectionTargets = pgTable('collection_targets', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceId: uuid('source_id').notNull().references(() => sources.id, { onDelete: 'restrict' }),
+  canonicalIdentity: text('canonical_identity').notNull(),
+  currentRevisionId: uuid('current_revision_id'),
+  enabled: boolean('enabled').notNull().default(false),
+  createdAt: utcTimestamp('created_at'),
+  updatedAt: utcTimestamp('updated_at'),
+}, (table) => [
+  unique('collection_targets_identity_unique').on(table.sourceId, table.canonicalIdentity),
+]);
+
+export const collectionTargetRevisions = pgTable('collection_target_revisions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  targetId: uuid('target_id').notNull().references(() => collectionTargets.id, { onDelete: 'restrict' }),
+  configHash: text('config_hash').notNull(),
+  selector: jsonb('selector').$type<TargetSelector>().notNull(),
+  capability: jsonb('capability').$type<TargetCapability>().notNull(),
+  policy: jsonb('policy').$type<TargetPolicy>().notNull(),
+  topicIds: jsonb('topic_ids').$type<string[]>().notNull().default([]),
+  taxonomyVersion: text('taxonomy_version').notNull().default('legacy-unreviewed'),
+  cadenceMs: bigint('cadence_ms', { mode: 'number' }),
+  overlapMs: bigint('overlap_ms', { mode: 'number' }).notNull().default(0),
+  createdAt: utcTimestamp('created_at'),
+}, (table) => [
+  unique('collection_target_revision_hash_unique').on(table.targetId, table.configHash),
+  check('collection_target_cadence_valid', sql`${table.cadenceMs} IS NULL OR ${table.cadenceMs} >= 60000`),
+  check('collection_target_overlap_valid', sql`${table.overlapMs} BETWEEN 0 AND 86400000`),
+]);
+
+export const collectionPartitions = pgTable('collection_partitions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  targetRevisionId: uuid('target_revision_id').notNull().references(() => collectionTargetRevisions.id, { onDelete: 'restrict' }),
+  naturalKey: text('natural_key').notNull().unique(),
+  mode: text('mode').notNull(),
+  scopeKey: text('scope_key').notNull(),
+  windowFrom: timestamp('window_from', { withTimezone: true, mode: 'date' }).notNull(),
+  windowTo: timestamp('window_to', { withTimezone: true, mode: 'date' }).notNull(),
+  timeBasis: text('time_basis').notNull(),
+  workflowVersion: text('workflow_version').notNull(),
+  state: text('state').notNull().default('pending'),
+  pageSequence: integer('page_sequence').notNull().default(0),
+  cursor: text('cursor'),
+  leaseEpoch: integer('lease_epoch').notNull().default(0),
+  leaseUntil: timestamp('lease_until', { withTimezone: true, mode: 'date' }),
+  runId: uuid('run_id').references(() => collectionRuns.id, { onDelete: 'restrict' }),
+  nextDueAt: timestamp('next_due_at', { withTimezone: true, mode: 'date' }).notNull(),
+  reason: text('reason'),
+  attempts: integer('attempts').notNull().default(0),
+  createdAt: utcTimestamp('created_at'),
+  updatedAt: utcTimestamp('updated_at'),
+}, (table) => [
+  check('collection_partition_window_valid', sql`${table.windowFrom} < ${table.windowTo}`),
+  check('collection_partition_mode_valid', sql`${table.mode} IN ('backfill','incremental','on_demand')`),
+  check('collection_partition_basis_valid', sql`${table.timeBasis} IN ('published_at','updated_at','observed_at')`),
+  check('collection_partition_state_valid', sql`${table.state} IN ('pending','running','deferred','completed','partial','failed','cancelled')`),
+  check('collection_partition_counters_valid', sql`${table.pageSequence} >= 0 AND ${table.leaseEpoch} >= 0 AND ${table.attempts} >= 0`),
+  index('collection_partition_due_idx').on(table.state, table.nextDueAt),
+]);
+export const collectionPageAttempts = pgTable('collection_page_attempts', {
+  runId: uuid('run_id').primaryKey().references(() => collectionRuns.id, { onDelete: 'restrict' }),
+  partitionId: uuid('partition_id').notNull().references(() => collectionPartitions.id, { onDelete: 'restrict' }),
+  pageSequence: integer('page_sequence').notNull(),
+  leaseEpoch: integer('lease_epoch').notNull(),
+}, (table) => [
+  unique('collection_page_attempt_epoch_unique').on(table.partitionId, table.leaseEpoch),
+  check('collection_page_attempt_counters_valid', sql`${table.pageSequence} >= 0 AND ${table.leaseEpoch} > 0`),
+]);
+
+
+export const collectionCheckpoints = pgTable('collection_checkpoints', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  partitionId: uuid('partition_id').notNull().references(() => collectionPartitions.id, { onDelete: 'restrict' }),
+  pageSequence: integer('page_sequence').notNull(),
+  leaseEpoch: integer('lease_epoch').notNull(),
+  cursorBefore: text('cursor_before'),
+  cursorAfter: text('cursor_after'),
+  disposition: text('disposition').notNull(),
+  retainedItems: integer('retained_items').notNull(),
+  requests: integer('requests').notNull(),
+  bytes: bigint('bytes', { mode: 'number' }).notNull(),
+  committedAt: utcTimestamp('committed_at'),
+}, (table) => [
+  unique('collection_checkpoint_page_unique').on(table.partitionId, table.pageSequence),
+  check('collection_checkpoint_disposition_valid', sql`${table.disposition} IN ('continue','complete','deferred','partial')`),
+  check('collection_checkpoint_counts_valid', sql`${table.retainedItems} >= 0 AND ${table.requests} >= 0 AND ${table.bytes} >= 0`),
+]);
+
+export const acquisitionMemberships = pgTable('acquisition_memberships', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  partitionId: uuid('partition_id').notNull().references(() => collectionPartitions.id, { onDelete: 'restrict' }),
+  rawItemId: uuid('raw_item_id').notNull().references(() => rawItems.id, { onDelete: 'restrict' }),
+  revisionId: uuid('revision_id').references(() => documentRevisions.id, { onDelete: 'restrict' }),
+  runId: uuid('run_id').notNull().references(() => collectionRuns.id, { onDelete: 'restrict' }),
+  acquiredAt: utcTimestamp('acquired_at'),
+}, (table) => [
+  unique('acquisition_partition_raw_unique').on(table.partitionId, table.rawItemId),
+  index('acquisition_revision_idx').on(table.revisionId),
+]);
+
+export const deliveryOutbox = pgTable('delivery_outbox', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  naturalKey: text('natural_key').notNull().unique(),
+  kind: text('kind').notNull(),
+  partitionId: uuid('partition_id').notNull().references(() => collectionPartitions.id, { onDelete: 'restrict' }),
+  pageSequence: integer('page_sequence').notNull(),
+  rawItemId: uuid('raw_item_id').references(() => rawItems.id, { onDelete: 'restrict' }),
+  revisionId: uuid('revision_id').references(() => documentRevisions.id, { onDelete: 'restrict' }),
+  notBefore: timestamp('not_before', { withTimezone: true, mode: 'date' }).notNull(),
+  sentAt: timestamp('sent_at', { withTimezone: true, mode: 'date' }),
+  completedAt: timestamp('completed_at', { withTimezone: true, mode: 'date' }),
+  leaseEpoch: integer('lease_epoch').notNull().default(0),
+  leaseUntil: timestamp('lease_until', { withTimezone: true, mode: 'date' }),
+  createdAt: utcTimestamp('created_at'),
+}, (table) => [
+  check('delivery_kind_valid', sql`${table.kind} IN ('collection','normalization','embedding')`),
+  check('delivery_subject_valid', sql`(${table.kind} = 'collection' AND ${table.rawItemId} IS NULL AND ${table.revisionId} IS NULL) OR (${table.kind} = 'normalization' AND ${table.rawItemId} IS NOT NULL) OR (${table.kind} = 'embedding' AND ${table.revisionId} IS NOT NULL)`),
+  index('delivery_pending_idx').on(table.completedAt, table.notBefore, table.sentAt),
+]);
+
+export const observationCohorts = pgTable('observation_cohorts', {
+  id: uuid('id').primaryKey(),
+  version: text('version').notNull().unique(),
+  effectiveAt: timestamp('effective_at', { withTimezone: true, mode: 'date' }).notNull(),
+  createdAt: utcTimestamp('created_at'),
+});
+export const observationCohortMembers = pgTable('observation_cohort_members', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  cohortId: uuid('cohort_id').notNull().references(() => observationCohorts.id, { onDelete: 'restrict' }),
+  targetRevisionId: uuid('target_revision_id').notNull().references(() => collectionTargetRevisions.id, { onDelete: 'restrict' }),
+  metric: text('metric').notNull(),
+  unit: text('unit').notNull(),
+  querySignature: text('query_signature').notNull(),
+  cadenceMs: bigint('cadence_ms', { mode: 'number' }).notNull(),
+}, (table) => [
+  unique('cohort_member_unique').on(table.cohortId, table.targetRevisionId, table.metric, table.unit),
+  check('cohort_member_cadence_valid', sql`${table.cadenceMs} >= 60000`),
+]);
+
+export const providerBudgetScopes = pgTable('provider_budget_scopes', {
+  id: text('id').primaryKey(),
+  approved: boolean('approved').notNull().default(false),
+  currency: text('currency').notNull(),
+  maxDailyUnits: bigint('max_daily_units', { mode: 'number' }).notNull(),
+  maxOutstandingUnits: bigint('max_outstanding_units', { mode: 'number' }).notNull(),
+  maxDailyTokens: bigint('max_daily_tokens', { mode: 'number' }).notNull(),
+  laneLimits: jsonb('lane_limits').$type<BudgetScope['laneLimits']>().notNull(),
+  approvedModelProfiles: jsonb('approved_model_profiles').$type<readonly string[]>().notNull().default([]),
+  blocked: boolean('blocked').notNull().default(false),
+  createdAt: utcTimestamp('created_at'),
+}, (table) => [
+  check('budget_scope_limits_valid', sql`${table.maxDailyUnits} >= 0 AND ${table.maxOutstandingUnits} >= 0 AND ${table.maxDailyTokens} >= 0`),
+]);
+export const providerBudgetReservations = pgTable('provider_budget_reservations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  scopeId: text('scope_id').notNull().references(() => providerBudgetScopes.id, { onDelete: 'restrict' }),
+  attemptId: text('attempt_id').notNull().unique(),
+  lane: text('lane').notNull(),
+  utcDay: text('utc_day').notNull(),
+  state: text('state').notNull().default('reserved'),
+  units: bigint('units', { mode: 'number' }).notNull(),
+  tokens: bigint('tokens', { mode: 'number' }).notNull(),
+  actualUnits: bigint('actual_units', { mode: 'number' }),
+  actualTokens: bigint('actual_tokens', { mode: 'number' }),
+  createdAt: utcTimestamp('created_at'),
+  updatedAt: utcTimestamp('updated_at'),
+}, (table) => [
+  check('budget_reservation_state_valid', sql`${table.state} IN ('reserved','settled','outcome_unknown','released')`),
+  check('budget_reservation_usage_valid', sql`${table.units} >= 0 AND ${table.tokens} >= 0 AND (${table.actualUnits} IS NULL OR ${table.actualUnits} >= 0) AND (${table.actualTokens} IS NULL OR ${table.actualTokens} >= 0)`),
+  index('budget_reservation_scope_day_idx').on(table.scopeId, table.utcDay, table.state),
+]);
+
+export const embeddingWorkItems = pgTable('embedding_work_items', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  workKey: text('work_key').notNull().unique(),
+  chunkId: uuid('chunk_id').notNull().references(() => chunks.id, { onDelete: 'cascade' }),
+  inputHash: text('input_hash').notNull(),
+  profile: jsonb('profile').$type<ModelProfile>().notNull(),
+  state: text('state').notNull().default('pending'),
+  leaseEpoch: integer('lease_epoch').notNull().default(0),
+  leaseUntil: timestamp('lease_until', { withTimezone: true, mode: 'date' }),
+  reservationId: uuid('reservation_id').references(() => providerBudgetReservations.id, { onDelete: 'restrict' }),
+  embeddingId: uuid('embedding_id').references(() => embeddings.id, { onDelete: 'restrict' }),
+  createdAt: utcTimestamp('created_at'),
+  updatedAt: utcTimestamp('updated_at'),
+}, (table) => [
+  unique('embedding_work_reservation_unique').on(table.reservationId),
+  check('embedding_work_reservation_required', sql`${table.state} NOT IN ('calling','completed','outcome_unknown') OR ${table.reservationId} IS NOT NULL`),
+  check('embedding_work_state_valid', sql`${table.state} IN ('pending','claimed','calling','completed','outcome_unknown','failed')`),
+  check('embedding_work_completed_valid', sql`${table.state} != 'completed' OR ${table.embeddingId} IS NOT NULL`),
+  index('embedding_work_state_lease_idx').on(table.state, table.leaseUntil),
+]);
+
+export const discoveryCandidates = pgTable('discovery_candidates', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceId: uuid('source_id').notNull().references(() => sources.id, { onDelete: 'restrict' }),
+  canonicalIdentity: text('canonical_identity').notNull(),
+  selector: jsonb('selector').$type<TargetSelector>().notNull(),
+  evidenceUrl: text('evidence_url').notNull(),
+  state: text('state').notNull().default('pending'),
+  targetId: uuid('target_id').references(() => collectionTargets.id, { onDelete: 'restrict' }),
+  reviewedBy: text('reviewed_by'),
+  reviewedAt: timestamp('reviewed_at', { withTimezone: true, mode: 'date' }),
+  createdAt: utcTimestamp('created_at'),
+}, (table) => [
+  unique('discovery_candidate_identity_unique').on(table.sourceId, table.canonicalIdentity),
+  check('discovery_candidate_state_valid', sql`${table.state} IN ('pending','accepted','rejected')`),
+]);
+
 export const schema = {
+  collectionTargets,
+  collectionTargetRevisions,
+  collectionPartitions,
+  collectionPageAttempts,
+  collectionCheckpoints,
+  acquisitionMemberships,
+  deliveryOutbox,
+  observationCohorts,
+  observationCohortMembers,
+  providerBudgetScopes,
+  providerBudgetReservations,
+  embeddingWorkItems,
+  discoveryCandidates,
   sources,
   collectionRuns,
   rawItems,

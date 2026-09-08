@@ -3,6 +3,7 @@
 - 상태: Draft contract
 - 작성일: 2026-09-01
 - 형식: JSON over HTTP 추천
+- 2026-09-08: [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md) 확장 승인. 아래 coverage/ops 확장은 COV-001 계약·COV-008 구현 전이다.
 - base path: `/api/v1` 추천
 
 백엔드 프레임워크와 server runtime은 [ADR-0001](./adr/0001-backend-framework.md)과 `DEC-002`에서 **Node runtime 위의 Elysia**로 Accepted됐다. streaming 방식은 아직 미결정이지만 외부 계약은 framework에 독립적이다. 구현 시 OpenAPI 문서를 생성하고 contract test의 기준으로 사용한다.
@@ -194,6 +195,12 @@
 - cursor는 opaque 문자열이며 client가 해석·생성하지 않는다.
 - `limit`은 서버 최대값으로 clamp하고 clamp된 값을 응답에 되돌려준다.
 
+### 2.5 `GET /api/v1/coverage` (승인 설계, 구현 대기)
+
+bounded topic IDs와 UTC from/to를 검증하고 generatedAt, window, 독립 문서 raw/lexical/vector 준비 수, 확인한 partition의 완료/partial 수, 부족 이유를 반환한다. 정확한 TypeBox schema와 입력 상한은 COV-001 contract manifest에 고정한다. 내부 cursor/partition payload/provider budget/권리 검토 원문은 공개하지 않는다.
+
+기존 `/api/v1/answers` envelope와 세 answer status는 유지한다. `coverage.limitations`에 부족 원인·cohort 분모/누락·외부 취득 제한을 요약하고 구조화 CoverageReport는 query run 및 이 endpoint에서 다룬다. 기존 strict client에 미선언 필드를 조용히 추가하지 않는다. COV-008이 API·web·OpenAPI·contract test를 함께 연결한다.
+
 ## 3. Operations endpoints
 
 운영 endpoint는 public API와 별도 prefix·인증·rate limit을 사용한다. 공개 데모에서 외부 노출하지 않는 것이 기본 추천이다.
@@ -207,7 +214,7 @@
 | POST | `/api/v1/ops/collection-runs` | 승인된 source의 수동 수집 요청 |
 | POST | `/api/v1/ops/pipeline-replays` | raw item/run의 bounded 재처리 |
 
-수동 실행과 replay는 idempotency key를 요구하고, 대상 source·기간·최대 item 수를 검증한다. endpoint 존재 여부와 인증 방식은 보안 ADR 전까지 Proposed다.
+기존 보호 ops 표면을 재사용하며 수동 실행/replay의 auth·idempotency·기간/item 상한·audit를 유지한다. ADR-0015의 target 등록/후보 검토, partition plan dry-run/상태/재개, 불명확 work 대사는 같은 보호 경계 안에 추가한다. COV-001이 route/CLI manifest를 확정하고 COV-008이 runtime에 연결한다. target enable은 권리 승인을 대신하지 않는다.
 
 ## 4. Error model
 
@@ -253,9 +260,11 @@ stack trace, SQL, provider body, secret는 응답에 포함하지 않는다.
 
 - public answer endpoint는 IP/API client 단위의 짧은 burst와 일일 quota를 둔다.
 - 실제 수치와 사용자 식별 방식은 배포·비용 결정 후 확정한다.
-- answer 생성은 사용자 재시도로 비용이 중복될 수 있으므로 선택적 `Idempotency-Key`를 추천한다.
+- ADR-0015 범위에는 answer cache/idempotency 신규 도입을 포함하지 않는다. 반복 요청 비용은 context/output cap과 persistent budget으로 제한하며 캐시는 보존·TTL·삭제 무효화 별도 결정 후 검토한다.
 - operations POST는 `Idempotency-Key`를 필수로 한다.
 - 같은 key에 다른 body가 오면 `409 IDEMPOTENCY_CONFLICT`를 반환한다.
+- request admission quota와 provider token/spend budget은 다른 통제다. budget은 PostgreSQL 예약·정산으로 동시 요청·재시작에도 유지한다. 호출 결과 불명확 상태를 무과금 실패로 처리하지 않는다.
+- 질문 보완은 ADR-0015의 1 round/2 search/3 documents/8 HTTP attempts/10초 상한과 전체 deadline을 함께 지킨다. 부족해도 무제한 재검색·background 탐색을 하지 않는다.
 
 ## 7. Versioning과 호환성
 
@@ -269,5 +278,5 @@ stack trace, SQL, provider body, secret는 응답에 포함하지 않는다.
 - 응답 streaming 도입 여부
 - 공개 데모 인증·rate-limit 기준
 - answer 원문 저장·재조회 endpoint 여부
-- operations API를 HTTP로 둘지 CLI로만 제공할지
+- 기존 보호 operations 표면은 유지하며 확장 route/CLI 상세는 COV-001 manifest로 고정한다. 인증·권한 강도는 낮추지 않는다.
 - OpenAPI client generation 범위

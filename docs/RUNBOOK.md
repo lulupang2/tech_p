@@ -2,6 +2,8 @@
 
 This runbook defines the operational procedures, deployment topologies, container configurations, and troubleshooting workflows for the Signal Archive platform.
 
+2026-09-08: ADR-0015 확장 설계가 승인됐고 현재 세션 구현·검증이 허용됐다. 아래 기존 명령은 baseline이며 target별 backfill/scheduler/coverage/budget 자동 운영 완료를 뜻하지 않는다. 새 실행·검증 상태는 TASKS COV 작업과 §12를 따른다. source/provider/지출 gate는 유지한다.
+
 ---
 
 ## 1. Quickstart: One-Command Local Stack
@@ -382,3 +384,16 @@ pg_restore \
 - PostgreSQL integration test는 `DATABASE_URL`이 없으면 skip된다. skip은 통과 증빙이 아니다.
 - Stack Exchange는 `verbatim_only`이며 허용된 발췌와 귀속 없이 재서술하지 않는다.
 - 자동 provider fallback은 없다. 모델 변경은 명시적 평가와 embedding 재색인을 요구한다.
+
+## 12. Coverage cutover와 운영 gate
+
+1. COV-001 contract manifest와 COV-002 migration을 검토하고 **빈 격리 PostgreSQL+pgvector**에서 forward 적용·기존 citation FK·rollback 동작을 확인한다. production DB에 자동 적용하지 않는다.
+2. 기존 producer를 정지하고 old jobs를 drain하거나 DB 상태로 재계획한다. opaque multi-target cursor를 임의 복제하지 않는다. v2 ID-only delivery와 outbox 복구를 검증한 뒤 구버전 producer/consumer·export를 제거한다.
+3. target은 기본 disabled로 등록한다. DISC-003의 최신 권리/capability 근거와 DEC-012의 cadence/byte/API/token/spend/retention 적용 범위가 있어야 활성화한다. 초기 90일은 retention 기간이 아니다.
+4. backfill 계획은 dry-run으로 target·기간·page/request 예산·history unsupported/partial을 먼저 확인한다. 실행 중 checkpoint·outbox 미완료·source quota를 확인하고 중단 후 재개한다. incremental 예산은 별도 유지한다.
+5. embedding calling 이후 장애는 outcome_unknown과 예약 금액을 확인한다. provider 공식 조회/idempotency 없이는 자동 재호출하지 않으며 사용자 확인 없는 비용 재시도를 하지 않는다.
+6. worker health는 scheduler/outbox 진전·stage consumer 생존을 관측한다. 기존 `process.exit(0)` healthcheck는 업무 정상 증빙이 아니다.
+7. 로컬 정상 동작 증거는 실제 PG+Redis와 실제 app 프로세스, fixture HTTP source·fake model을 사용한다. 이것은 유료 provider·실제 corpus 품질 증빙과 별개다.
+8. 실제 모델/source 실행은 DEC-007/DEC-012 승인 뒤 COV-009에서 수행한다. COV-010과 EVAL-002 기준 미달이면 MVP 출시 완료로 표시하지 않는다.
+
+새 ops 명령은 COV-001 manifest→COV-008 구현·smoke 이후 이 절에 실행 가능한 명령으로 등록한다. 현재 문서의 절차를 아직 존재하지 않는 CLI가 구현됐다는 주장으로 읽지 않는다.

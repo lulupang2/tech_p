@@ -3,6 +3,7 @@
 - 상태: Draft threat model
 - 작성일: 2026-09-01
 - 범위: 수집기, 처리 파이프라인, RAG, API, 데이터베이스, 로컬/배포 컨테이너
+- 2026-09-08 확장: [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md) 및 [공통 계약](./COLLECTION_CONTRACTS.md). 승인 방향과 COV runtime 검증 대기를 구분한다.
 
 ## 1. 보호 대상
 
@@ -80,9 +81,19 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 - system instruction과 evidence를 명확한 delimiter/structured message로 분리한다.
 - 모델이 선택할 수 있는 source, SQL, URL, tool을 열어두지 않는다.
 - structured output을 schema로 검증하고 실패 시 bounded retry만 허용한다.
-- provider error body는 sanitize 후 기록한다.
+- provider error body는 기록하지 않고 allowlisted error code·latency·outcome만 기록한다.
 - token·요금 상한을 request와 일 단위로 둔다.
 - 모델·embedding provider의 학습 사용, 보존, 지역, 삭제 조건을 결정 전에 검토한다.
+
+### 5.1 Coverage 확장 보안 gate
+
+- SourceSearchPort는 승인된 typed selector를 받으며 모델이나 사용자가 arbitrary fetch URL·SQL·shell을 지정하지 못한다. 후보/redirect 매 hop의 scheme·host·resolved IP·크기·내용을 다시 검사한다.
+- raw 저장 전 개인정보 제거, revision별 저장/모델 입력/embedding/표시 권리, `verbatim_only`, 귀속 출시 gate를 유지한다. 기존 relaxed rights flag를 신규 경로에서 승계하지 않는다.
+- new target 후보는 기본 disabled다. 접근 가능한 공개 페이지라는 사실이나 repository 소프트웨어 license만으로 모든 본문 재사용을 허용하지 않는다. 권리 provenance가 불명확하면 DISC-003에서 보류한다.
+- provider key 존재만으로 live 모델을 활성화하지 않는다. DEC-007 및 운영 scope/예산 승인과 tokenizer/price/output cap 설정이 있어야 한다. unknown/missing usage는 실제 billing token으로 추정 기록하지 않는다.
+- persistent budget reserve→calling→settle/unknown 흐름을 사용한다. lease 만료 후 calling work를 자동 재호출하지 않으며 unknown reservation을 날짜 변경으로 반환하지 않는다.
+- on-demand acquisition은 정규 수집 quota와 별도 lane이고 ADR-0015 HTTP/시간 상한 및 총 byte/token 상한을 지킨다. 정책·budget 미충족이면 fail closed다.
+- 권리 철회·tombstone은 lexical/vector 검색과 신규 citation을 모두 차단한다. 원문 보존 및 파생 데이터 purge는 별도 승인된 정책을 따른다.
 
 ## 6. API 보안
 
@@ -180,6 +191,7 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 - public/ops route 분리와 rate limit 검증
 - backup/restore 및 credential rotation 절차 문서화
 - raw/query retention job의 dry-run과 삭제 검증
+- COV 확장 gate: stale lease/checkpoint 공격, outbox 중복·Redis 유실, on-demand 표본 오염, 병렬 budget 초과, unknown outcome 자동 재과금, unapproved target/model 호출을 실제 경계에서 검증한다.
 
 ## 12. 운영 배포 통제
 
@@ -190,7 +202,7 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 ## 13. 미결정 사항
 
 - 공개 데모 인증과 quota 식별자
-- ops interface를 HTTP/CLI 중 어디에 둘지
+- 기존 보호 ops 확장의 입력·audit 상세는 COV-001 manifest로 고정하며 공개 데모 인증 방식과 혼동하지 않는다.
 - secret manager의 구체 제품 및 서버 hardening 세부값
 - 사용자 질문·답변 보존 여부
 - provider 데이터 처리 조건

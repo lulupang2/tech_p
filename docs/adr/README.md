@@ -26,6 +26,7 @@ ADR은 중요한 기술 선택의 맥락과 승인을 기록한다. `Proposed` A
 | [ADR-0010](./0010-turborepo-monorepo.md) | Turborepo monorepo orchestration | **Accepted** (2026-09-01) | pnpm workspaces + Turborepo, 승인 package 경계와 dependency-aware task graph |
 | [ADR-0011](./0011-neon-serverless-postgresql.md) | Serverless Neon PostgreSQL runtime and connection strategy | **Accepted** (2026-09-02) | Neon Serverless Postgres, Drizzle 유지, pooled runtime·WebSocket transaction·direct migration endpoint |
 | [ADR-0013](./0013-production-deployment.md) | Production deployment with Compose, GHCR, and SSH | **Accepted** (2026-09-03) | Docker Compose + GHCR + SSH, GitHub production approval, host Caddy snippet/reload, loopback API/web, SHA rollback |
+| [ADR-0015](./0015-coverage-driven-collection-retrieval.md) | Coverage-driven collection and bounded retrieval expansion | **Accepted** (2026-09-08) | A1–A6: target별 backfill/checkpoint, 관측 집합 분리, 제한적 외부 취득, embedding 재사용·예산 예약; 권리/provider/지출 gate 유지 |
 
 ## 작성 규칙
 

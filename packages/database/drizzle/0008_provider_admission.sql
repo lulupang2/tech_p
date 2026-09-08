@@ -1,0 +1,3 @@
+ALTER TABLE "provider_budget_scopes" ADD COLUMN "lane_limits" jsonb NOT NULL;--> statement-breakpoint
+ALTER TABLE "embedding_work_items" ADD CONSTRAINT "embedding_work_reservation_unique" UNIQUE("reservation_id");--> statement-breakpoint
+ALTER TABLE "embedding_work_items" ADD CONSTRAINT "embedding_work_reservation_required" CHECK ("embedding_work_items"."state" NOT IN ('calling','completed','outcome_unknown') OR "embedding_work_items"."reservation_id" IS NOT NULL);

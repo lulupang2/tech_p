@@ -1,6 +1,6 @@
 # Signal Archive Observability & Monitoring Design
 
-- 상태: Implemented baseline (OPS-002)
+- 상태: 기존 OPS-002 baseline 기록; ADR-0015 확장과 runtime 사용량 연결은 COV-008 구현·검증 대기
 - 작성일: 2026-09-02
 - 기준: [SSOT](./SSOT.md), [ARCHITECTURE §9](./ARCHITECTURE.md), [SECURITY](./SECURITY.md)
 
@@ -46,6 +46,15 @@ Signal Archive의 관측성(Observability) 체계는 외부 개발 기술 신호
 | `techpulse_api_request_duration_ms` | Histogram | `ms` | `method`, `route`, `status_code` | API HTTP 요청 지연시간 (p50, p95) |
 | `techpulse_api_rate_limit_rejections_total` | Counter | `rejections` | `route`, `limit_type` | 레이트 리밋 / 동시성 제한 거부 건수 |
 
+
+### 2.1 Coverage 확장 관측 계약
+
+- target/partition: 계획·완료·partial·deferred·gap 개수와 기간, checkpoint 진전, outbox 미완료 age, scheduler heartbeat를 분리한다.
+- 검색 준비: raw/normalized/lexical_ready/vector_ready 수와 stage backlog, 권리 차단, 독립 문서 수를 분리한다. source raw 개수를 검색 가능 근거 수로 표시하지 않는다.
+- cohort: version·공통 target 수·제외 분모·coverage 누락을 기록하고 on-demand 문서 증가를 기존 trend 값에 합산하지 않는다.
+- 비용: actual provider usage, reserved/settled/unknown 금액·token, 완료 embedding 재사용 수, bounded 외부 HTTP attempts/bytes/deadline 종료를 기록한다. usage 누락은 추정 청구값으로 채우지 않는다.
+- targetRevisionId/partitionId/deliveryId/cohortId/workId/reservationId는 trace/log 상관 ID다. metric label은 source/stage/model/lane/reason 같은 bounded 차원만 사용한다.
+- 위 항목은 설계 규약이다. registry의 존재만으로 runtime 수집을 주장하지 않으며 COV-008 실제 호출·실패·재개 smoke로 event와 값을 확인한다.
 ---
 
 ## 3. 장애 알림 베이스라인 및 임계치 평가 (Alert Baseline & Threshold Evaluation)

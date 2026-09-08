@@ -24,6 +24,10 @@
 | FR-012 운영 가시성 | API §3, ARCHITECTURE §9 | PIPE-001, API-004, OPS-002 | contract, integration |
 | FR-013 실패 복구 | DATA_PIPELINE §7 | QUE-001, PIPE-007 | integration |
 | FR-014 최신성 표현 | API §2.1~2.2 | API-002, API-003, WEB-003 | contract, E2E |
+| FR-015 기간 backfill·target 확장 | ADR-0015 A1/A2, COLLECTION_CONTRACTS §2~3 | COV-001, COV-002, COV-003, COV-004, DISC-003, COV-008, COV-009 | target/page contract, 실제 PG+Redis restart integration, 허용된 live canary |
+| FR-016 목적·관측 집합 분리 | ADR-0015 A3, COLLECTION_CONTRACTS §4 | COV-002, COV-006, COV-008, COV-010 | cohort invariance, 분모/partial contract, 실제 비교 평가 |
+| FR-017 부족 원인·bounded 보완 | ADR-0015 A4, API §2.5, RAG §5.4 | COV-003, COV-006, COV-007, COV-008, COV-010 | coverage fixtures, malicious fetch/deadline test, API/UI, RAG eval |
+| FR-018 중복 과금·persistent budget | ADR-0015 A5, COLLECTION_CONTRACTS §5 | COV-002, COV-005, COV-008, COV-009 | concurrent reservation/work claim, unknown outcome·UTC/restart integration, usage 관측 |
 
 ## 2. 비기능 요구사항
 
@@ -39,6 +43,8 @@
 | NFR-008 보안 | SECURITY 전체 | FND-005, COL-001, SEC-001, SEC-002, SEC-003 | security |
 | NFR-009 배포 무결성 | ADR-0013, SECURITY §6 | OPS-004 | SHA image, pinned SSH host key, approval gate, Caddy validate/reload, static/config validation |
 
+ADR-0015의 NFR-003 멱등성은 COV-002/004/005의 page·delivery·model work 경계에서, NFR-004/005는 COV-006/007/010에서 추가 검증한다. API-003·SEC-001·OPS-002 등 기존 DONE은 TASKS §11의 baseline 범위이며 새 기능의 runtime 증거가 아니다.
+
 ## 3. 위협
 
 | 위협 | 구현 task | 검증 |
@@ -48,12 +54,12 @@
 | THR-003 prompt injection | SEC-003, RAG-005 | injection corpus, EVAL-002 |
 | THR-004 허위 URL·citation | RAG-005 | generation contract test |
 | THR-005 secret 유출 | FND-005, OBS-001 | secret scan, redaction unit test |
-| THR-006 비용·DoS | SEC-001 | load/abuse test |
+| THR-006 비용·DoS | SEC-001, COV-002, COV-005, COV-007, COV-008 | shared reservation·unknown outcome·HTTP/token/deadline cap·실제 runtime usage |
 | THR-007 입력 공격 | CON-001, DB-005 | SAST, integration fuzz |
 | THR-008 운영 endpoint 오용 | API-004 | authz test |
 | THR-009 공급망 | FND-003, FND-006, OPS-001 | dependency/container scan |
 | THR-010 과도한 보존 | DISC-001, OPS-003 | retention dry-run, audit |
-| THR-011 job 변조·중복 | QUE-001, PIPE-001 | duplicate/tamper integration test |
+| THR-011 job 변조·중복 | QUE-001, PIPE-001, COV-001, COV-002, COV-004, COV-008 | ID-only version 2, stale fencing, page/outbox transaction, Redis 유실·재시작 복구 |
 | THR-012 공급자 데이터 노출 | AI-002, EXP-003 | redaction test, provider review |
 
 ## 4. 열려 있는 추적 공백
@@ -65,8 +71,10 @@
 | NFR-001 | 15초 목표의 최종 승인 | EXP-003 결과 후 SSOT 반영 |
 | NFR-004, NFR-005 | threshold 확정 | EXP-002, EXP-003 |
 | SEC-001 | rate limit 수치와 사용자 식별 방식 | 배포·비용 결정 |
-| API-004 | ops interface를 HTTP/CLI 중 어디에 둘지 | SECURITY §12 미결정 |
-| OPS-003 | 보존 기간 확정 | DATA_PIPELINE §9 승인 |
+| API-004/COV-001 | 기존 보호 ops 확장 route/CLI manifest와 audit | COV-001 계약, COV-008 runtime 검증 |
+| OPS-003 | 보존 기간·새 acquisition/cohort purge 관계 | DEC-012 승인 및 RUNBOOK §12 |
+| 신규 target 권리·운영 scope | 후보의 접근/store/model-input/embed/display/cadence/비용 승인 | DISC-003 → DEC-012; provider는 DEC-007 별도 유지 |
+| 확장 corpus 성능·품질 | 실제 baseline/expanded 기준과 threshold | COV-009 → DEC-013 → COV-010; EVAL-002 유지 |
 
 PIPE-007 is implemented by the versioned replay contract/service, bounded failure classification, disabled-source guard, and redacted audit boundary in `packages/domain/src/replay.ts` and `apps/worker/src/replay.ts`.
 
@@ -75,5 +83,7 @@ PIPE-007 is implemented by the versioned replay contract/service, bounded failur
 아래 task는 특정 요구사항에 1:1로 대응하지 않는 기반 작업이며 다른 모든 항목의 전제다. 범위 표기 대신 개별 ID를 적어 누락을 기계적으로 확인할 수 있게 한다.
 
 `DISC-001`, `DISC-002`, `DEC-001`, `DEC-002`, `DEC-003`, `DEC-004`, `DEC-005`, `DEC-006`, `DEC-007`, `DEC-008`, `EXP-001`, `EXP-005`, `FND-001`, `FND-002`, `FND-003`, `FND-004`, `FND-005`, `FND-006`, `CON-001`, `TST-001`, `TST-002`, `OBS-001`, `DB-001`, `DB-005`, `AI-001`, `EVAL-001`, `API-001`, `WEB-001`, `DOC-001`, `MVP-001`
+
+ADR-0015 결정·운영 gate: `DEC-011`(A1–A6 승인), `DEC-012`(target/운영/예산), `DEC-013`(품질·성능), `DISC-003`(권리/capability 조사). COV-001~010은 FR-015~018 표에서 개별 추적한다. DB-001/PIPE-008/RAG-001/RAG-002/EXP-002/API-003/SEC-001/SEC-003/WEB-003/OPS-002/MVP-001의 dependency·acceptance 재정의는 TASKS §11~12 및 위 기존 FR/NFR 연결을 유지한다.
 
 기반 task는 요구사항 커버리지 계산에서 제외하지만, 삭제하면 위 표의 여러 행이 동시에 검증 불가가 된다.

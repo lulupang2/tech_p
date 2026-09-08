@@ -3,6 +3,7 @@
 - 상태: Draft
 - 작성일: 2026-09-01
 - 관련 문서: [DATABASE.md](./DATABASE.md), [SECURITY.md](./SECURITY.md)
+- 2026-09-08: [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md) 승인. 아래 target/checkpoint/outbox/readiness 설계의 구현은 COV 작업이며 [공통 계약](./COLLECTION_CONTRACTS.md)을 따른다.
 
 ## 1. 목적
 
@@ -82,9 +83,9 @@ flowchart LR
 
 ### 5.1 Schedule
 
-- source 설정에는 주기, timezone(기본 UTC), overlap window, page limit, enabled 상태를 둔다.
-- 같은 source/schedule window에는 하나의 활성 run만 허용한다.
-- 이전 run이 지연되면 무제한 backlog를 만들지 않고 coalescing 정책을 적용한다.
+- source는 정책 경계이고 cadence·timezone·overlap·page/request budget·enabled는 검토된 target revision과 운영 계획에 연결한다.
+- `(targetRevisionId, mode, scopeKey, from, to, timeBasis, workflowVersion)` partition 자연 키로 중복을 막고 backfill/incremental/on-demand cursor를 분리한다.
+- 실제 worker runtime에 scheduler와 outbox dispatcher를 연결한다. downtime gap은 역사 capability 안에서 재계획하고, 최신 수집과 backfill 예산을 분리한다. 미완료 window를 단순 coalescing으로 버리지 않는다.
 
 ### 5.2 Fetch
 
@@ -92,12 +93,14 @@ flowchart LR
 - ETag/Last-Modified가 있으면 conditional GET을 사용한다.
 - timeout과 최대 page/item 수를 둔다.
 - `429`와 일시적 `5xx`만 bounded retry 대상으로 분류한다. 인증·정책 오류는 즉시 운영 확인 대상으로 보낸다.
+- `CollectionContext.timeWindow`는 job→ingestion→adapter까지 전달한다. 한 호출은 한 target/page이며 cursorVersion·partition 일치를 검증한다. 시간축·API inclusive 변환 후 `[from,to)`를 다시 검증한다.
+- page disposition은 `continue`, `complete`, `deferred`, `partial`이다. feed 끝·결과 상한·history unsupported를 전체 기간 완료로 처리하지 않는다.
 
 ### 5.3 Raw persistence
 
-- `(source_id, external_id, payload_hash)`는 동일 revision의 멱등 키다.
-- 원본 revision은 불변이다. 새 payload hash는 새 revision으로 보존한다.
-- raw 저장 전에는 후속 job을 발행하지 않는다.
+- `(source_id, external_id, payload_hash)`는 동일 raw revision의 멱등 키다. 새 payload hash는 새 불변 revision이며 source namespace를 보존한다.
+- raw upsert·acquisition membership·checkpoint·후속 stage/continuation outbox를 같은 짧은 DB transaction으로 commit한다. 외부 fetch와 queue I/O는 transaction 밖이다.
+- 이미 저장된 raw라도 새 취득 목적과 누락된 후속 stage를 복구한다. dispatcher의 sent와 consumer의 DB completion을 분리하고 Redis 손실 후 재발행한다.
 
 ### Database endpoint and connection lifecycle
 
@@ -146,11 +149,11 @@ cluster membership는 `algorithm_version`, `confidence`, immutable `revision_id`
 - 동일 revision·ordinal·chunker version은 idempotent하게 저장하며, 같은 version에서 내용이 달라지면 기존 chunk를 덮어쓰지 않고 실패시킨다.
 - chunk 크기·overlap은 모델 token limit과 [EXP-002](./experiments/EXP-002-retrieval.md) 결과로 결정한다.
 - embedding에는 provider, model, dimensions, input hash, created_at을 기록한다.
-- 같은 `(chunk, model, input_hash)`는 재호출하지 않는다.
+- `(chunkId, inputHash, provider, model/configVersion, dimensions)` 완료 결과를 먼저 재사용한다. DB work claim/fencing·예산 예약 후에만 호출하며 외부 결과 불명확 상태는 공식 복구 수단이 없는 한 자동 재호출하지 않는다.
 
 ### 5.8 Publish
 
-document revision의 유효한 chunk가 하나 이상 준비된 트랜잭션에서만 searchable/published로 바꾼다. chunk가 없거나 빈 content·잘못된 token count/hash이면 publish를 거부한다. embedding은 승인된 provider가 생긴 뒤 필수 조건을 추가하며, 질의 경로는 `published` revision만 검색한다.
+유효 revision·chunk·권리 확인을 transaction에서 완료하면 lexical_ready로 발행한다. vector_ready는 승인된 model profile의 필수 chunk embedding 완료를 추가로 요구한다. 양쪽은 동일한 현재 정책·게시일·tombstone 필터를 사용한다. embedding backlog가 lexical 근거 전체를 숨기지 않게 하며 기존 무조건 embedding 완료 publish 조건은 대체한다.
 
 ### 5.9 Aggregate metrics
 
@@ -158,10 +161,19 @@ document revision의 유효한 chunk가 하나 이상 준비된 트랜잭션에�
 - `community_mentions`는 accepted/exact duplicate-cluster identity가 있을 때 cluster당 한 번만 집계한다. 원본 source observations와 raw provenance는 삭제·수정하지 않는다.
 - `repo_attention`은 collection start 이후에 수집된 snapshot observation만 사용한다. 수집 시작 이전 window를 backfill하거나 합성하지 않는다.
 - 검색 파생 observation은 `query_signature`와 `is_incomplete`를 집계 결과에 전파한다. 입력 observation이 없는 window는 결과를 만들지 않고 0으로 채우지 않는다. 모든 window는 UTC instant로 검증한다.
+- versioned 관측 집합의 공통 target revision·metric·unit·coverage만 기간 비교한다. on-demand acquisition 추가만으로 기존 관측 통계가 변하지 않아야 한다. membership·query signature·분모·불완전 이유를 함께 기록한다.
 
 ### PIPE-007 replay and recovery
 
 Replay requests address immutable IDs at `run`, `raw`, or `stage` scope and produce schema-versioned deterministic natural keys. Duplicate deliveries do not rewrite raw documents, revisions, chunks, or citations; disabled sources are skipped without enqueueing. Transient failures retry within bounded attempts and then become `dead_letter`; permanent or policy failures become `quarantined`; audit timestamps are UTC with redacted summaries.
+
+### 5.10 초기 corpus 확보와 확장
+
+- 초기 horizon 90일은 수집 설계 기본값이며 retention·운영비 승인이 아니다. historyMode별 가능 범위를 기록하고 재개 가능한 partition/page로 계획한다.
+- 한 adapter 유형의 target은 canonical identity와 불변 config/policy revision 등록으로 추가한다. source enum·collector 클래스를 대상마다 복제하지 않는다.
+- 승인 API/공식 목록에서 발견한 후보는 metadata·발견 출처·검토 상태만 저장한다. 본문 권리와 target 활성화는 별도 결정이며 unknown은 허용이 아니다.
+- on-demand 근거는 동일 policy/raw/chunk 서비스를 재사용하고 queryRunId scope acquisition을 붙인다. bounded 완료 뒤 lexical 재검색하되 cohort에 자동 편입하지 않는다.
+- 상세 ports·상태·migration/cutover는 [COLLECTION_CONTRACTS](./COLLECTION_CONTRACTS.md), 실행 소유권은 [COVERAGE_IMPLEMENTATION](./COVERAGE_IMPLEMENTATION.md)을 따른다.
 
 ## 6. Playwright collector 규칙
 

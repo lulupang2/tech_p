@@ -1,0 +1,23 @@
+import { Type } from '@sinclair/typebox';
+import { CoverageQuerySchema, CoverageReportSchema, PartitionPlanSchema, RegisterTargetSchema, COVERAGE_ROUTES,
+  OpsCommandSchema, OpsEntityParamsSchema, OpsListQuerySchema, ReviewCandidateSchema, ReconcileModelWorkSchema } from './coverage.js';
+
+export const COVERAGE_CONTRACT_MANIFEST = {
+  version: 2,
+  queue: { schemaVersion: 2, fields: ['schemaVersion', 'deliveryId'], completionAuthority: 'postgresql' },
+  routes: [
+    { method: 'GET', path: COVERAGE_ROUTES.coverage, access: 'public', query: CoverageQuerySchema, response: CoverageReportSchema },
+    { method: 'GET', path: COVERAGE_ROUTES.targets, access: 'ops', query: OpsListQuerySchema },
+    { method: 'POST', path: COVERAGE_ROUTES.targets, access: 'ops', body: Type.Object({ ...RegisterTargetSchema.properties, ...OpsCommandSchema.properties }, { additionalProperties: false }), createsEnabledTarget: false },
+    { method: 'POST', path: `${COVERAGE_ROUTES.targets}/:id/enable`, access: 'ops', params: OpsEntityParamsSchema, body: OpsCommandSchema, requiresExistingPolicyApproval: true },
+    { method: 'POST', path: `${COVERAGE_ROUTES.targets}/:id/disable`, access: 'ops', params: OpsEntityParamsSchema, body: OpsCommandSchema },
+    { method: 'GET', path: COVERAGE_ROUTES.partitions, access: 'ops', query: OpsListQuerySchema },
+    { method: 'POST', path: COVERAGE_ROUTES.partitions, access: 'ops', body: Type.Object({ ...PartitionPlanSchema.properties, ...OpsCommandSchema.properties }, { additionalProperties: false }) },
+    { method: 'POST', path: `${COVERAGE_ROUTES.partitions}/:id/resume`, access: 'ops', params: OpsEntityParamsSchema, body: OpsCommandSchema },
+    { method: 'GET', path: COVERAGE_ROUTES.candidates, access: 'ops', query: OpsListQuerySchema },
+    { method: 'POST', path: `${COVERAGE_ROUTES.candidates}/:id/review`, access: 'ops', params: OpsEntityParamsSchema, body: ReviewCandidateSchema, createsPolicyApproval: false },
+    { method: 'GET', path: COVERAGE_ROUTES.work, access: 'ops', query: OpsListQuerySchema },
+    { method: 'POST', path: `${COVERAGE_ROUTES.work}/:id/reconcile`, access: 'ops', params: OpsEntityParamsSchema, body: ReconcileModelWorkSchema, requiresUsageEvidence: true },
+  ],
+  externalAcquisition: { rounds: 1, searches: 2, originalFetches: 3, httpAttempts: 8, deadlineMs: 10000, retries: 0 },
+} as const;

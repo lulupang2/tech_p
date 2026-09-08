@@ -1,7 +1,7 @@
 # Signal Archive Single Source of Truth
 
 - 상태: Active
-- 기준일: 2026-09-01
+- 기준일: 2026-09-08
 - 범위: 현재 승인된 제품 정의, 기술 제약, 프로젝트 규칙
 
 > 이 문서에는 **이미 확정된 내용만** 기록한다. 추천, 비교안, 실험 목표, 승인 대기 선택은 기록하지 않고 ADR 또는 experiments에 둔다.
@@ -72,6 +72,7 @@ Playwright 수집 대상은 `developer.chrome.com/origintrials/`다. 서버 HTML
 | Repository layout and orchestration | **pnpm workspaces + Turborepo**. pnpm은 package manager·workspace linker, Turborepo는 dependency-aware task orchestration·cache 계층이다. 승인 package 경계는 `apps/{web,api,worker}` + `packages/{contracts,domain,database,collectors,rag,observability}`이며 의존 방향은 `apps → packages`, adapter → domain port다 | [ADR-0010](./adr/0010-turborepo-monorepo.md), 2026-09-01. [ADR-0007](./adr/0007-repository-layout.md)는 Superseded |
 | Database access, migrations, and hosting | **Drizzle ORM + Drizzle Kit**. `packages/database`가 schema·repository adapter·검토된 forward-only SQL migration을 소유하고 첫 migration에서 pgvector extension을 bootstrap한다. 공유·운영 PostgreSQL provider는 **Neon Serverless Postgres**이며 일반 쿼리는 pooled endpoint, 짧은 원자적 transaction은 Node 호환 WebSocket 연결, migration은 direct endpoint를 사용한다 | [ADR-0009](./adr/0009-drizzle-orm-migrations.md), [ADR-0011](./adr/0011-neon-serverless-postgresql.md), 2026-09-02 |
 | Production deployment | **Docker Compose + GHCR + SSH remote deployment**. GitHub `production` Environment approval 뒤 commit SHA 이미지(`sha-<git SHA>`)를 GHCR에 pull하고, pinned `known_hosts`로 접속해 migration-before-rollout·healthcheck·previous-SHA rollback을 수행한다. Server-owned systemd Caddy는 `signal.jisung.lol`용 snippet을 검증·reload하고, Compose API/web는 각각 `127.0.0.1:3000`/`127.0.0.1:5173`에만 publish한다 | [ADR-0013](./adr/0013-production-deployment.md), 2026-09-03 |
+| Coverage-driven collection/retrieval | target revision·기간 partition·durable checkpoint·transactional outbox, versioned 관측 집합, 제한적 질문 시점 취득, lexical/vector readiness 분리, embedding work 재사용·PostgreSQL 예산 예약 | [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md), A1–A6 승인 2026-09-08. 구현 대기는 [TASKS](../TASKS.md)의 COV 작업으로 추적 |
 
 날짜 계산, SQL 필터, 점수 집계, citation·라이선스 검증은 LLM이 아니라 deterministic node에서 수행한다. web은 database package를 import하지 않고 contracts를 통해서만 타입을 얻는다. package dependency cycle은 CI에서 차단한다.
 
@@ -83,6 +84,19 @@ Backend와 queue 결정에서 파생되는 구현 조건은 다음과 같다. �
 - job payload는 ID와 versioned schema만 담고 큰 payload를 넣지 않는다.
 - 테스트는 Vitest, integration 환경은 Testcontainers를 사용한다.
 - browser collector는 다른 worker와 같은 Node runtime에 둔다.
+
+### 3.4 수집·검색 확장 승인 (2026-09-08)
+
+- source는 정책 경계, target은 실제 repository/tag/feed/query/package 등 수집 대상이다. 한 target revision·수집 모드·UTC `[from,to)` partition에 독립 cursor/checkpoint를 둔다.
+- page raw 저장·acquisition 연결·checkpoint·후속 outbox를 한 짧은 PostgreSQL transaction으로 commit한다. BullMQ는 전달 계층이며 외부 I/O는 DB transaction 밖에서 수행한다.
+- 초기 backfill horizon은 최근 90일이다. target 활성화·수집 cadence·운영 예산·보존 기간을 승인한 것은 아니다. snapshot-only source의 과거 관측을 합성하지 않는다.
+- 후보 발견과 활성화를 분리한다. 같은 허용 adapter 유형은 target 설정으로 확장하되 source/target 권리·접근 범위를 자동 확대하지 않는다.
+- 고정된 versioned 관측 집합과 질문 보완 취득을 분리한다. 기간별 공통 대상·metric·unit·coverage가 확인된 관측만 비교하며 on-demand 취득을 관심 증가로 합산하지 않는다.
+- lexical readiness와 model profile별 vector readiness를 분리한다. 권리·시각·tombstone은 양쪽 검색에 동일 적용한다. 원문 부족·처리 미완료·기간 공백·증거 있는 검색 실패를 구분하고 근거가 없으면 unknown으로 남긴다.
+- 질문 보완은 1 round, 검색 API 2회, 원문 최대 3건, redirect 포함 HTTP attempts 8회, 외부 단계 10초/남은 answer deadline 이내, 자동 retry 없음이 설계 상한이다. 추가 byte/token/금액 설정과 정책 승인 없이는 활성화하지 않는다. 원문 검증·불변 revision/chunk 저장 후에만 근거 citation으로 사용한다.
+- 동일 chunk/input/model profile의 완료 embedding을 재사용한다. 외부 성공 여부가 불명확하면 공식 복구 기능이 없는 한 자동 재호출을 보류한다. PostgreSQL 예산 예약·정산은 재시작/동시 요청에도 유지하며 query count를 금액 상한으로 취급하지 않는다.
+- [공통 계약](./COLLECTION_CONTRACTS.md) 선행 후 독립 코드 소유권으로 병렬 구현하고 단일 통합 담당이 runtime을 연결한다. [지시서](./COVERAGE_IMPLEMENTATION.md) 작성은 세션 실행이 아니다.
+- 이 승인은 새 source 권리·provider/model·지출 gate를 해제하지 않는다. provider-neutral 구현·fake 검증은 가능하지만 승인되지 않은 실제 모델 호출은 금지한다.
 
 ## 4. 문서와 의사결정 규칙
 

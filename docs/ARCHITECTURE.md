@@ -3,6 +3,7 @@
 - 상태: Draft
 - 작성일: 2026-09-01
 - 결정 기준: [SSOT.md](./SSOT.md)
+- 2026-09-08 승인 확장: [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md), [공통 계약](./COLLECTION_CONTRACTS.md). COV 구현 전 설계이며 현재 runtime과 구분한다.
 
 ## 1. 설계 목표
 
@@ -35,11 +36,11 @@ flowchart LR
 
 | 컨테이너 | 책임 | 금지되는 책임 |
 |---|---|---|
-| Web | 질문 입력, 기간·주제 보조 입력, 답변·출처·freshness 표시 | 직접 DB 접근, LLM key 보유 |
-| API | 입력 검증, 요청 제한, RAG 호출, 응답 계약, 운영 상태 | 직접 크롤링, 장기 배치 실행 |
-| RAG workflow | 질의 해석, 검색, 재정렬, 근거 조립, 답변, 검증 | 원문을 임의로 수정, 출처 없는 사실 생성 |
-| Scheduler | 소스별 실행 시점과 중복 없는 작업 생성 | 수집 비즈니스 로직 |
-| Collector worker | 소스 호출, rate limit, 원본 저장, cursor 관리 | 정규화 이후 결과를 원본 대신 덮어쓰기 |
+| Web | 질문·기간·답변·출처·freshness·coverage 한계 표시 | 직접 DB 접근, LLM key 보유 |
+| API | 입력 검증, admission/budget, RAG·bounded acquisition 서비스 호출, 운영 상태 | 직접 collector 구현, 장기 배치 실행 |
+| RAG workflow | 해석·검색·coverage·제한적 근거 취득 요청·답변 검증 | arbitrary fetch, 원문 임의 수정, 출처 없는 생성 |
+| Scheduler/outbox dispatcher | target별 due partition 생성, DB outbox 전달·미완료 재조정 | Redis 상태만으로 business completion 판단 |
+| Collector worker | 한 target/page의 수집, policy/rate 준수, 원자적 raw·membership·checkpoint·outbox 저장 요청 | 원문 덮어쓰기, 여러 target cursor 혼합 |
 | Processing worker | 정규화, 중복 clustering, 토픽, 청킹, 임베딩, publish | 외부 페이지 탐색 정책 우회 |
 | PostgreSQL + pgvector (Neon) | 트랜잭션, provenance, 전문·벡터 검색, 지표 | 원본 외부 secret 저장 |
 | Redis/Queue 후보 | 예약·재시도·backpressure·단기 job 상태 | authoritative business record |
@@ -58,14 +59,16 @@ sequenceDiagram
     participant D as PostgreSQL
     participant E as Embedding API
 
-    S->>Q: source + cursor + run_id
-    Q->>C: collect job
-    C->>D: immutable raw item upsert
-    C->>Q: normalize job(raw_item_id)
-    Q->>P: process job
-    P->>D: normalized document + dedup cluster
-    P->>E: versioned chunk embeddings
-    P->>D: chunks + embeddings + publish status
+    S->>D: target revision + due partition + initial outbox commit
+    S->>Q: delivery ID + schemaVersion 2
+    Q->>C: claim page (partition + fencing epoch)
+    C->>D: raw + acquisition + checkpoint + stage/continuation outbox commit
+    C->>Q: committed outbox delivery
+    Q->>P: stage delivery ID
+    P->>D: normalized revision + chunks + lexical readiness
+    P->>D: embedding work claim + budget reservation
+    P->>E: only missing approved embeddings
+    P->>D: result + work completion + profile vector readiness
 ```
 
 각 단계는 식별자만 전달하고 큰 원문 payload는 PostgreSQL에서 읽는다. 단계 완료는 DB의 authoritative 상태로 기록하며, 큐 상태만으로 완료를 판단하지 않는다.
@@ -83,8 +86,14 @@ sequenceDiagram
     U->>A: question + optional time range
     A->>G: validated request + request_id
     G->>M: structured query parse
+    G->>D: coverage + lexical readiness
     G->>D: metadata-filtered hybrid retrieval
     G->>G: fuse, rerank, diversify, assemble evidence
+    opt insufficient local evidence and approved bounded acquisition
+        G->>G: approved source search + guarded fetch within limits
+        G->>D: immutable raw/revision/chunk + acquisition
+        G->>D: lexical re-retrieval
+    end
     G->>M: grounded answer request
     G->>G: citation and coverage validation
     G->>D: query run + citations + model usage
@@ -158,7 +167,7 @@ framework별 경계 규칙은 다음과 같다.
 ## 8. 신뢰성과 일관성
 
 - 수집·처리 job은 at-least-once 실행을 전제로 멱등 키를 가진다.
-- DB 변경과 후속 job 생성 사이에는 transactional outbox 패턴을 추천한다. 실제 도입은 큐 ADR 승인 후 결정한다.
+- [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md) 승인으로 page raw·acquisition·checkpoint·후속 outbox의 원자적 commit은 필수다. dispatcher는 DB 미완료 상태로 Redis 전달 손실을 복구한다.
 - 외부 호출은 timeout, bounded retry, exponential backoff, jitter, circuit/open 상태를 가진다.
 - 영구 실패는 삭제하지 않고 원인, attempt, next action을 남긴다.
 - API 응답의 citation은 저장된 query run과 immutable document revision을 가리킨다.
@@ -175,6 +184,8 @@ framework별 경계 규칙은 다음과 같다.
 - LLM: provider, model, token/usage, latency, error(본문 제외)
 - Pipeline: lag, fetched/normalized/deduplicated/embedded/published count, retry, dead-letter count
 - Database: pool saturation, query latency, index hit/scan 지표
+- 확장 correlation: targetRevisionId, partitionId, deliveryId, cohortId, embeddingWorkId, reservationId. 고유 ID는 trace/log에 두고 무제한 cardinality의 metric label로 사용하지 않는다.
+- lexical/vector 준비, partition partial/gap, on-demand 취득, budget reserved/settled/unknown은 분리 관측한다.
 
 ## 10. 확장 시점
 

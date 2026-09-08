@@ -3,6 +3,7 @@
 - 상태: Draft
 - 작성일: 2026-09-01
 - 원칙: 결정적 테스트를 기본으로 하고 live source·LLM 평가는 분리한다.
+- ADR-0015 확장 검증은 COV-001~010으로 추적한다. 설계 승인과 기존 fake baseline을 실제 확장 runtime/corpus 통과로 해석하지 않는다.
 
 ## 1. 품질 목표
 
@@ -206,6 +207,21 @@ web은 SvelteKit이다([ADR-0008](./adr/0008-frontend-sveltekit.md)). E2E는 Sve
 - large document의 chunk/embedding 상한
 
 성능 수치는 고정 fixture, DB row count, hardware/container resource를 결과와 함께 기록한다.
+
+### 10.1 Coverage 확장 필수 증거
+
+| 경계 | 깨뜨려 볼 상황 | 통과 기준 |
+|---|---|---|
+| target/page | 같은 source의 두 target·같은 기간, filtered empty page, cursor mismatch, history/result cap | 독립 cursor·정확한 ID 집합·진전, unsupported/partial을 complete로 위장하지 않음 |
+| DB/outbox | raw commit 전후·queue send 전후 kill, stale lease, Redis 전달 유실 | 원자 rollback/checkpoint, DB 미완료 복구, 중복 consumer의 logical 결과 불변 |
+| readiness/cohort | embedding backlog, 다른 model profile, tombstone, on-demand 추가 | lexical은 정책 범위에서 검색, 부적합 vector 제외, 기존 cohort 집계 불변·분모와 누락 표시 |
+| embedding/budget | 동일 입력 replay·동시 호출, calling 직후 crash, UTC 경계·usage 누락 | 완료 재사용, unknown 자동 재호출 금지, 예약 유지·합산 한도 준수 |
+| bounded acquisition | local sufficient, redirect/SSRF, unapproved rights, byte/token/HTTP/deadline 초과 | 불필요 외부 0, 상한 준수·안전 중단, 저장된 revision/chunk로만 citation |
+| 실제 surface | scheduler→source→raw→lexical/vector→API→UI와 worker 재시작 | 실제 PG+Redis stack과 fixture source/fake provider로 end-to-end 관측, health가 무조건 성공하지 않음 |
+
+병렬 편집 중 format/lint/project-wide suite는 생략한다. 공유 checkout에서 build/test도 중단하고 작업 완료 후 검증 창을 배정한다. 통합 담당은 마지막에 `pnpm run static`, `pnpm run test`, 영향 PostgreSQL/Redis integration과 Playwright UI/collector suite를 분리 실행한다. Docker/credential 부재 skip은 통과가 아니다.
+
+COV-009/010의 live 측정은 승인된 source/provider/운영 scope에서만 수행한다. 기존 43항목 baseline을 보존하고 dataset hash·model/config·기간·coverage·Recall/nDCG·abstention·citation·HTTP/token/cost를 기록한다. 새 라벨/수치 승인 없이 기존 gate를 낮추지 않는다.
 
 ## 11. CI pipeline
 

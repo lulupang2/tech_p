@@ -3,6 +3,7 @@
 - 상태: Draft
 - 작성일: 2026-09-01
 - 기준 문서: [SSOT.md](./SSOT.md)
+- 2026-09-08 변경: [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md) A1–A6 승인. 아래 확장 요구는 설계 승인 상태이며 COV 구현·실운영 검증 완료를 뜻하지 않는다.
 - 대상 릴리스: MVP
 
 ## 1. 제품 요약
@@ -38,11 +39,11 @@ Signal Archive는 여러 개발 기술 데이터 소스에서 최근 정보를 �
 
 1. 사용자가 “최근 7일간 TypeScript 백엔드 분야의 주요 트렌드는?”라고 질문한다.
 2. 시스템이 주제, 기간, 질문 의도를 구조화한다.
-3. 기간 필터가 적용된 하이브리드 검색으로 관련 문서를 찾고 중복 출처를 억제한다.
-4. 시스템이 주요 흐름, 관찰 근거, 한계를 답변하고 각 핵심 주장에 원문 링크와 날짜를 붙인다.
+3. 기간·권리 필터가 적용된 로컬 검색과 coverage 진단을 수행한다. 근거가 부족하면 승인된 source에서 예산·시간 제한 내 원문을 추가 취득하고 저장된 revision/chunk로 재검색한다.
+4. 시스템이 주요 흐름, 관찰 근거, 부족 원인과 한계를 답변하고 핵심 주장에 원문 링크·날짜를 붙인다. 제한 내 근거를 확보하지 못하면 보류한다.
 5. 사용자는 출처를 열어 답변을 검증한다.
 
-비교 질문에서는 두 대상에 같은 기간과 같은 지표 정의를 적용하고, 데이터가 없는 축은 “데이터 없음”으로 표시한다.
+비교 질문에서는 두 대상에 같은 기간·지표 정의·단위를 적용하고, versioned 관측 집합의 공통 target revision과 coverage를 확인한다. 질문 보완 취득을 관심 증가로 합산하지 않으며, 데이터가 없는 축은 0 대신 “데이터 없음”으로 표시한다.
 
 ## 5. 기능 요구사항
 
@@ -62,6 +63,10 @@ Signal Archive는 여러 개발 기술 데이터 소스에서 최근 정보를 �
 | FR-012 | 운영 가시성 | 수집 실행별 성공·실패·처리 건수·지연·재시도 상태를 조회할 수 있다. |
 | FR-013 | 실패 복구 | 일시 실패는 제한된 재시도를 하고, 영구 실패는 원인과 재처리 가능 상태를 남긴다. |
 | FR-014 | 최신성 표현 | 데이터 최신 시각과 해당 기간의 소스 커버리지를 답변에 표시한다. |
+| FR-015 | 과거 수집과 대상 확장 | 지원 capability의 지정 UTC 기간을 checkpoint에서 재개하고, 같은 adapter 유형의 target은 설정 등록으로 추가한다. 초기 horizon 90일은 보존·지출 승인이 아니다. |
+| FR-016 | 취득 목적과 관측 집합 | backfill/incremental/on-demand acquisition을 원문과 별도로 보존하고, 버전별 관측 집합·분모·누락을 표시한다. |
+| FR-017 | 부족 원인과 제한적 보완 | 원문 부족·처리 미완료·기간 공백·증거 있는 검색 실패/unknown을 구분하고, 외부 취득은 승인된 상한·권리와 저장된 citation을 지킨다. |
+| FR-018 | 호출 비용의 재처리 안전성 | 완료 embedding 재사용, 동시 호출 억제, 불명확 outcome 자동 재호출 보류, 재시작에도 유지되는 예산 예약·정산을 제공한다. |
 
 ## 6. 비기능 요구사항
 
@@ -93,12 +98,14 @@ Signal Archive는 여러 개발 기술 데이터 소스에서 최근 정보를 �
 - raw → normalized → embedded 단계별 처리량 및 실패율
 - exact duplicate 차단률과 near-duplicate cluster 정밀도
 - 임베딩 비용과 LLM 답변당 비용
+- 주제/기간별 독립 문서·lexical/vector 준비 수, partition 완료/partial coverage, cohort 공통 분모를 별도로 관측한다.
+- embedding 완료 재사용·불명확 outcome·예약/정산 비용을 구분한다. 문서/청크 개수 증가만으로 검색 품질 개선을 주장하지 않는다.
 
 ## 8. MVP 범위
 
 ### 포함
 
-- 확정된 실제 개발 데이터 소스 11개. 텍스트 문서 7개(GitHub Releases, Stack Exchange, Rust 공식 포럼, arXiv, Chrome release notes, react.dev/blog, Chrome origin trials)와 지표 4개(npm registry, npm downloads, GitHub search, Hugging Face Hub)
+- [SSOT §3.1](./SSOT.md)의 source set을 유지한다. ADR-0015는 새로운 source나 본문 권리를 추가하지 않으며 target별 승인 범위 안에서 확장한다.
 - API·피드·브라우저 렌더링 등 복수 수집 방식. source마다 가장 단순하고 정책에 맞는 방식을 고른다
 - 예약 수집, 원본 보존, 정규화, 중복 처리, 토픽 태깅, 청킹, 임베딩
 - PostgreSQL + pgvector 기반 기간 필터와 하이브리드 검색
@@ -106,6 +113,8 @@ Signal Archive는 여러 개발 기술 데이터 소스에서 최근 정보를 �
 - 출처·게시일·데이터 최신성·한계가 있는 답변
 - 단일 사용자 포트폴리오 UI와 운영에 필요한 최소 상태 조회
 - Docker 기반 로컬 실행, 자동화 테스트, RAG 평가 세트
+- target revision별 90일 초기 backfill, 독립 증분 수집, 검토 기반 대상 발견, 제한된 질문 시점 근거 취득
+- lexical/vector readiness 분리, versioned 관측 집합과 coverage 진단, persistent budget 통제
 
 ### 제외
 

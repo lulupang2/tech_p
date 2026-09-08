@@ -4,12 +4,18 @@
 - 검토자: `Signal Archive Evaluation Team`
 - 검토일: `2026-09-02`
 - 작성일: `2026-09-01`
-- 대응 task: `EVAL-001`, `EVAL-002`
+- 대응 task: `EVAL-001`, `EVAL-002`, `COV-009`, `COV-010`
 - 관련: [TESTING.md](./TESTING.md) §7, [RAG.md](./RAG.md), [SOURCE_CATALOG.md](./SOURCE_CATALOG.md)
 
 `EVAL-001` 요구사항에 따라 확정된 38개 필수 질문(G-001~G-033, G-039~G-043) 및 5개 보안 주입 항목(G-034~G-038) 등 총 43개 항목에 대한 사람이 검토한 구조화 평가 라벨이다.
 
 질문은 무작위로 고르지 않았다. 설계 문서에 적어둔 규칙 하나하나에 대응하는 질문을 배치했다. 규칙이 깨지면 해당 질문이 실패한다.
+
+### ADR-0015 평가 확장 규약
+
+기존 38개 질문·5개 보안 항목의 라벨은 이번 설계 동기화에서 변경하지 않았다. COV-009는 동일 model/config·고정 baseline corpus와 확장 corpus의 coverage/검색·비용 측정값을 남기고, DEC-013이 실제 품질·성능 threshold를 승인한다. COV-010은 EVAL-002 gate와 함께 최종 결과를 판정한다.
+
+추가 검증 범주는 raw 부족, processing pending, period gap, labeled retrieval miss/unknown, target 추가 전후 cohort 편향, lexical-only 근거, bounded 외부 실패·citation, 재처리 비용이다. 실제 질문·라벨 추가는 검토자·dataset version·관련 TASKS/TESTING을 같은 변경에서 갱신한다. 평가 편의를 위해 insufficient를 answered로 바꾸거나 on-demand 문서를 독립 관측 증가로 라벨링하지 않는다.
 
 ---
 

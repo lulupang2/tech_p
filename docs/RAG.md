@@ -3,6 +3,7 @@
 - 상태: Draft
 - 작성일: 2026-09-01
 - 관련 문서: [PRD.md](./PRD.md), [DATABASE.md](./DATABASE.md)
+- 2026-09-08: [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md) A1–A6 승인. 확장 workflow는 COV 구현 대기이며 [공통 계약](./COLLECTION_CONTRACTS.md)을 따른다.
 
 ## 1. 목표와 비목표
 
@@ -32,7 +33,13 @@ flowchart LR
     D --> F[fuse/rerank/diversify]
     E --> F
     F --> G[evidence sufficiency]
-    G -->|insufficient| H[bounded clarification/abstain]
+    G -->|insufficient and policy/budget permits| X[bounded source acquisition]
+    X --> Y[guard + immutable raw/revision/chunk]
+    Y --> Z[one lexical re-retrieval]
+    Z --> G2[evidence sufficiency]
+    G2 -->|insufficient| H[bounded clarification/abstain]
+    G2 -->|sufficient| I
+    G -->|insufficient and gate closed| H
     G -->|sufficient| I[generate grounded answer]
     I --> J[validate citations/claims]
     J -->|invalid| H
@@ -60,12 +67,12 @@ API가 별도 기간을 받으면 자연어에서 추정한 기간보다 우선�
 
 ### 5.1 Candidate generation
 
-동일한 metadata filter를 적용한 두 검색을 병렬로 수행한다.
+동일한 권리·시각·tombstone filter를 적용하되 준비 상태에 따라 검색한다.
 
-- lexical: PostgreSQL full-text search, 제목·entity exact match에 강점
-- semantic: pgvector cosine similarity, 표현이 다른 관련 문서에 강점
+- lexical: 유효 chunk와 lexical readiness가 있는 revision의 PostgreSQL FTS·제목/entity exact match
+- semantic: lexical 조건과 선택된 승인 model profile의 vector readiness를 함께 만족하는 pgvector 후보
 
-필수 filter는 `published`, time range, rights visibility다. source/topic filter는 요청과 confidence에 따라 적용한다.
+모든 영문 token 포함 여부만으로 부족을 판정하지 않는다. lexical 근거가 충분하면 query embedding을 생략할 수 있으며 품질은 고정 골든셋으로 비교한다. 준비된 문서가 없을 때 무조건 모델을 호출하거나 기간을 넓히지 않는다.
 
 `published_at`이 없는 문서의 규칙은 다음과 같다.
 
@@ -96,6 +103,15 @@ MVP 초기 데이터가 작을 때는 exact vector search를 우선한다. HNSW/
 - title, source, published_at, canonical URL, excerpt를 모델 context와 분리된 metadata로 전달한다.
 - 여러 출처가 같은 upstream 발표를 복제하면 하나의 독립 근거로 과대계산하지 않는다.
 - context 예산의 일부를 상충 근거와 데이터 한계에 확보한다.
+
+### 5.4 Coverage와 제한적 근거 취득
+
+- 원문 부족·처리 미완료·기간 공백·증거 있는 retrieval miss/unknown을 partition/processing/평가 근거로 분리한다. 빈 결과만으로 원문 부재를 확정하지 않는다.
+- 로컬 충분 시 외부 취득 0회. 부족 branch만 승인 SourceSearchPort를 호출하며 1 round/검색 2회/원문 3건/HTTP attempts 8회/외부 단계 10초·남은 deadline 이내/자동 retry 없음이다.
+- byte/context/output token cap, source 권리, 운영 budget이 없으면 외부/model 단계를 활성화하지 않는다. key 존재가 승인 gate를 대체하지 않는다.
+- guarded 원문 fetch와 개인정보 제거 후 immutable raw/revision/chunk를 저장한다. snippet·비보존 링크·임의 URL은 grounded citation이 아니다. 재검색은 한 번이며 보완 실패 시 로컬 근거 또는 insufficient를 반환한다.
+- on-demand acquisition을 queryRunId로 연결하고 트렌드 관측 집합에 자동 편입하지 않는다. query run에는 구조화 coverage·cohort 분모·사용량을 기록하되 질문 원문 보존은 별도 gate다.
+- 호출마다 persistent budget을 예약하고 실제 usage로 정산한다. `outcome_unknown`은 자동 재호출하지 않으며 word count를 billing token으로 사용하지 않는다.
 
 ## 6. 답변 계약
 

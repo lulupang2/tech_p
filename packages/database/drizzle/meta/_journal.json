@@ -50,6 +50,41 @@
       "when": 1788311036906,
       "tag": "0006_perpetual_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788854504674,
+      "tag": "0007_coverage_state",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788854960380,
+      "tag": "0008_provider_admission",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788881617606,
+      "tag": "0009_outbox_fencing",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788882023297,
+      "tag": "0010_coverage_review_metadata",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1788882715968,
+      "tag": "0011_collection_page_attempts",
+      "breakpoints": true
     }
   ]
 }

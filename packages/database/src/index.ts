@@ -5,6 +5,17 @@
  * Exposes lazy client factory, schema entrypoint, and migration utilities.
  */
 
+export { createCollectionStateRepository } from './collection-state.js';
+export { createProviderBudgetRepository } from './provider-budget.js';
+export { createEmbeddingWorkRepository } from './embedding-work.js';
+export { createCohortPersistenceRepository } from './cohort-state.js';
+export { createDiscoveryStateRepository } from './discovery-state.js';
+export {
+  collectionTargets, collectionTargetRevisions, collectionPartitions, collectionCheckpoints,
+  collectionPageAttempts,
+  acquisitionMemberships, deliveryOutbox, observationCohorts, observationCohortMembers,
+  providerBudgetScopes, providerBudgetReservations, embeddingWorkItems, discoveryCandidates,
+} from './schema/index.js';
 export {
   collectionRuns,
   pipelineEvents,

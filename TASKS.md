@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 구현 상태: `FND-001`~`FND-005`, `CON-001`, `OBS-001`, `TST-001`, `DB-001`~`DB-006`, `QUE-001`, `AI-001`, `DEC-008`, `COL-001`~`COL-010` (수집기 11개 전 소스 완료), `PIPE-001` (원시 수집 파이프라인 오케스트레이션 완료), `PIPE-002` (결정적 정규화 완료), `PIPE-003` (exact dedup·duplicate cluster 완료), `PIPE-004` (near-duplicate versioned clustering 완료), `PIPE-005` (deterministic topic classification·heading-aware chunking 완료), `PIPE-006` (deterministic metric aggregation 완료), `EXP-004` (240-pair synthetic/redacted holdout 실험 완료), `EVAL-001` (골든셋 레이블링 완료). 이후 task는 표의 dependency gate를 따른다.
+- 현재 기준(2026-09-08): ADR-0015 A1–A6 설계 승인 완료, COV 구현은 아직 시작하지 않았다. 기존 DONE/검증 기록은 과거 baseline 범위이며 target별 예약·backfill·persistent budget·새 RAG 완성을 뜻하지 않는다. 확장 실행 순서는 §12, 소유권·세션 지시서는 [COVERAGE_IMPLEMENTATION](./docs/COVERAGE_IMPLEMENTATION.md)을 따른다.
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -115,6 +115,7 @@
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
+| DB-001 | Drizzle migration과 pgvector bootstrap baseline | FND-004 | DONE | 아래 DB-001 완료 증빙의 기존 migration·실제 PostgreSQL 재현 기록을 참조. ADR-0015 추가 schema는 COV-002에서 별도 검증 |
 | DB-002 | source, run, raw item schema | DB-001 | DONE | source/run/raw/pipeline event table과 FK/unique/check가 migration으로 생성됨; 동일 raw revision 2회 insert가 한 logical row를 유지; Neon integration test 통과 (2026-09-02) |
 | DB-003 | document, revision, topic, chunk, embedding schema | DB-002 | DONE | revision 불변성, publish status, topic link, chunk ordinal, versioned embedding uniqueness가 실제 PostgreSQL integration test로 검증됨 (2026-09-02) |
 | DB-004 | metric observation, query run, citation schema | DB-003 | DONE | metric 자연 키, query/citation FK와 query-run 내 citation key uniqueness가 검증됨; citation이 immutable revision/chunk를 가리킴 (2026-09-02) |
@@ -182,10 +183,10 @@
 | EXP-003 | model provider 평가 실행 | AI-001, EVAL-001, PIPE-005 | DONE | 2 chat/2 embedding 후보를 43개 전 항목으로 측정. Embedding gate 통과, chat gate 실패; [EXP-003](./docs/experiments/EXP-003-model-providers.md) scorecard와 sanitized raw measurement 기록 (2026-09-02) |
 | DEC-007 | chat/embedding provider와 model 승인 | EXP-003 | GATE | Embedding recommendation은 유지. Chat 후보가 gate를 통과하지 못해 [ADR-0012](./docs/adr/0012-chat-provider-revalidation.md) Proposed; 새 chat 평가·사람 blind review·data policy/budget 승인 필요 |
 | AI-002 | 선택 provider adapter 구현 | DEC-007, AI-001 | BLOCKED | structured output, timeout, rate error, usage를 공통 contract로 변환; secret/log redaction; provider contract test 통과 |
-| PIPE-008 | versioned embedding stage | AI-002, PIPE-005, DB-003 | BLOCKED | 동일 chunk/model/input hash는 API 재호출 없음; partial failure 재개; dimensions mismatch 차단; publish는 필수 embedding 완료 후만 가능 |
-| RAG-001 | query intent/entity/time parser | DEC-003, AI-002, CON-001 | BLOCKED | 4개 intent와 명시 기간 우선, timezone/rolling window, alias, invalid/ambiguous fixture 통과; 날짜 계산은 deterministic code에서 수행 |
-| RAG-002 | metadata-filtered hybrid candidate retrieval | DB-006, PIPE-008, EVAL-001 | BLOCKED | FTS와 exact vector 후보가 동일 time/status/rights filter를 사용; time violation 0; ranked evidence에 revision/chunk provenance 포함 |
-| EXP-002 | retrieval/index 실험 실행 | RAG-002 | BLOCKED | [EXP-002](./docs/experiments/EXP-002-retrieval.md)의 variants, Recall/nDCG, latency, query plans 기록; exact/HNSW 결정 recommendation 생성 |
+| PIPE-008 | 승인 model의 versioned embedding 통합 | AI-002, PIPE-005, DB-003, COV-005, COV-008 | BLOCKED | 완료 chunk/profile/input은 재호출 없음; 부분 실패·unknown outcome·차원 불일치 검증. lexical readiness는 embedding 없이 가능하고 vector readiness만 승인 profile의 필수 완료를 요구. COV fake 검증은 실모델 증빙을 대체하지 않음 |
+| RAG-001 | provider-neutral query intent/entity/time parser | DEC-003, CON-001, COV-001 | BLOCKED | 4개 intent·명시 기간·UTC/timezone·alias·모호성 결정적 검증. provider-neutral 경로는 AI-002 전 가능하며 실제 모델 parser 선택/호출은 DEC-007/AI-002 이후에만 허용 |
+| RAG-002 | metadata-filtered hybrid candidate retrieval | DB-006, COV-006, EVAL-001 | BLOCKED | FTS lexical readiness, vector profile readiness에 같은 time/rights/tombstone filter; provenance 보존과 time violation 0. provider-neutral seeded vector 검증 가능; live model 성능은 COV-009 이후 |
+| EXP-002 | retrieval/index 실험 실행 | RAG-002, COV-009 | BLOCKED | 기존 실험 variants·Recall/nDCG·query plan/latency를 실제 확장 corpus와 dataset hash로 측정. index/weight recommendation을 자동 승인하지 않음 |
 | RAG-003 | fusion, recency, cluster/source diversity | EXP-002 | BLOCKED | 승인 config로 RRF/boost/caps 구현; 점수는 사용자 관심도로 노출되지 않음; 골든셋 regression gate 통과 |
 | RAG-004 | evidence sufficiency와 context assembly | RAG-003 | BLOCKED | intent별 최소 근거, token budget, adjacent chunk merge, duplicate upstream 억제; 부족하면 기간을 몰래 넓히지 않고 abstain |
 | RAG-005 | answer generation과 citation validation workflow | RAG-001, RAG-004, AI-002 | BLOCKED | 승인 orchestration에서 parse→retrieve→generate→validate branch가 trace됨; fabricated/missing/out-of-range citation 차단; `verbatim_only` source 근거가 재서술 없이 원문 발췌로 제시되는지 후검증; retry 최대 1회 |
@@ -198,14 +199,14 @@
 |---|---|---|---|---|
 | API-001 | API shell, error model, health/readiness | DEC-002, CON-001, DB-005, FND-005, OBS-001 | DONE | versioned JSON/error contract와 request ID; liveness는 dependency와 무관, readiness는 DB 상태 반영; stack/provider error 비노출 |
 | API-002 | source/topic endpoints | API-001, COL-001, DB-005 | DONE | source freshness를 secret 없이 반환; topic search cursor/limit validation; OpenAPI contract test 통과 |
-| API-003 | synchronous answer endpoint | API-001, RAG-005, RAG-006 | DONE | resolved range, answer/insufficient status, observations, citations, coverage 반환; deadline/body cap/idempotency contract test 통과 |
-| SEC-001 | public API abuse controls | API-003, FND-005 | DONE | CORS allowlist, security headers, rate/concurrency/provider budget limit; oversized/injection/fuzz 입력에서 정보 유출·무제한 호출 없음 |
+| API-003 | synchronous answer endpoint baseline | API-001 | DONE | 기존 seeded/fake HTTP response·deadline/body cap 증빙 범위. 실제 RAG 품질은 RAG-005/RAG-006/EVAL-002, persistent budget/coverage runtime은 COV-008/010에서 검증. answer idempotency 구현 완료로 해석하지 않음 |
+| SEC-001 | public API abuse controls baseline | API-003, FND-005 | DONE | 기존 CORS/header·프로세스 메모리 rate/concurrency/query-count 제한 증빙. 금액/token persistent budget 또는 재시작 안전 상한은 COV-005/COV-008에서 추가 검증 |
 | API-004 | protected operations endpoints 또는 CLI | PIPE-007, API-001, SEC-001 | DONE | 선택 interface가 strong auth로 보호; bounded collect/replay와 idempotency; public route에서 접근 불가; audit event 생성 |
 | SEC-002 | collector/browser hardening | COL-005, PIPE-002 | DONE | non-root/최소 capability, egress allowlist, private IP/redirect 차단, HTML output escaping, malicious fixture 회귀 통과 |
-| SEC-003 | RAG prompt-injection/egress hardening | RAG-005, SEC-001 | DONE | retrieved instruction이 tool/secret/URL을 바꾸지 못함; RAG에 arbitrary fetch/shell 없음; injection corpus success 0 |
+| SEC-003 | RAG prompt-injection/egress baseline | SEC-001 | DONE | 기존 fixture/seeded 경계 검증 기록만 의미. 신규 on-demand 취득·승인 provider 통합은 COV-007/COV-008 및 EVAL-002 release gate를 통과해야 함 |
 | WEB-001 | web shell과 typed API client | DEC-005, FND-001, CON-001, API-001 | DONE | web이 DB/provider package를 import하지 않음; server 전용 코드가 `+page.server.ts`·`+server.ts`·`$lib/server/` 경계 안에만 있고 client bundle 산출물 검사에서 secret이 발견되지 않음; loading/error/empty layout 접근성 smoke; API contract type drift test 통과 |
 | WEB-002 | 질문·답변·citation UI | WEB-001, API-003 | DONE | 질문/기간 입력, resolved range, answer, clickable citation/date/source, limitations/insufficient state 표시; keyboard/screen-reader labels 검증 |
-| WEB-003 | 비교 metric과 source freshness UI | WEB-002, API-002, RAG-006 | DONE | metric별 unit/기간 분리 표시; composite score 없음; stale/partial source warning이 API coverage와 일치 |
+| WEB-003 | 비교 metric과 source freshness UI baseline | WEB-002, API-002 | DONE | 기존 seeded API의 metric unit/기간·freshness 표시 증빙. cohort/coverage 확장은 COV-008, 실제 비교 품질은 RAG-006/EVAL-002에서 검증 |
 | TST-002 | Playwright UI E2E suite | WEB-002, WEB-003, TST-001 | DONE | seeded deterministic API/fake model contract에서 summary/comparison/no-data/citation 및 locale persistence 흐름 통과; collector suite와 분리; flaky retry 없이 Chromium PR smoke 성공 (2026-09-02) |
 
 ## 8. Operations and MVP acceptance
@@ -213,14 +214,14 @@
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
 | OPS-001 | API/web/worker Docker images와 full Compose | API-004, WEB-003, FND-004 | DONE | non-root images, healthcheck, graceful shutdown; clean machine에서 documented one-command stack; browser binary/version pin 검증 |
-| OPS-002 | metrics/dashboard와 failure alert baseline | OBS-001, PIPE-007, API-003 | DONE | source freshness, stage counts/errors, queue lag, DB/LLM latency/usage가 correlation IDs로 추적; alert test event 확인 |
+| OPS-002 | metrics/dashboard와 failure alert baseline | OBS-001, PIPE-007, API-003 | DONE | registry/dashboard·alert fixture 기존 증빙. runtime provider usage·checkpoint·budget/unknown outcome 계측 연결은 COV-008에서 실제 관측 |
 | OPS-003 | backup/restore, retention, tombstone runbook | DB-005, PIPE-007, SEC-002 | DONE | 빈 환경 restore drill 성공; source tombstone 후 search 제외; retention dry-run/count와 irreversible step 보호가 문서화됨 |
 
 | DOC-001 | developer/operator README와 runbook | OPS-001, OPS-002, OPS-003 | DONE | setup, source policy, collect/replay, query, evaluation, rotate secret, backup/restore, known limits가 clean-reader test를 통과 (2026-09-02) |
 
 | OPS-004 | GHCR SHA image와 SSH production deployment | OPS-001, DEC-009, API-001, DB-001 | DONE | production Compose는 Caddy 없이 API/web을 `127.0.0.1:3000`/`127.0.0.1:5173`에 publish하고, host-owned Caddy snippet이 `signal.jisung.lol` TLS와 routing을 정의; workflow/script가 production approval·concurrency·GHCR SHA push·pinned known_hosts SSH·Caddy validate/reload·migration-before-rollout·healthcheck·previous-SHA rollback을 수행; secret/.env 미커밋 |
 
-| MVP-001 | end-to-end MVP acceptance | TST-002, EVAL-002, SEC-003, OPS-001, OPS-002, DOC-001, FND-006 | BLOCKED | 승인 source 3개 이상 예약 수집; raw→normalize→dedup→embed→query 흐름; 사용자 예시 4개 결과·출처; 테스트/보안/RAG gate와 freshness/cost 보고서 통과. Reddit corpus/evaluation은 아직 증명되지 않음 |
+| MVP-001 | end-to-end MVP acceptance | TST-002, EVAL-002, SEC-003, OPS-001, OPS-002, DOC-001, FND-006, COV-010 | BLOCKED | 승인 source 3개 이상 실제 예약 수집·backfill 재개; raw→lexical/vector→query 출처; 예시 4개와 확장 corpus의 품질·freshness·cost gate 통과. 권리/provider/지출/귀속 gate 및 Reddit 미증명 범위를 유지 |
 
 ## 9. Dependency graph
 
@@ -250,7 +251,7 @@ flowchart TD
 
 ## 10. 현재 상태와 다음 행동
 
-**구현·검증 대부분이 완료됐고 MVP acceptance 단계에 있다.** `FND-*`, `CON-001`, `OBS-*`, `DB-001`, `QUE-001`, `TST-001`, `COL-*`, `PIPE-*`, `API-*`, `WEB-*`, `SEC-*`, `DOC-001`은 DONE이다. 남은 미결은 chat/embedding provider 승인(`DEC-007`, ADR-0012 Proposed), embedding adapter(`AI-002`)·RAG(`RAG-*`)·production corpus 평가(`EVAL-002`)이며 `MVP-001`은 BLOCKED다.
+**ADR-0015 설계는 승인됐고 구현은 대기 중이다.** COV-001만 즉시 착수 가능한 새 구현 task다. 기존 DONE은 과거 baseline 기록이며 scheduler·replay runtime 연결, 중복 embedding 과금, lexical/vector 준비, persistent 비용 통제의 잔여 작업은 §11~12에서 명시한다. DEC-007과 실제 corpus 평가가 끝나지 않아 MVP-001은 BLOCKED다.
 
 ### 확정된 기술 스택
 
@@ -271,7 +272,7 @@ flowchart TD
 
 ### 구현 순서
 
-`CON-001`과 `OBS-001`은 각각 `5c2045d`와 `1d59cb3`에서 완료됐고, 현재 main gate 및 영향 범위 테스트로 확인됐다. `DB-001`은 Drizzle Kit migration 생성·검토, pgvector extension bootstrap과 빈 DB 적용을 먼저 수행한다. `QUE-001`은 `DEC-004`·`FND-004`·`CON-001`, `TST-001`은 `FND-002`·`CON-001`이 모두 `DONE`이므로 `DB-001`과 병렬 착수 가능하다. `DB-002`와 `AI-001`은 구현·review를 완료했고, 이후에는 DB-002의 Docker PostgreSQL integration 환경 검증을 해소한 뒤 `DB-003` 및 `AI-002`로 진행한다.
+새 작업은 `COV-001 → COV-002 → (COV-003, COV-004, COV-005, COV-006 병렬) → COV-007 → COV-008` 순서다. DISC-003은 COV-001 뒤 문서 조사로 병행 가능하나 권리 승인/외부 호출을 대신하지 않는다. 운영·provider gate 뒤 COV-009, 기존 RAG/평가 잔여 작업, COV-010을 진행한다. 과거 DB/QUE 완료 task를 다시 착수하라는 이전 메모는 이 순서로 대체한다.
 
 ### 아직 사람이 처리해야 할 것
 
@@ -461,3 +462,46 @@ Docker Compose 전체 stack(api/web/worker/postgres/redis, 5 컨테이너 health
 - **query 흐름**: `/api/v1/answers`가 결정적으로 200 `insufficient_evidence`(documentsConsidered 0, citations [])를 반환 — RAG answer quality gate를 충족하는 grounded 답변은 아직 없음.
 - **보안 픽스**: `.dockerignore` 추가(이미지 내 .env 번들링 차단), stack-exchange URL 오류 key 노출 제거, XFF 마지막 홉 신뢰 + ops 레이트 리밋 적용, abuse control env(`API_RATE_LIMIT_*`/`API_MAX_CONCURRENT_ANSWERS`/`API_MAX_DAILY_ANSWER_BUDGET`)를 createApp에 배선, 수집기 런타임에 `createHardenedFetch` 연결.
 - **결론**: MVP-001은 **BLOCKED 유지**. 파이프라인 기계는 실행되지만 승인된 chat provider(DEC-007 GATE)와 production corpus 기반 EVAL-002 release gate가 없어 grounded 사용자 예시 4개와 freshness/cost 보고서 acceptance를 충족하지 못한다. 후속: ADR-0012 승인 → AI-002/PIPE-008/RAG 통합 → 실제 corpus 평가.
+
+## 11. Baseline과 새 acceptance의 경계
+
+2026-09-08 코드 분석에 따른 범위 정리다. 과거 측정값을 재실행하거나 바꾸지 않았다. 아래 gap 때문에 기존 DONE을 확장 기능의 완료로 해석하지 않는다.
+
+| 기존 task | 기록된 baseline / 현재 gap | 새 acceptance 소유 |
+|---|---|---|
+| QUE-001, PIPE-001 | queue helper·raw ingest는 있으나 target별 due scheduler/timeWindow/page continuation runtime이 불충분 | COV-001, COV-003, COV-004, COV-008 |
+| PIPE-007 | replay contract/service와 실행 consumer 연결은 별개 | COV-004, COV-008 |
+| DB-003, PIPE-005, PIPE-008 | raw/chunk 존재와 lexical/vector readiness를 분리해야 함 | COV-002, COV-005, COV-006 |
+| API-003, SEC-001 | answer idempotency 없음; daily budget은 in-memory query count | COV-005, COV-008; answer cache는 별도 결정 |
+| OPS-002, OPS-003 | metric/retention adapter 존재가 runtime 자동 실행 증빙은 아님; retention 기간은 SSOT gate 유지 | COV-008, DEC-012 |
+| AI-002, RAG-001~RAG-006, EVAL-002 | live adapter/RAG 코드가 있어도 provider 승인·quality gate 완료 아님 | 기존 gate 유지; COV-009 및 COV-010과 연결 |
+| DEC-010 | TASKS의 ADR-0014 참조와 현재 문서 부재 대조 필요 | DISC-003에서 최신 결정·권리 근거 대조; 승인 추정 금지 |
+
+## 12. Coverage redesign implementation (ADR-0015)
+
+기준: [공통 계약](./docs/COLLECTION_CONTRACTS.md), [병렬 코딩 지시서](./docs/COVERAGE_IMPLEMENTATION.md). 후속 사용자 지시로 현재 세션의 코드 구현·테스트가 허용됐다. 별도 source/provider/지출 gate는 유지한다. `COV-*`는 FR-015~FR-018과 기존 요구의 확장 acceptance다.
+
+| ID | Task | Dependencies | Status | Acceptance criteria |
+|---|---|---|---|---|
+| DEC-011 | A1–A6 수집·검색 설계 승인 | - | DONE | 2026-09-08 사용자 승인; ADR-0015 Accepted 및 SSOT 반영. 권리/provider/지출 gate·세션 미실행 유지 |
+| COV-001 | 공통 domain/TypeBox 계약과 contract manifest | DEC-011, CON-001, AI-001 | DONE | COLLECTION_CONTRACTS typed ports, v2 ID-only delivery, COVERAGE_CONTRACT_MANIFEST 및 ops schemas 완료; domain/contracts focused tests 통과 |
+| COV-002 | DB schema와 원자적 persistence primitives | COV-001, DB-005 | DONE | 0007~0011 forward migrations, PostgreSQL+pgvector 실제 integration, page/checkpoint/outbox 원자성·fencing·budget/work state·기존 citation 보존 검증 완료; 공통 persistence adapter exports 동결 |
+| COV-003 | 단일 target 역사 수집과 발견/search adapter | COV-002, COL-001 | READY | 기존 adapter를 target/page/timeWindow 계약으로 전환; 설정만 추가한 두 target 독립 cursor; pagination·빈 filtered page·API cap/history unsupported partial 검증; approved source-search/discovery 실제 HTTP adapter를 fixture transport로 검증, 신규 권리/live 호출 승인 없음 |
+| COV-004 | partition planner·scheduler·outbox·replay 실행 서비스 | COV-002, QUE-001, PIPE-001 | READY | durable due planning, checkpoint/continuation, source disable, normalization/replay delivery, Redis 손실/중복 dispatcher/worker kill 후 DB pending 복구; backfill/incremental starvation 방지; entrypoint 연결은 COV-008 |
+| COV-005 | provider-neutral embedding work와 예산 서비스 | COV-002, AI-001 | READY | 완료 결과 재사용·동시 worker 호출 소유권·calling timeout/commit 전 crash unknown 보류; UTC 경계/재시작에도 reservation 유지; 승인/price/token cap 미설정 시 fail closed; 실제 신규 provider 선택·호출 없이 fake로 검증 |
+| COV-006 | lexical/vector readiness·coverage·cohort 조회 | COV-002, DB-006, PIPE-006 | READY | lexical 준비 문서가 embedding 없이 FTS 검색; profile vector·rights/time/tombstone 필터; 네 부족 원인/unknown 구분; on-demand 추가만으로 cohort 값 불변·공통 분모·partial 표시 검증 |
+| COV-007 | bounded acquisition과 RAG 서비스 연결 | COV-003, COV-004, COV-005, COV-006 | BLOCKED | 기존 live fallback을 승인 source port·공통 ingest로 교체; local sufficient 외부 0, 1/2/3/8/10초 상한·bytes/token/budget·악성 URL·권리·citation 검증; provider-neutral fake/injected transport로 실제 workflow 검증; 기존 model gate 유지 |
+| COV-008 | runtime·API/web·운영 cutover와 통합 검증 | COV-007 | BLOCKED | worker scheduler/outbox/stage/embedding·API coverage/answer/ops·web 한계 표시·usage 관측·실제 health 연결; v1 job producer/export 제거와 v2 복구; 실제 PG+Redis+API/web/worker stack에 fixture source/fake provider 주입해 restart·재개·API/UI proof; 전체 static/unit/관련 integration/E2E 최종 검증 |
+| DISC-003 | target별 권리·capability·활성화 후보 조사 | COV-001 | READY | seed/후보 target의 최신 공식 근거, fetch/store/model-input/embed/display/retention 범위·history capability·unknown 기록; ADR-0014 참조 불일치 대조. 조사 완료가 새로운 권리 승인이나 enable은 아님 |
+| DEC-012 | 확장 source·운영 계획·예산 활성화 승인 | DISC-003, COV-008 | GATE | 사용자가 허용 target/policy scope, cadence·API/byte/token/spend 한도·currency·승인 provider mapping·데이터 보존 범위를 명시 승인. 신규 권리/유료 provider는 별도 결정 근거를 연결하고 DEC-007을 대체하지 않음 |
+| COV-009 | 승인 범위 live backfill·재개·baseline 측정 | COV-008, DISC-003, DEC-007, DEC-012, AI-002 | BLOCKED | 승인된 실제 API 낮은 rate canary 후 90일 지원 범위 backfill·incremental·on-demand 관측, partial/gap·독립 근거·실제 usage/raw measurement 기록; 모델 미승인/지원 불가를 가짜 corpus로 대체하지 않음 |
+| DEC-013 | 확장 corpus 품질·성능 acceptance 승인 | COV-009 | GATE | baseline dataset·질문·model/config 고정 후 Recall/nDCG·abstention/citation·latency·비용 기준을 사용자 승인; 기존 hard security/time/provenance invariant 완화 없음 |
+| COV-010 | 확장 corpus 품질과 최종 acceptance | COV-009, DEC-013, EVAL-002 | BLOCKED | 고정 baseline/expanded corpus·별도 라벨 확장 비교, 필수 예시 4개·43항목 baseline·신규 부족 사례·비용/coverage 보고서; 최종 thresholds·source/provider/운영 gate 충족; 미충족이면 MVP BLOCKED 유지 |
+
+### 의존성과 검증 운영
+
+- COV-001/002의 공통 mutable 경계는 직렬이다. COV-002 완료 후 COV-003~006만 동시에 편집한다. COV-007은 그 결과를 소비하고 COV-008은 단일 integration owner다.
+- DISC-003은 문서 조사로 병행 가능하다. 운영 권리·지출 승인이 없으면 fixture/fake 검증만 가능하며 live 실행은 금지한다.
+- 기존 RAG-001/002의 provider-neutral 작업은 COV 공통 계약 뒤 가능하다. EXP-002→RAG-003/004→RAG-005/006→EVAL-002는 COV-009 corpus와 기존 provider gate 이후 별도 품질 closure로 진행한다. 같은 RAG 파일을 COV-007과 동시에 수정하지 않는다.
+- 편집 중 formatter/linter/project-wide suite는 실행하지 않는다. 공유 checkout의 병렬 편집 중 build/test도 생략하고, 완료 후 validation window 또는 격리 환경에서 focused 검증한다. COV-008이 전체 검증을 한 번 수행한다.
+- acceptance 증거 없는 task는 DONE 금지다. common 계약 변경은 해당 소유자의 manifest 수정 후 소비자를 일괄 이행한다.

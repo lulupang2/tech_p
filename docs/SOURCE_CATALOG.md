@@ -8,6 +8,17 @@
 
 수집 주기는 [SSOT §5](./SSOT.md)에서 미결정이므로 아래 값은 제안이다. rate limit과 원본 갱신 주기에서 유도했다.
 
+### ADR-0015 적용 범위 (2026-09-08)
+
+- target 중심 확장·초기 90일 backfill 설계는 승인됐다. 아래 source별 cadence는 여전히 제안이며 실제 활성 target·예산·수집 주기는 DEC-012에서 결정한다.
+- source set과 권리 허용 범위는 이번 변경으로 확대하지 않는다. DISC-003에서 seed target별 접근·저장·embedding·표시 권리와 검토 근거를 등록한다. `relaxedRightsMode`/`ignoreLicenseCutoff`는 확장 근거가 아니다.
+- target selector는 repository, site+tag, package, feed/index, category/query 등 adapter가 실제 지원하는 단위다. canonical identity, config/policy revision, topic 매핑, historyMode와 timeBasis를 [공통 계약](./COLLECTION_CONTRACTS.md)에 맞춰 기록한다.
+- historyMode는 `historical_range`, `paginated_history`, `feed_only`, `snapshot_only`로 구분한다. source 이름만으로 historical 지원을 단정하지 않고 endpoint/target capability를 fixture·허용된 canary로 확인한다.
+- GitHub release pagination은 기간 완료까지 재개하되 release 없는 target은 별도 표시한다. Stack Exchange/arXiv는 기간 전달·날짜 경계·필터 이후 빈 page 진전을 검증한다.
+- RSS 최신 목록은 전체 archive가 아니다. feed-only target의 기간 coverage는 partial이며 새로운 archive/sitemap 경로는 별도 정책 검토 후 추가한다. metric snapshot의 과거 값을 backfill로 합성하지 않는다.
+- 발견 후보는 metadata 수준으로 검토 대기한다. issue/discussion 본문·model card·새 blog·제외 source의 저장/embedding 허용을 기존 metric/API 승인에서 추론하지 않는다.
+- TASKS가 참조하는 ADR-0014 파일은 이번 조사 경로에 없었다. Reddit 관련 최신 사용자 결정과 문서 근거를 DISC-003에서 대조하고 불명확 범위를 자동 활성화하지 않는다.
+
 ## 1. 공통 규칙
 
 - 모든 external ID는 source가 준 안정적 값을 쓰고, 없으면 결정적 대체키를 만든다. 멱등 키는 `(source_id, external_id, payload_hash)`다.

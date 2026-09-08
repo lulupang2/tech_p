@@ -1,0 +1,2 @@
+ALTER TABLE "collection_target_revisions" ADD COLUMN "taxonomy_version" text DEFAULT 'legacy-unreviewed' NOT NULL;--> statement-breakpoint
+ALTER TABLE "provider_budget_scopes" ADD COLUMN "approved_model_profiles" jsonb DEFAULT '[]'::jsonb NOT NULL;

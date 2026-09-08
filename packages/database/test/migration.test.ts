@@ -25,7 +25,7 @@ describe('migration files and metadata structure', () => {
     };
 
     assert.ok(Array.isArray(journal.entries));
-    assert.equal(journal.entries.length, 7);
+    assert.equal(journal.entries.length, 12);
     assert.equal(journal.entries[0]?.tag, '0000_bootstrap_pgvector');
     assert.equal(journal.entries[1]?.tag, '0001_complete_puck');
     assert.equal(journal.entries[2]?.tag, '0002_mature_post');

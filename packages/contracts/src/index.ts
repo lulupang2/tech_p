@@ -1,3 +1,5 @@
+export * from './coverage-manifest.js';
+export * from './coverage.js';
 export {
   COLLECTION_QUEUE_JOB_NAME,
   COLLECTION_QUEUE_JOB_SCHEMA_VERSION,
