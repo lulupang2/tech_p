@@ -37,7 +37,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - '127.0.0.1:3000:3000'
+      - '127.0.0.1:35001:3000'
 
   worker:
     image: ${IMAGE_PREFIX}/worker:${IMAGE_TAG}
