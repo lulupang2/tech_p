@@ -47,8 +47,8 @@ describe('COV-008 API Runtime Model Bindings & Budget Authorization', () => {
       blocked: boolean;
       approvedModelProfiles: readonly string[];
     } | null,
+    reservations: Record<string, unknown>[] = [],
   ): DatabaseClient['db'] {
-    const reservations: Record<string, unknown>[] = [];
     let selectCalls = 0;
     const mockTx = {
       execute: async () => ({
@@ -160,6 +160,53 @@ describe('COV-008 API Runtime Model Bindings & Budget Authorization', () => {
       return Promise.all(reqs.map((r) => this.embed(r)));
     },
   };
+
+  test('Korean query usage fits its reservation without blocking later requests', async () => {
+    const reservations: Record<string, unknown>[] = [];
+    const db = createFakeDb(
+      {
+        id: sampleScopeId,
+        approved: true,
+        blocked: false,
+        approvedModelProfiles: [collectionHash(sampleProfile)],
+      },
+      reservations,
+    );
+    const models = createBudgetedApiModels(db, {
+      chat: {
+        port: fakeChatPort,
+        profile: sampleProfile,
+        scopeId: sampleScopeId,
+        caps: sampleCaps,
+        priceRate: samplePriceRate,
+      },
+      embedding: {
+        port: {
+          ...fakeEmbeddingPort,
+          async embed() {
+            const result = await fakeEmbeddingPort.embed({ input: 'ignored' });
+            return {
+              ...result,
+              metadata: { ...result.metadata, usage: { inputTokens: 28, totalTokens: 28 } },
+            };
+          },
+        },
+        profile: sampleProfile,
+        scopeId: sampleScopeId,
+        caps: sampleCaps,
+        priceRate: samplePriceRate,
+      },
+    });
+    const question = 'TypeScript 최신 릴리스의 버전과 주요 변경점을 알려줘.';
+    await models.embeddingPort!.embed({ input: question });
+    assert.ok(Number(reservations[0]?.tokens) >= 28);
+    assert.equal(reservations[0]?.tokens, Buffer.byteLength(question, 'utf8'));
+    await models.chatPort.complete({ messages: [{ role: 'user', content: question }] });
+    assert.ok(
+      Number(reservations[1]?.tokens) >=
+        Buffer.byteLength(question, 'utf8') + sampleCaps.maxOutputTokens!,
+    );
+  });
 
   test('validates model bindings up-front on creation', () => {
     const db = createFakeDb(null);

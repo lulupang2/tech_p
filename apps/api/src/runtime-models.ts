@@ -75,9 +75,13 @@ export function createBudgetedApiModels(
       return budget.executeChatWithBudget(bindings.chat.port, request, {
         ...bindings.chat,
         attemptId: randomUUID(),
-        ...(options.reserveFullInputCap
-          ? { inputTokenUpperBound: bindings.chat.caps.maxInputTokens }
-          : {}),
+        inputTokenUpperBound: options.reserveFullInputCap
+          ? bindings.chat.caps.maxInputTokens
+          : request.messages.reduce(
+              (total, message) =>
+                total + Buffer.byteLength(`${message.role}:${message.content}`, 'utf8') + 16,
+              16,
+            ),
       });
     },
   };
@@ -90,9 +94,9 @@ export function createBudgetedApiModels(
             ...embedding,
             attemptId: randomUUID(),
             lane: 'query_embedding',
-            ...(options.reserveFullInputCap
-              ? { inputTokenUpperBound: embedding.caps.maxInputTokens }
-              : {}),
+            inputTokenUpperBound: options.reserveFullInputCap
+              ? embedding.caps.maxInputTokens
+              : Buffer.byteLength(request.input, 'utf8'),
           });
         },
         async embedMany(requests) {
