@@ -6,8 +6,9 @@ test('renders persisted runtime citations and coverage without mocked responses'
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('tab', { name: '질문과 답변' }).click();
+  await page.getByRole('link', { name: '질문', exact: true }).click();
   await page.getByLabel('질문 *').fill('TypeScript compiler architecture');
+  await page.getByText('기간·시간대·답변 언어 설정', { exact: true }).click();
   await page.locator('#qa-timerange-select').selectOption('custom');
   await page.locator('#qa-custom-from').fill('2026-06-01T00:00');
   await page.locator('#qa-custom-to').fill('2026-09-09T00:00');

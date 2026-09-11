@@ -128,6 +128,23 @@ async function installApiFixtures(page: Page): Promise<void> {
 
 test.beforeEach(async ({ page }) => {
   await installApiFixtures(page);
+  await page.route('**/api/v1/coverage?**', async (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    await route.fulfill({
+      json: {
+        generatedAt: fixedTimestamp,
+        from: params.get('from'),
+        to: params.get('to'),
+        rawDocuments: 28,
+        lexicalDocuments: 26,
+        vectorDocuments: 24,
+        partitionsChecked: 10,
+        partitionsCompleted: 9,
+        partitionsPartial: 1,
+        reasons: ['processing_pending'],
+      },
+    });
+  });
   await page.addInitScript(() => {
     if (!localStorage.getItem('signal-archive-locale')) {
       localStorage.setItem('signal-archive-locale', 'ko');
@@ -147,8 +164,20 @@ test('한국어 기본 화면과 언어 설정을 유지한다', async ({ page }
   await expect(page.getByText('What’s changing in your tech stack?')).toBeVisible();
 });
 
+test('실제 응답의 수집 현황과 실패 상태를 구분한다', async ({ page }) => {
+  const archive = page.getByRole('region', { name: '답변의 바탕이 되는 데이터' });
+  await expect(archive.getByText('28', { exact: true })).toBeVisible();
+  await expect(archive.getByText('26', { exact: true })).toBeVisible();
+  await page.route('**/api/v1/coverage?**', (route) => route.fulfill({ status: 503, body: '{}' }));
+  await page.reload();
+  await expect(
+    page.getByText('지금은 수집 현황을 확인할 수 없습니다. 질문 입력은 계속할 수 있습니다.'),
+  ).toBeVisible();
+  await expect(page.getByLabel('질문 *')).toBeEnabled();
+});
+
 test('질문 홈에서 탐색 후 돌아오고 예시를 선택한다', async ({ page }) => {
-  await page.getByRole('button', { name: '트렌드 둘러보기 →' }).click();
+  await page.getByRole('link', { name: '트렌드 둘러보기', exact: true }).click();
   await expect(page).toHaveURL(/\/explore$/);
   await expect(page.getByText('소스 현황', { exact: true })).toBeVisible();
   await page.reload();
@@ -168,7 +197,8 @@ test('질문 홈에서 탐색 후 돌아오고 예시를 선택한다', async ({
 });
 
 test('토픽 검색의 결과와 빈 상태를 표시한다', async ({ page }) => {
-  await page.getByRole('tab', { name: '토픽 카탈로그' }).click();
+  await page.getByRole('link', { name: '트렌드 둘러보기', exact: true }).click();
+  await page.getByRole('button', { name: '토픽 카탈로그' }).click();
   await expect(page.getByRole('heading', { name: 'TypeScript' })).toBeVisible();
 
   await page.getByRole('searchbox', { name: '표준 기술 토픽 검색' }).fill('missing');
@@ -177,7 +207,7 @@ test('토픽 검색의 결과와 빈 상태를 표시한다', async ({ page }) =
 });
 
 test('비교 답변, 단위별 지표와 클릭 가능한 인용을 표시한다', async ({ page }) => {
-  await page.getByRole('tab', { name: '질문과 답변' }).click();
+  await page.getByRole('link', { name: '질문', exact: true }).click();
   await page.getByLabel('질문 *').fill('Bun과 Node.js의 관심 변화를 비교해줘.');
   await page.getByRole('button', { name: '근거와 함께 답변받기' }).click();
 
@@ -194,7 +224,7 @@ test('비교 답변, 단위별 지표와 클릭 가능한 인용을 표시한다
 });
 
 test('근거가 없는 질문은 답변을 생성하지 않는다', async ({ page }) => {
-  await page.getByRole('tab', { name: '질문과 답변' }).click();
+  await page.getByRole('link', { name: '질문', exact: true }).click();
   await page.getByLabel('질문 *').fill('근거 없음: 존재하지 않는 기술을 알려줘.');
   await page.getByRole('button', { name: '근거와 함께 답변받기' }).click();
 

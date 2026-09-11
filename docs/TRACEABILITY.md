@@ -8,6 +8,9 @@
 
 ## 1. 기능 요구사항
 
+리서치 도구 디자인(PRD §2) → WEB-005 → `apps/web/e2e/dashboard.spec.ts`: 상단 경로 이동,
+예시 선택, 수집 현황 응답/오류 구분, 모바일 overflow, 기존 질문/답변·출처 확인.
+
 질문 중심 진입 흐름(2026-09-11): PRD §2 → WEB-004 → `apps/web/e2e/dashboard.spec.ts`의
 홈/예시 선택/설정/탐색 URL·뒤로 가기/locale persistence/모바일 및 답변 검증.
 

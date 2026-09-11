@@ -18,15 +18,15 @@
 
 <style>
   :global(:root) {
-    --bg-primary: #f3f5f2;
+    --bg-primary: #f7f8f3;
     --bg-secondary: #f7f8f6;
     --bg-card: #fff;
     --border-color: #e3e8e1;
     --text-primary: #10251e;
     --text-secondary: #4f6059;
     --text-muted: #687871;
-    --accent-blue: #9ceb65;
-    --accent-cyan: #70db36;
+    --accent-blue: #496b3b;
+    --accent-cyan: #496b3b;
     --accent-deep: #0d3a2c;
     --status-ok: #2f9b66;
     --status-warn: #d6922e;

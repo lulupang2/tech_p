@@ -400,6 +400,71 @@
       </p>
     </div>
 
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        class="submit-btn"
+        disabled={!isQuestionValid || submitting}
+        aria-busy={submitting}
+      >
+        {#if submitting}
+          <span class="spinner" aria-hidden="true"></span>
+          <span>{currentLocale === 'ko' ? '답변을 생성하는 중...' : 'Synthesizing Answer...'}</span>
+        {:else}
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>근거와 함께 답변받기</span>
+        {/if}
+      </button>
+
+      <button
+        type="button"
+        class="reset-btn"
+        disabled={submitting || (!question && !response && !errorMessage)}
+        onclick={handleReset}
+      >
+        Clear
+      </button>
+    </div>
+    <!-- Sample questions chips -->
+    <div
+      class="sample-queries"
+      aria-label={currentLocale === 'ko' ? '예시 질문' : 'Sample questions'}
+    >
+      <span class="sample-label">{currentLocale === 'ko' ? '예시:' : 'Examples:'}</span>
+      <div class="chips-row">
+        {#each sampleQuestions as sample, index (sample)}
+          <button
+            type="button"
+            class="chip-btn"
+            aria-label={sample}
+            disabled={submitting}
+            onclick={() => selectSampleQuestion(sample)}
+          >
+            {#if landing}<strong
+                >{['Playwright', 'TypeScript', 'React', 'Node.js'][index]}
+                <span aria-hidden="true">↗</span></strong
+              ><small
+                >{currentLocale === 'ko'
+                  ? '최신 릴리스 살펴보기'
+                  : 'Explore the latest release'}</small
+              >{:else}{sample}{/if}
+          </button>
+        {/each}
+      </div>
+    </div>
+
     {#if landing}
       <p class="scope-note">
         GitHub Releases · TypeScript, Node.js, Playwright, React<br />
@@ -408,26 +473,6 @@
           : 'Answers use collected releases. Check evidence dates and the requested period in each answer.'}
       </p>
     {/if}
-
-    <!-- Sample questions chips -->
-    <div
-      class="sample-queries"
-      aria-label={currentLocale === 'ko' ? '예시 질문' : 'Sample questions'}
-    >
-      <span class="sample-label">{currentLocale === 'ko' ? '예시:' : 'Examples:'}</span>
-      <div class="chips-row">
-        {#each sampleQuestions as sample (sample)}
-          <button
-            type="button"
-            class="chip-btn"
-            disabled={submitting}
-            onclick={() => selectSampleQuestion(sample)}
-          >
-            {sample}
-          </button>
-        {/each}
-      </div>
-    </div>
 
     <!-- Controls: Time range, Timezone, Language -->
     <details open={!landing} class="query-options">
@@ -543,44 +588,6 @@
         {/if}
       </fieldset>
     </details>
-
-    <!-- Action Buttons -->
-    <div class="form-actions">
-      <button
-        type="submit"
-        class="submit-btn"
-        disabled={!isQuestionValid || submitting}
-        aria-busy={submitting}
-      >
-        {#if submitting}
-          <span class="spinner" aria-hidden="true"></span>
-          <span>{currentLocale === 'ko' ? '답변을 생성하는 중...' : 'Synthesizing Answer...'}</span>
-        {:else}
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <span>근거와 함께 답변받기</span>
-        {/if}
-      </button>
-
-      <button
-        type="button"
-        class="reset-btn"
-        disabled={submitting || (!question && !response && !errorMessage)}
-        onclick={handleReset}
-      >
-        Clear
-      </button>
-    </div>
   </form>
 
   <!-- Loading State Indicator -->
@@ -1253,6 +1260,50 @@
 </section>
 
 <style>
+  .landing .chips-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+  }
+  .landing .chip-btn {
+    text-align: left;
+    padding: 14px !important;
+    background: #f7f8f3 !important;
+    border: 1px solid #e2e6d9 !important;
+    border-radius: 12px;
+    color: #31452e !important;
+  }
+  .landing .chip-btn:hover {
+    border-color: #899f7b !important;
+    background: #eff3e7 !important;
+  }
+  .chip-btn strong {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font:
+      600 13px 'DM Sans',
+      sans-serif;
+  }
+  .chip-btn small {
+    display: block;
+    margin-top: 8px;
+    font-size: 10px;
+    color: #74806b;
+  }
+  .landing .qa-form {
+    padding: 26px;
+    box-shadow: 0 12px 45px #253b2310 !important;
+  }
+  @media (max-width: 600px) {
+    .landing .chips-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .landing .qa-form {
+      padding: 18px;
+    }
+  }
   .visually-hidden {
     position: absolute;
     width: 1px;

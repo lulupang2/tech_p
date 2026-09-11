@@ -207,6 +207,7 @@
 | WEB-001 | web shell과 typed API client | DEC-005, FND-001, CON-001, API-001 | DONE | web이 DB/provider package를 import하지 않음; server 전용 코드가 `+page.server.ts`·`+server.ts`·`$lib/server/` 경계 안에만 있고 client bundle 산출물 검사에서 secret이 발견되지 않음; loading/error/empty layout 접근성 smoke; API contract type drift test 통과 |
 | WEB-002 | 질문·답변·citation UI | WEB-001, API-003 | DONE | 질문/기간 입력, resolved range, answer, clickable citation/date/source, limitations/insufficient state 표시; keyboard/screen-reader labels 검증 |
 | WEB-004 | 질문 중심 홈과 탐색 경로 | WEB-002, WEB-003 | DONE | `/` 질문 기본 화면, `/explore` 기존 탐색, 예시 4개와 세부 설정, URL/뒤로 가기·언어 유지·모바일 overflow 및 기존 답변 E2E 검증 |
+| WEB-005 | 기술 리서치 도구 디자인 개편 | WEB-004 | DONE | 상단 질문/탐색 메뉴, 하단 시스템 상태, 짧은 예시 카드와 수집 현황 API 연결; 실패 상태·반응형·기존 질문 흐름 E2E 검증. 개별 최신 릴리스 목록은 API 미지원으로 제외 |
 | WEB-003 | 비교 metric과 source freshness UI baseline | WEB-002, API-002 | DONE | 기존 seeded API의 metric unit/기간·freshness 표시 증빙. cohort/coverage 확장은 COV-008, 실제 비교 품질은 RAG-006/EVAL-002에서 검증 |
 | TST-002 | Playwright UI E2E suite | WEB-002, WEB-003, TST-001 | DONE | seeded deterministic API/fake model contract에서 summary/comparison/no-data/citation 및 locale persistence 흐름 통과; collector suite와 분리; flaky retry 없이 Chromium PR smoke 성공 (2026-09-02) |
 
@@ -601,3 +602,8 @@ Docker Compose 전체 stack(api/web/worker/postgres/redis, 5 컨테이너 health
 
 - 질문 홈과 독립 탐색 경로를 구현했다. 웹 static, unit 57개, Playwright 5개가 통과했다. 별도 runtime 연결 E2E 1개는 환경 미설정으로 skip됐다.
 - 로컬 브라우저에서 질문 입력·예시·설정·탐색 진입 배치를 확인했다. 실제 provider 호출은 없었다.
+
+### WEB-005 검증 (2026-09-11)
+
+- 웹 static과 unit 57개, Playwright 6개 PASS. 별도 runtime 연결 E2E 1개는 환경 미설정으로 skip. 상단 경로 이동·예시 선택·모바일 overflow·coverage 정상/503·답변 인용 흐름을 검증했다.
+- 로컬 브라우저에서 상단 메뉴와 질문 카드의 시각 배치를 확인했다. 신규 API/수집/provider 호출은 추가하지 않았다.

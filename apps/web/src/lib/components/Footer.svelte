@@ -1,63 +1,48 @@
 <script lang="ts">
-  import { CONTRACT_VERSION } from '@techpulse/contracts';
-  import { locale, type Locale } from '$lib/i18n.js';
-  let currentLocale = $state<Locale>('ko');
-  locale.subscribe((value) => (currentLocale = value));
+  import { resolve } from '$app/paths';
+  import { locale } from '$lib/i18n.js';
 </script>
 
-<footer class="app-footer">
-  <div>
-    <strong>Signal Archive</strong>
-    <p>
-      {currentLocale === 'ko'
-        ? '검증 가능한 공개 기술 출처를 바탕으로 변화를 읽습니다.'
-        : 'Read technology change through verifiable public sources.'}
-    </p>
-  </div>
-  <div class="footer-meta">
-    <span>{currentLocale === 'ko' ? '계약 버전' : 'Contract version'} {CONTRACT_VERSION}</span><span
-      >{currentLocale === 'ko' ? '출처 추적 가능' : 'Traceable sources'}</span
-    ><span>{currentLocale === 'ko' ? 'UTC 기준' : 'UTC based'}</span>
-  </div>
+<footer>
+  <p>
+    Signal Archive <span
+      >· {$locale === 'ko'
+        ? '출처로 확인하는 기술 변화'
+        : 'Technology changes, with evidence'}</span
+    >
+  </p>
+  <a href={resolve('/explore?tab=status')}>{$locale === 'ko' ? '시스템 상태' : 'System health'} ↗</a
+  >
 </footer>
 
 <style>
-  .app-footer {
+  footer {
     display: flex;
     justify-content: space-between;
+    gap: 20px;
     align-items: center;
-    gap: 24px;
-    padding: 28px 6px 0;
-    color: #7a8781;
+    margin-top: 60px;
+    border-top: 1px solid #e0e5dc;
+    padding: 24px 0;
+    font-size: 12px;
+    color: #657166;
   }
-  .app-footer strong {
-    font-family: 'DM Sans', sans-serif;
-    color: #163b30;
+  p {
+    margin: 0;
   }
-  .app-footer p {
-    font-size: 11px;
-    margin: 3px 0 0;
+  a {
+    color: #51624f;
+    text-decoration: none;
+    white-space: nowrap;
   }
-  .footer-meta {
-    display: flex;
-    gap: 18px;
-    font-size: 10px;
-  }
-  .footer-meta span {
-    position: relative;
-  }
-  .footer-meta span + span:before {
-    content: '·';
-    position: absolute;
-    left: -11px;
-  }
-  @media (max-width: 650px) {
-    .app-footer {
+  @media (max-width: 600px) {
+    footer {
       align-items: flex-start;
-      flex-direction: column;
+      margin-top: 36px;
     }
-    .footer-meta {
-      flex-wrap: wrap;
+    p span {
+      display: block;
+      margin-top: 5px;
     }
   }
 </style>

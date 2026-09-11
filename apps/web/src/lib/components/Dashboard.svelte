@@ -10,6 +10,7 @@
   import SourceList from '$lib/components/SourceList.svelte';
   import TopicSearch from '$lib/components/TopicSearch.svelte';
   import QuestionAnswer from '$lib/components/QuestionAnswer.svelte';
+  import ArchiveContext from '$lib/components/ArchiveContext.svelte';
   import Footer from '$lib/components/Footer.svelte';
   type TabId = 'sources' | 'topics' | 'status' | 'qa';
   const client = createApiClient(
@@ -85,30 +86,35 @@
 >
 <Header {activeTab} onTabChange={navigate} />
 <main id="main-content" class="dashboard-shell" class:question-home={activeTab === 'qa'}>
-  <header class="topbar">
-    <div>
-      {currentLocale === 'ko' ? '출처와 함께 읽는 기술 변화' : 'Technology changes, with sources'}
-    </div>
-    <button onclick={() => navigate(activeTab === 'qa' ? 'sources' : 'qa')}
-      >{activeTab === 'qa'
-        ? currentLocale === 'ko'
-          ? '트렌드 둘러보기 →'
-          : 'Explore trends →'
-        : currentLocale === 'ko'
-          ? '✦ AI에게 질문하기'
-          : '✦ Ask AI'}</button
-    >
-  </header>
   <section class="hero">
     <div>
       <p class="eyebrow">{labels[activeTab].eyebrow}</p>
       <h1>{labels[activeTab].title}</h1>
       <p>{labels[activeTab].description}</p>
     </div>
-    {#if activeTab !== 'qa'}<div class="signal-orb" aria-hidden="true">
-        <span></span><span></span><strong>SA</strong>
-      </div>{/if}
   </section>
+  {#if activeTab !== 'qa'}
+    <nav
+      class="explore-nav"
+      aria-label={currentLocale === 'ko' ? '탐색 메뉴' : 'Explore navigation'}
+    >
+      <button
+        id="tab-sources"
+        class:active={activeTab === 'sources'}
+        onclick={() => navigate('sources')}
+        >{currentLocale === 'ko' ? '데이터 소스' : 'Data sources'}</button
+      >
+      <button
+        id="tab-topics"
+        class:active={activeTab === 'topics'}
+        onclick={() => navigate('topics')}
+        >{currentLocale === 'ko' ? '토픽 카탈로그' : 'Topic catalog'}</button
+      >
+      {#if activeTab === 'status'}<span id="tab-status"
+          >{currentLocale === 'ko' ? '시스템 상태' : 'System health'}</span
+        >{/if}
+    </nav>
+  {/if}
   <div class="content-wrap">
     {#if activeTab === 'sources'}<div
         id="panel-sources"
@@ -131,161 +137,85 @@
       >
         <StatusBanner {client} />
       </div>
-    {:else}<div id="panel-qa" role="tabpanel" aria-labelledby="tab-qa">
+    {:else}<div id="panel-qa" role="tabpanel" aria-label={currentLocale === 'ko' ? '질문' : 'Ask'}>
         <QuestionAnswer {client} landing />
       </div>{/if}
   </div>
+  {#if activeTab === 'qa'}<ArchiveContext {client} />{/if}
   <Footer />
 </main>
 
 <style>
   .dashboard-shell {
-    margin-left: 244px;
-    min-height: 100vh;
-    padding: 0 38px 36px;
-  }
-  .topbar {
-    height: 74px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid #e1e6df;
-    color: #78847f;
-    font-size: 12px;
-  }
-  .topbar > div {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .question-home .hero {
-    min-height: 160px;
-    text-align: center;
-    justify-content: center;
-  }
-  .question-home .hero p:not(.eyebrow) {
-    max-width: none;
-  }
-  .question-home .content-wrap {
-    max-width: 960px;
+    max-width: 1080px;
     margin: 0 auto;
-    background: transparent;
-    border: 0;
-    padding: 0;
-    box-shadow: none;
-  }
-  .topbar button {
-    border: 0;
-    background: #123c2e;
-    color: #fff;
-    border-radius: 10px;
-    padding: 10px 15px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
+    padding: 0 28px;
+    min-height: calc(100vh - 88px);
   }
   .hero {
-    min-height: 250px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 42px 6px 34px;
+    padding: 54px 0 30px;
+  }
+  .question-home .hero {
+    text-align: center;
+    padding: 66px 0 30px;
   }
   .eyebrow {
     font:
-      700 10px 'DM Sans',
+      600 11px 'DM Sans',
       sans-serif;
-    letter-spacing: 0.16em;
-    color: #75a85c !important;
-    margin: 0 0 11px;
+    letter-spacing: 0.18em;
+    color: #6c7966;
+    margin: 0 0 16px;
   }
-  .hero h1 {
-    font-size: 38px;
-    line-height: 1.15;
+  h1 {
+    font-size: 40px;
+    font-weight: 600;
     letter-spacing: -0.055em;
-    margin: 0 0 13px;
-    color: #10251e;
+    line-height: 1.3;
+    margin: 0 0 16px;
+    color: #203429;
   }
   .hero p:not(.eyebrow) {
+    color: #71796e;
     font-size: 14px;
-    color: #74817b;
     margin: 0;
-    max-width: 520px;
+    line-height: 1.8;
   }
-  .signal-orb {
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    background: radial-gradient(
-      circle at 35% 30%,
-      #efffe6 0,
-      #a3f16c 42%,
-      #4b9b45 72%,
-      #123c2e 100%
-    );
-    position: relative;
-    box-shadow: 0 24px 45px rgba(57, 118, 67, 0.16);
-    display: grid;
-    place-content: center;
-    overflow: hidden;
+  .question-home .content-wrap {
+    max-width: 820px;
+    margin: auto;
   }
-  .signal-orb:before {
-    content: '';
-    position: absolute;
-    inset: 13px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 50%;
+  .explore-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 0 24px;
   }
-  .signal-orb span {
-    position: absolute;
-    width: 180px;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.4);
-    transform: rotate(-35deg);
-    left: -15px;
+  .explore-nav button {
+    border: 1px solid #dce2d5;
+    border-radius: 22px;
+    padding: 9px 18px;
+    background: transparent;
+    cursor: pointer;
+    color: #53644e;
   }
-  .signal-orb span:nth-child(2) {
-    transform: rotate(35deg);
+  .explore-nav button.active {
+    background: #233c2e;
+    color: white;
+    border-color: #233c2e;
   }
-  .signal-orb strong {
-    color: #123c2e;
-    font:
-      700 20px 'DM Sans',
-      sans-serif;
-    z-index: 1;
-  }
-  .content-wrap {
-    background: #f8faf7;
-    border: 1px solid #e5e9e2;
-    border-radius: 24px;
-    padding: 26px;
-    min-height: 430px;
-    box-shadow: 0 16px 45px rgba(16, 37, 30, 0.04);
-  }
-  @media (max-width: 820px) {
+  @media (max-width: 600px) {
     .dashboard-shell {
-      margin-left: 0;
-      padding: 0 16px 24px;
+      padding: 0 20px;
     }
-    .topbar {
-      height: 58px;
+    .question-home .hero {
+      padding: 40px 0 24px;
     }
-    .hero {
-      min-height: 190px;
-      padding: 28px 2px;
-    }
-    .hero h1 {
+    h1 {
       font-size: 29px;
     }
-    .signal-orb {
-      width: 88px;
-      height: 88px;
-      flex: none;
-      margin-left: 18px;
-    }
-    .content-wrap {
-      padding: 15px;
-      border-radius: 18px;
+    .hero p:not(.eyebrow) {
+      font-size: 13px;
     }
   }
 </style>
