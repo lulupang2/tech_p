@@ -26,6 +26,17 @@
     <ul class="nav-list" role="tablist">
       <li>
         <button
+          id="tab-qa"
+          aria-controls="panel-qa"
+          class:active={activeTab === 'qa'}
+          role="tab"
+          aria-selected={activeTab === 'qa'}
+          onclick={() => onTabChange?.('qa')}
+          ><span class="icon">✦</span>{t('qa', currentLocale)}</button
+        >
+      </li>
+      <li>
+        <button
           id="tab-sources"
           aria-controls="panel-sources"
           class:active={activeTab === 'sources'}
@@ -55,17 +66,6 @@
           aria-selected={activeTab === 'status'}
           onclick={() => onTabChange?.('status')}
           ><span class="icon">⌁</span>{t('status', currentLocale)}</button
-        >
-      </li>
-      <li>
-        <button
-          id="tab-qa"
-          aria-controls="panel-qa"
-          class:active={activeTab === 'qa'}
-          role="tab"
-          aria-selected={activeTab === 'qa'}
-          onclick={() => onTabChange?.('qa')}
-          ><span class="icon">✦</span>{t('qa', currentLocale)}</button
         >
       </li>
     </ul>

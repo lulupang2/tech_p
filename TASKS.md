@@ -206,6 +206,7 @@
 | SEC-003 | RAG prompt-injection/egress baseline | SEC-001 | DONE | 기존 fixture/seeded 경계 검증 기록만 의미. 신규 on-demand 취득·승인 provider 통합은 COV-007/COV-008 및 EVAL-002 release gate를 통과해야 함 |
 | WEB-001 | web shell과 typed API client | DEC-005, FND-001, CON-001, API-001 | DONE | web이 DB/provider package를 import하지 않음; server 전용 코드가 `+page.server.ts`·`+server.ts`·`$lib/server/` 경계 안에만 있고 client bundle 산출물 검사에서 secret이 발견되지 않음; loading/error/empty layout 접근성 smoke; API contract type drift test 통과 |
 | WEB-002 | 질문·답변·citation UI | WEB-001, API-003 | DONE | 질문/기간 입력, resolved range, answer, clickable citation/date/source, limitations/insufficient state 표시; keyboard/screen-reader labels 검증 |
+| WEB-004 | 질문 중심 홈과 탐색 경로 | WEB-002, WEB-003 | DONE | `/` 질문 기본 화면, `/explore` 기존 탐색, 예시 4개와 세부 설정, URL/뒤로 가기·언어 유지·모바일 overflow 및 기존 답변 E2E 검증 |
 | WEB-003 | 비교 metric과 source freshness UI baseline | WEB-002, API-002 | DONE | 기존 seeded API의 metric unit/기간·freshness 표시 증빙. cohort/coverage 확장은 COV-008, 실제 비교 품질은 RAG-006/EVAL-002에서 검증 |
 | TST-002 | Playwright UI E2E suite | WEB-002, WEB-003, TST-001 | DONE | seeded deterministic API/fake model contract에서 summary/comparison/no-data/citation 및 locale persistence 흐름 통과; collector suite와 분리; flaky retry 없이 Chromium PR smoke 성공 (2026-09-02) |
 
@@ -595,3 +596,8 @@ Docker Compose 전체 stack(api/web/worker/postgres/redis, 5 컨테이너 health
 - DEC-014 추가 사용은 embedding 1회와 chat 1회이며 누적 97/100·32/60, unknown reservation 0이다. 원장 기존 prefix와 과거 사용량은 보존했다. 전체 live 재실행, budget 증액, commit, 운영 배포는 하지 않았다.
 - RAG 103/103, API 177/177 tests, 두 package typecheck·ESLint·Prettier와 `git diff --check`를 통과했다. 해시·개수·지표 증빙은 `docs/experiments/eval-002/resume-validation-2026-09-11T03-25-45-334Z.json`에 기록했다.
 - 8개 label과 6개 citation 근거의 해시를 대조하고 터미널에서 표시했다. 새 L-001 답변은 확인 가능하지만 재사용한 L-007/L-014/L-017 원문은 현재 연결된 세션 기록에 없어 원래 터미널 출력 복구가 필요하다. 원문 확보와 명시적 사람 승인 전에는 human-review JSON/attestation을 만들지 않는다. EVAL-002 READY, COV-010/MVP-001 BLOCKED를 유지한다.
+
+### WEB-004 검증 (2026-09-11)
+
+- 질문 홈과 독립 탐색 경로를 구현했다. 웹 static, unit 57개, Playwright 5개가 통과했다. 별도 runtime 연결 E2E 1개는 환경 미설정으로 skip됐다.
+- 로컬 브라우저에서 질문 입력·예시·설정·탐색 진입 배치를 확인했다. 실제 provider 호출은 없었다.

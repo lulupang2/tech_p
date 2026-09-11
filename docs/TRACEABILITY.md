@@ -8,6 +8,9 @@
 
 ## 1. 기능 요구사항
 
+질문 중심 진입 흐름(2026-09-11): PRD §2 → WEB-004 → `apps/web/e2e/dashboard.spec.ts`의
+홈/예시 선택/설정/탐색 URL·뒤로 가기/locale persistence/모바일 및 답변 검증.
+
 | 요구사항 | 설계 문서 | 구현 task | 검증 계층 |
 |---|---|---|---|
 | FR-001 실제 외부 데이터 수집 | DATA_PIPELINE §2~4, SOURCE_CATALOG | COL-002, COL-003, COL-004, COL-006, COL-007, COL-008, COL-009, COL-010, QUE-001, PIPE-001 | fixture contract, integration, source별 live canary |

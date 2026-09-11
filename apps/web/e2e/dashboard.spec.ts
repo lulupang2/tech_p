@@ -138,13 +138,33 @@ test.beforeEach(async ({ page }) => {
 
 test('한국어 기본 화면과 언어 설정을 유지한다', async ({ page }) => {
   await expect(page).toHaveTitle('Signal Archive — 개발 기술 트렌드 인텔리전스');
-  await expect(page.getByText('소스 현황', { exact: true })).toBeVisible();
-  await expect(page.getByText('릴리스', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '어떤 기술 변화가 궁금한가요?' })).toBeVisible();
+  await expect(page.getByLabel('질문 *')).toBeVisible();
 
   await page.getByRole('button', { name: 'English' }).click();
-  await expect(page.getByText('Technology signals at a glance')).toBeVisible();
+  await expect(page.getByText('What’s changing in your tech stack?')).toBeVisible();
   await page.reload();
-  await expect(page.getByText('Technology signals at a glance')).toBeVisible();
+  await expect(page.getByText('What’s changing in your tech stack?')).toBeVisible();
+});
+
+test('질문 홈에서 탐색 후 돌아오고 예시를 선택한다', async ({ page }) => {
+  await page.getByRole('button', { name: '트렌드 둘러보기 →' }).click();
+  await expect(page).toHaveURL(/\/explore$/);
+  await expect(page.getByText('소스 현황', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('소스 현황', { exact: true })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByLabel('질문 *')).toBeVisible();
+  const sample = 'Playwright 최신 릴리스의 버전과 주요 변경점을 알려줘.';
+  await page.getByRole('button', { name: sample, exact: true }).click();
+  await expect(page.getByLabel('질문 *')).toHaveValue(sample);
+  await page.getByText('기간·시간대·답변 언어 설정', { exact: true }).click();
+  await expect(page.getByLabel('조회 기간')).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByLabel('질문 *')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
+    true,
+  );
 });
 
 test('토픽 검색의 결과와 빈 상태를 표시한다', async ({ page }) => {

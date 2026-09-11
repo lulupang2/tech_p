@@ -80,6 +80,7 @@
   } from '@techpulse/contracts';
   interface Props {
     client: ApiClient;
+    landing?: boolean;
     initialResponse?: AnswerResponse | null;
     initialTimePreset?: 'auto' | '7d' | '30d' | '90d' | 'custom';
     initialQuestion?: string;
@@ -87,6 +88,7 @@
 
   let {
     client,
+    landing = false,
     initialResponse = null,
     initialTimePreset = 'auto',
     initialQuestion = '',
@@ -126,7 +128,7 @@
     'Playwright 최신 릴리스의 버전과 주요 변경점을 알려줘.',
     'TypeScript 최신 릴리스의 버전과 주요 변경점을 알려줘.',
     'React 최신 릴리스와 공식 업데이트 내용을 요약해줘.',
-    '최근 npm 다운로드 기준으로 React와 Playwright 사용량을 비교해줘.',
+    'Node.js 최신 릴리스의 버전과 주요 변경점을 알려줘.',
   ];
 
   function selectSampleQuestion(sample: string) {
@@ -349,8 +351,8 @@
   }
 </script>
 
-<section class="qa-panel" aria-labelledby="qa-heading">
-  <div class="panel-header">
+<section class="qa-panel" class:landing aria-labelledby="qa-heading">
+  <div class="panel-header" class:visually-hidden={landing}>
     <div>
       <h2 id="qa-heading" class="panel-title">근거 기반 AI 질문</h2>
       <p class="panel-description">
@@ -385,7 +387,7 @@
       <textarea
         id="qa-question-input"
         class="form-textarea"
-        placeholder="예: 최근 한 달간 Bun과 Node.js의 관심 변화를 비교해줘."
+        placeholder="예: Playwright 최신 릴리스의 주요 변경점을 알려줘."
         bind:value={question}
         rows={3}
         maxlength={MAX_QUESTION_LENGTH}
@@ -397,6 +399,15 @@
         한국어 또는 영어로 2,000자 이내의 질문을 입력하세요.
       </p>
     </div>
+
+    {#if landing}
+      <p class="scope-note">
+        GitHub Releases · TypeScript, Node.js, Playwright, React<br />
+        {currentLocale === 'ko'
+          ? '수집된 릴리스를 기준으로 답합니다. 답변에서 근거의 날짜와 조회 기간을 확인할 수 있습니다.'
+          : 'Answers use collected releases. Check evidence dates and the requested period in each answer.'}
+      </p>
+    {/if}
 
     <!-- Sample questions chips -->
     <div
@@ -419,110 +430,119 @@
     </div>
 
     <!-- Controls: Time range, Timezone, Language -->
-    <fieldset class="controls-fieldset">
-      <legend class="controls-legend"
-        >{currentLocale === 'ko' ? '질의 범위와 설정' : 'Query Scope & Parameters'}</legend
+    <details open={!landing} class="query-options">
+      <summary
+        >{currentLocale === 'ko'
+          ? '기간·시간대·답변 언어 설정'
+          : 'Time range, timezone and answer language'}</summary
       >
+      <fieldset class="controls-fieldset">
+        <legend class="controls-legend"
+          >{currentLocale === 'ko' ? '질의 범위와 설정' : 'Query Scope & Parameters'}</legend
+        >
 
-      <div class="controls-grid">
-        <!-- Time Range Selector -->
-        <div class="control-item">
-          <label for="qa-timerange-select" class="control-label"
-            >{currentLocale === 'ko' ? '조회 기간' : 'Time Range'}</label
-          >
-          <select
-            id="qa-timerange-select"
-            class="form-select"
-            bind:value={timePreset}
-            disabled={submitting}
-          >
-            <option value="auto"
-              >{currentLocale === 'ko'
-                ? '기본값 (기간 필터 없음 / 최신 데이터)'
-                : 'Default (No Date Filter / Latest Data)'}</option
-            >
-            <option value="7d">{currentLocale === 'ko' ? '최근 7일' : 'Past 7 Days'}</option>
-            <option value="30d">{currentLocale === 'ko' ? '최근 30일' : 'Past 30 Days'}</option>
-            <option value="90d">{currentLocale === 'ko' ? '최근 90일' : 'Past 90 Days'}</option>
-            <option value="custom"
-              >{currentLocale === 'ko' ? '직접 기간 설정' : 'Custom Date Range'}</option
-            >
-          </select>
-        </div>
-
-        <!-- Timezone Selector -->
-        <div class="control-item">
-          <label for="qa-timezone-select" class="control-label"
-            >{currentLocale === 'ko' ? '시간대' : 'Timezone'}</label
-          >
-          <select
-            id="qa-timezone-select"
-            class="form-select"
-            bind:value={selectedTimezone}
-            disabled={submitting}
-          >
-            <option value="Asia/Seoul">Asia/Seoul (KST, UTC+9)</option>
-            <option value="UTC">UTC (Coordinated Universal Time)</option>
-            <option value="America/New_York">America/New_York (EST/EDT)</option>
-            <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
-            <option value="Europe/London">Europe/London (GMT/BST)</option>
-          </select>
-        </div>
-
-        <!-- Language Selector -->
-        <div class="control-item">
-          <label for="qa-lang-select" class="control-label"
-            >{currentLocale === 'ko' ? '답변 언어' : 'Output Language'}</label
-          >
-          <select
-            id="qa-lang-select"
-            class="form-select"
-            bind:value={selectedLanguage}
-            disabled={submitting}
-          >
-            <option value="auto"
-              >{currentLocale === 'ko' ? '질문에서 자동 감지' : 'Auto-detect from question'}</option
-            >
-            <option value="ko">Korean (한국어)</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- Custom Date Range Inputs -->
-      {#if timePreset === 'custom'}
-        <div class="custom-range-row" aria-label="Custom date range input">
+        <div class="controls-grid">
+          <!-- Time Range Selector -->
           <div class="control-item">
-            <label for="qa-custom-from" class="control-label">
-              {currentLocale === 'ko' ? '시작 일시' : 'Start Date (From)'}
-              <span class="required" aria-hidden="true">*</span>
-            </label>
-            <input
-              type="datetime-local"
-              id="qa-custom-from"
-              class="form-input"
-              bind:value={customFrom}
+            <label for="qa-timerange-select" class="control-label"
+              >{currentLocale === 'ko' ? '조회 기간' : 'Time Range'}</label
+            >
+            <select
+              id="qa-timerange-select"
+              class="form-select"
+              bind:value={timePreset}
               disabled={submitting}
-              required
-            />
+            >
+              <option value="auto"
+                >{currentLocale === 'ko'
+                  ? '기본값 (기간 필터 없음 / 최신 데이터)'
+                  : 'Default (No Date Filter / Latest Data)'}</option
+              >
+              <option value="7d">{currentLocale === 'ko' ? '최근 7일' : 'Past 7 Days'}</option>
+              <option value="30d">{currentLocale === 'ko' ? '최근 30일' : 'Past 30 Days'}</option>
+              <option value="90d">{currentLocale === 'ko' ? '최근 90일' : 'Past 90 Days'}</option>
+              <option value="custom"
+                >{currentLocale === 'ko' ? '직접 기간 설정' : 'Custom Date Range'}</option
+              >
+            </select>
           </div>
+
+          <!-- Timezone Selector -->
           <div class="control-item">
-            <label for="qa-custom-to" class="control-label">
-              {currentLocale === 'ko' ? '종료 일시' : 'End Date (To)'}
-              <span class="required" aria-hidden="true">*</span>
-            </label>
-            <input
-              type="datetime-local"
-              id="qa-custom-to"
-              class="form-input"
-              bind:value={customTo}
+            <label for="qa-timezone-select" class="control-label"
+              >{currentLocale === 'ko' ? '시간대' : 'Timezone'}</label
+            >
+            <select
+              id="qa-timezone-select"
+              class="form-select"
+              bind:value={selectedTimezone}
               disabled={submitting}
-              required
-            />
+            >
+              <option value="Asia/Seoul">Asia/Seoul (KST, UTC+9)</option>
+              <option value="UTC">UTC (Coordinated Universal Time)</option>
+              <option value="America/New_York">America/New_York (EST/EDT)</option>
+              <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+              <option value="Europe/London">Europe/London (GMT/BST)</option>
+            </select>
+          </div>
+
+          <!-- Language Selector -->
+          <div class="control-item">
+            <label for="qa-lang-select" class="control-label"
+              >{currentLocale === 'ko' ? '답변 언어' : 'Output Language'}</label
+            >
+            <select
+              id="qa-lang-select"
+              class="form-select"
+              bind:value={selectedLanguage}
+              disabled={submitting}
+            >
+              <option value="auto"
+                >{currentLocale === 'ko'
+                  ? '질문에서 자동 감지'
+                  : 'Auto-detect from question'}</option
+              >
+              <option value="ko">Korean (한국어)</option>
+              <option value="en">English</option>
+            </select>
           </div>
         </div>
-      {/if}
-    </fieldset>
+
+        <!-- Custom Date Range Inputs -->
+        {#if timePreset === 'custom'}
+          <div class="custom-range-row" aria-label="Custom date range input">
+            <div class="control-item">
+              <label for="qa-custom-from" class="control-label">
+                {currentLocale === 'ko' ? '시작 일시' : 'Start Date (From)'}
+                <span class="required" aria-hidden="true">*</span>
+              </label>
+              <input
+                type="datetime-local"
+                id="qa-custom-from"
+                class="form-input"
+                bind:value={customFrom}
+                disabled={submitting}
+                required
+              />
+            </div>
+            <div class="control-item">
+              <label for="qa-custom-to" class="control-label">
+                {currentLocale === 'ko' ? '종료 일시' : 'End Date (To)'}
+                <span class="required" aria-hidden="true">*</span>
+              </label>
+              <input
+                type="datetime-local"
+                id="qa-custom-to"
+                class="form-input"
+                bind:value={customTo}
+                disabled={submitting}
+                required
+              />
+            </div>
+          </div>
+        {/if}
+      </fieldset>
+    </details>
 
     <!-- Action Buttons -->
     <div class="form-actions">
@@ -1233,6 +1253,45 @@
 </section>
 
 <style>
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .scope-note {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .query-options summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .query-options[open] summary {
+    margin-bottom: 16px;
+  }
+  .landing .qa-form {
+    border-radius: 24px;
+    box-shadow: 0 18px 50px rgba(16, 37, 30, 0.05);
+  }
+  .landing .form-textarea {
+    min-height: 105px;
+    font-size: 17px;
+  }
+  .landing .chip-btn {
+    color: #24533a;
+    background: #f0f7eb;
+    border-color: #d5e5ca;
+  }
+  .landing .chip-btn:hover {
+    color: #163724;
+    background: #e2f1d8;
+  }
   .qa-panel {
     display: flex;
     flex-direction: column;
