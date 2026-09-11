@@ -67,4 +67,25 @@ describe('API runtime configuration', () => {
     assert.equal(config.aiEmbeddingModel, 'perplexity/pplx-embed-v1-0.6b');
     assert.equal(config.aiEmbeddingDimensions, 1024);
   });
+
+  test('loads the approved provider variable names used by deployment env files', () => {
+    const config = loadApiConfig({
+      DATABASE_URL: 'postgresql://db.test:5432/techpulse',
+      OPENAI_API_KEY: 'runinfra-key',
+      OPENAI_BASE_URL: 'https://api.runinfra.ai/v1',
+      OPENAI_CHAT_MODEL: 'nemotron-3-5-lightning-30b',
+      EMBEDDING_API_KEY: 'openrouter-key',
+      EMBEDDING_BASE_URL: 'https://openrouter.ai/api/v1',
+      EMBEDDING_MODEL: 'perplexity/pplx-embed-v1-0.6b',
+      EMBEDDING_DIMENSIONS: '1024',
+    });
+
+    assert.equal(config.aiChatApiKey, 'runinfra-key');
+    assert.equal(config.aiChatBaseUrl, 'https://api.runinfra.ai/v1');
+    assert.equal(config.aiChatModel, 'nemotron-3-5-lightning-30b');
+    assert.equal(config.aiEmbeddingApiKey, 'openrouter-key');
+    assert.equal(config.aiEmbeddingBaseUrl, 'https://openrouter.ai/api/v1');
+    assert.equal(config.aiEmbeddingModel, 'perplexity/pplx-embed-v1-0.6b');
+    assert.equal(config.aiEmbeddingDimensions, 1024);
+  });
 });

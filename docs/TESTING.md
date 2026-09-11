@@ -170,7 +170,17 @@ fake chat/embedding provider와 seeded corpus로 workflow branch를 테스트한
 
 지표 수치의 소유 위치를 하나로 유지한다. `NFR-004`, `NFR-005`의 수치는 [PRD.md](./PRD.md)가 소유하고 이 표는 참조만 한다. `FR-008`, `FR-009`에 연결된 나머지 행은 이 문서가 소유하는 test-level gate이며 PRD에 중복 기재하지 않는다. 값을 바꾸면 소유 문서와 관련 experiment gate를 한 변경에서 함께 수정한다.
 
-수치는 [EXP-002](./experiments/EXP-002-retrieval.md)와 [EXP-003](./experiments/EXP-003-model-providers.md) 후 승인해야 하며 현재 SSOT가 아니다.
+기존 표의 품질 수치와 COV-009 live 평가의 세부 기준은 2026-09-10 ADR-0018로 승인됐다. 2026-09-11 ADR-0019에 따라 포트폴리오 MVP blocking live gate는 8개 대표 문항으로 축소한다. 기존 43개 회귀 결과는 별도 진단/회귀 자산으로 보존하지만 MVP를 막지 않는다.
+
+### 7.4 EVAL-002 엄격 실행 및 COV-011 검증
+
+앱 내부 실행기는 `apps/api/src/release-evaluation-cli.ts`이며 모드·산출물·미완료 범위는 [EVAL-002 실행 기록](./experiments/eval-002/README.md)에 정리한다. `plan`은 DB/provider를 만들지 않고, `preflight`는 SELECT-only, `negative-diagnostic`은 FTS 전용 진단, `live`만 유료 경로다. `live`는 예산 입장을 통과하지 못하면 DB/provider 구성 전에 실패한다.
+
+필수 offline 회귀는 취소 중 non-cooperative provider, 동기 abort, journal 마지막 LF 누락, reservation/settlement/restart, 모델/output cap, 과거 사용량 초과, foreign evidence ID·잘못된 target/window, 43개 라벨/분모 보존이다. `answerSubset.complete`는 개수만으로 true가 될 수 없고 독립 DB membership 대조 전에는 null이다. 점수 정의는 `chunk-cutoff10-unique-revision-v2`로 표시하며, revision dedup 뒤 cutoff하던 기존 EXP-002와 직접 증감 비교하지 않는다.
+
+COV-011은 고유 격리 PostgreSQL database에 fixture만 주입해 같은 target/topic/scope의 raw·lexical·vector·partition exact count를 검증한다. 비활성/미검토 source·target 권리, raw 권리, null/기간 밖 게시 시각, wrong profile/input hash, 부분 embedding, tombstone, on-demand 제외, 반복 membership 중복 억제, 정확한 window/topic/evidence에 대응하는 labeled miss를 확인한다. 고정 Neon corpus에 fixture를 쓰지 않는다.
+
+과거 누적 평가 embedding은 [감사 기록](./experiments/eval-002/historical-usage-audit.json)상 최소 195회이며 승인 총 100회를 초과했다. 추가 호출은 명시적 신규/변경 승인 전 차단한다. 통과한 unit/격리 integration은 대표 8문항 live 모델 품질이나 사람 검토를 대체하지 않는다. 43개 전체 golden regression은 MVP blocker가 아닌 별도 진단 suite다.
 
 ## 8. E2E 대표 흐름
 
@@ -221,7 +231,9 @@ web은 SvelteKit이다([ADR-0008](./adr/0008-frontend-sveltekit.md)). E2E는 Sve
 
 병렬 편집 중 format/lint/project-wide suite는 생략한다. 공유 checkout에서 build/test도 중단하고 작업 완료 후 검증 창을 배정한다. 통합 담당은 마지막에 `pnpm run static`, `pnpm run test`, 영향 PostgreSQL/Redis integration과 Playwright UI/collector suite를 분리 실행한다. Docker/credential 부재 skip은 통과가 아니다.
 
-COV-009/010의 live 측정은 승인된 source/provider/운영 scope에서만 수행한다. 기존 43항목 baseline을 보존하고 dataset hash·model/config·기간·coverage·Recall/nDCG·abstention·citation·HTTP/token/cost를 기록한다. 새 라벨/수치 승인 없이 기존 gate를 낮추지 않는다.
+COV-009/010의 live 측정은 승인된 source/provider/운영 scope에서만 수행한다. 기존 43항목 baseline은 보존한다. MVP live gate는 ADR-0019의 8문항에 대해 Recall@10·abstention·citation/unsupported claim·latency·cost를 기록한다. nDCG와 세부 subset 지표는 진단값으로 남길 수 있으나 MVP blocking 기준은 아니다.
+
+COV-009 bounded corpus 측정은 2026-09-10 연결된 PostgreSQL+pgvector/Redis에서 완료했다. 5개 target의 backfill/incremental 10개 partition, 28 revisions, 500 chunks/embeddings, source 11 requests/1,274,586 bytes, provider 188,073 tokens/USD 0.000912, pending/unknown 0과 dataset hash를 [`experiments/cov-009/live-measurement.json`](./experiments/cov-009/live-measurement.json)에 기록했다. `pgvector/pgvector`의 90일 retained release 0건은 정상 빈 partition이자 coverage gap으로 평가한다. 이 corpus의 Recall/nDCG·abstention·citation·latency threshold는 DEC-013 이후 EXP-002/COV-010에서 검증한다.
 
 ## 11. CI pipeline
 
@@ -286,3 +298,11 @@ live canary와 유료 LLM 평가는 이 blocking pipeline 밖에서 실행하고
 - Playwright는 Bun runtime에서 local launch와 ws connect가 모두 실패했고 Node에서는 전 항목을 통과했다. **collector browser runtime은 Node여야 한다.**
 - 위 세 항목은 모두 Node runtime 전제다. `DEC-002`에서 **Node runtime 위의 Elysia가 Accepted**돼 Vitest와 Testcontainers를 현재 baseline으로 확정하고 browser collector도 Node에 둔다. Bun runtime은 현재 경로로 채택하지 않는다.
 - UI E2E는 `playwright test`가 기본적으로 Node로 실행되므로 영향을 받지 않는다.
+- COV-007 (2026-09-09): focused RAG tests 4 files/48 tests passed; RAG typecheck passed. Golden/evaluation focused tests 2 files/12 tests passed. Full PG+Redis/API/web/worker validation belongs to COV-008.
+- RAG-002 (2026-09-10): 기본 DB integration은 로컬 격리 서버만 허용한다. 명시적으로 연결된 개발 DB를 사용할 때만 `ALLOW_REMOTE_INTEGRATION_DATABASE=1`로 opt-in하며, 테스트는 고유 database를 생성하고 `DROP DATABASE ... WITH (FORCE)`로 정리한다. 운영 DB URL에는 이 flag를 사용하지 않는다.
+- 연결 Redis integration은 저장된 TLS URL을 사용해 고유 queue/key prefix만 생성한다. 2026-09-10 실행에서 v2 dedup, v1 rejection, concurrency lease, SIGKILL recovery 4 tests가 통과했다.
+### 승인 모델 live canary (2026-09-10)
+
+- `tooling/live-model-canary.ts`는 실제 secret, prompt 응답 본문과 embedding vector를 출력하지 않고 모델명, 차원, 유한/비영 여부, provider usage와 latency만 출력한다.
+- 승인 OpenRouter `perplexity/pplx-embed-v1-0.6b`를 최소 입력 1건으로 검증해 1024차원·유한·비영 벡터와 5 input tokens를 확인했다. OpenRouter 응답의 `pplx-embed-v1-0.6b` 표기는 명시적 alias allowlist를 통과한 경우에만 승인 모델명으로 정규화한다.
+- 이전 `deepseek-v4-flash`는 인증과 model catalog 확인 후에도 최소 completion이 두 번 HTTP 503이었다. ADR-0017로 변경한 RunInfra `nemotron-3-5-lightning-30b`는 최소 JSON canary에서 837ms, input 28/output 6 tokens로 성공했다. 이는 연결·JSON 계약 증빙이며 골든셋 품질 또는 운영 출시 증빙으로 확대 해석하지 않는다.

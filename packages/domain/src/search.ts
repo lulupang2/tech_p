@@ -1,10 +1,21 @@
 export interface SearchHit {
+  readonly canonicalUrl?: string;
+  readonly sourceKey?: string;
+  readonly license?: {
+    readonly id: string;
+    readonly name: string;
+    readonly url: string;
+    readonly attribution: string;
+  };
   readonly chunkId: string;
   readonly documentId: string;
+  readonly duplicateClusterId?: string | null;
   readonly documentRevisionId: string;
   readonly title: string;
   readonly content: string;
   readonly headingPath: string[];
+  readonly ordinal?: number;
+  readonly tokenCount?: number;
   readonly score: number;
   readonly publishedAt: Date | null;
 }
@@ -14,6 +25,8 @@ export interface SearchFilter {
   readonly publishedAfter?: Date;
   readonly publishedBefore?: Date;
   readonly topicSlugs?: readonly string[];
+  /** RAG/model-input paths must opt into fail-closed source and revision rights checks. */
+  readonly requireApprovedRights?: boolean;
 }
 
 export interface FtsQueryParams {
@@ -27,6 +40,7 @@ export interface ExactVectorQueryParams {
   readonly dimensions: number;
   readonly provider: string;
   readonly model: string;
+  readonly profileHash?: string;
   readonly filter?: SearchFilter;
   readonly limit?: number;
 }
@@ -224,4 +238,44 @@ export function extractSearchKeywords(rawQuery: string): string[] {
   }
 
   return result;
+}
+
+const LOW_SIGNAL_SEARCH_TERMS = new Set([
+  'summarize',
+  'summary',
+  'release',
+  'releases',
+  'version',
+  'current',
+  'lts',
+  'january',
+  'february',
+  'march',
+  'april',
+  'may',
+  'june',
+  'july',
+  'august',
+  'september',
+  'october',
+  'november',
+  'december',
+]);
+
+/** Orders fallback terms by retrieval specificity instead of natural-language position. */
+export function prioritizeSearchKeywords(keywords: readonly string[]): string[] {
+  const priority = (value: string): number => {
+    const lower = value.toLowerCase();
+    if (/^v?\d+\.\d+(?:\.\d+)?(?:[-+][a-z0-9.-]+)?$/iu.test(value)) return 0;
+    if (/^\d{4}-\d{2}-\d{2}$/u.test(value)) return 1;
+    if (/\d/u.test(value) && /[._-]/u.test(value)) return 2;
+    if (LOW_SIGNAL_SEARCH_TERMS.has(lower) || /^\d{1,2}(?:st|nd|rd|th)$/iu.test(value)) return 9;
+    if (/^[A-Za-z][A-Za-z0-9@._/-]*$/u.test(value)) return 4;
+    return 6;
+  };
+  return keywords
+    .map((value, index) => ({ value, index, priority: priority(value) }))
+    .sort((left, right) => left.priority - right.priority || left.index - right.index)
+    .filter((item) => item.priority < 9)
+    .map((item) => item.value);
 }

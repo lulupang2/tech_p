@@ -5,6 +5,7 @@ export * from './model-work.js';
 export {
   AiPortError,
   AiProviderError,
+  AiRateLimitError,
   AiTimeoutError,
   UnsupportedAiInputError,
   createDeterministicChatPort,
@@ -91,7 +92,7 @@ export type {
   ExactVectorQueryParams,
   SearchServicePort,
 } from './search.js';
-export { extractSearchKeywords } from './search.js';
+export { extractSearchKeywords, prioritizeSearchKeywords } from './search.js';
 export type {
   SourceKey,
   CollectedRawItem,
@@ -201,7 +202,6 @@ export type {
   ReplayStatus,
   FailureDisposition,
   ReplayRequest,
-  ReplayJob,
   ReplayResult,
   ReplayPublisherPort,
   ReplayAuditEvent,
@@ -222,6 +222,7 @@ export {
   METRIC_UNITS,
   MetricAggregationError,
   validateMetricObservation,
+  validateCohortMetricType,
   aggregateMetricObservations,
   createMetricAggregationService,
 } from './metrics.js';
@@ -231,6 +232,38 @@ export type {
   AggregatedMetricObservation,
   MetricAggregationServicePort,
 } from './metrics.js';
+export {
+  diagnoseCoverageReasons,
+  validateCoverageWindow,
+  evaluateCohortComparison,
+} from './coverage-service.js';
+export { createEmbeddingService } from './embedding-service.js';
+export type {
+  EmbeddingChunkInput,
+  EmbeddingServiceCaps,
+  EmbeddingServiceOptions,
+  ChunkEmbeddingStatus,
+  ChunkEmbeddingResult,
+  EmbeddingService,
+} from './embedding-service.js';
+export {
+  createProviderBudgetService,
+  calculateTokenUnits,
+  estimateTokenCount,
+  assertValidModelProfile,
+  assertValidBudgetCaps,
+  assertValidPriceRate,
+} from './provider-budget.js';
+export type {
+  BudgetLane,
+  PriceRate,
+  ModelPricingTable,
+  ExecutionCaps,
+  BudgetedChatOptions,
+  BudgetedEmbeddingOptions,
+  ProviderBudgetService,
+} from './provider-budget.js';
+export type { CoverageDiagnosisInput, MemberCoverageEvaluation } from './coverage-service.js';
 
 export type {
   DeduplicationMatchReason,

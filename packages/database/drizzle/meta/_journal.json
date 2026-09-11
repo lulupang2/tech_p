@@ -85,6 +85,13 @@
       "when": 1788882715968,
       "tag": "0011_collection_page_attempts",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789019113514,
+      "tag": "0012_white_gauntlet",
+      "breakpoints": true
     }
   ]
 }

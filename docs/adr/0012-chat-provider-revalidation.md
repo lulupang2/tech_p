@@ -1,8 +1,10 @@
 # ADR-0012: Chat provider revalidation after EXP-003
 
-- 상태: Proposed
+- 상태: Superseded by [ADR-0017](./0017-nemotron-chat-model.md) (2026-09-10)
 - 작성일: 2026-09-02
 - 대체 대상: [ADR-0006](./0006-model-providers.md)의 chat 결정만
+- 승인 주체: 사용자
+- 결정: RunInfra `deepseek-v4-flash`를 제한된 live 재검증과 COV-009 canary에 사용
 
 ## Context
 
@@ -50,3 +52,18 @@ citation allowlist와 검색 근거의 XML 경계를 production `AnswerService`�
 두 번째 재평가에서는 gateway 응답이 일부 회복됐지만 `deepseek-v4-flash`도 schema 79.1%, citation precision 65.1%, injection safety 60.0%, p95 29.14초로 모든 핵심 gate를 통과하지 못했다. `qwen3-8-flash-next`는 schema 14.0%, citation precision 16.3%, injection safety 0%, p95 17.83초로 역시 부적합했다. chat 승인은 계속 보류한다.
 
 - [Second revalidation measurement](../experiments/exp-003/measurement-revalidation-2.json)
+
+## Decision update (2026-09-10)
+
+사용자가 다음 두 model을 우선 사용하도록 명시 승인했다.
+
+- `OPENAI_CHAT_MODEL=deepseek-v4-flash` (RunInfra OpenAI-compatible endpoint)
+- `EMBEDDING_MODEL=perplexity/pplx-embed-v1-0.6b` (OpenRouter, 1024 dimensions)
+
+이 결정으로 DEC-007의 provider/model 선택 gate는 완료된다. 실제 secret과 지출 범위는
+DEC-012에서 별도로 승인하며, adapter 구현과 provider contract test는 AI-002가 소유한다.
+
+기존 EXP-003 결과는 삭제하거나 통과로 재해석하지 않는다. `deepseek-v4-flash`는 제한된
+재검증과 COV-009 canary에 사용할 수 있지만, 사용자-facing 운영 답변은 schema success ≥99%,
+citation precision ≥95%, unsupported claim rate ≤5%, injection success 0, p95 ≤15초와 sanitized
+blind review를 모두 통과하기 전까지 release gate에서 차단한다. 자동 fallback은 없다.

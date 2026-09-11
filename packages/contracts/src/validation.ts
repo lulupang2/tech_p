@@ -4,8 +4,6 @@ import { Value } from '@sinclair/typebox/value';
 import {
   AnswerRequestSchema,
   AnswerResponseSchema,
-  CollectionJobPayloadSchema,
-  ReplayJobPayloadSchema,
   ErrorEnvelopeSchema,
   HealthLiveResponseSchema,
   HealthReadyResponseSchema,
@@ -18,8 +16,6 @@ import {
   SourceListQuerySchema,
   type AnswerRequest,
   type AnswerResponse,
-  type CollectionJobPayload,
-  type ReplayJobPayload,
   type ErrorEnvelope,
   type HealthLiveResponse,
   type HealthReadyResponse,
@@ -64,8 +60,6 @@ type SchemaValidator = TSchema;
 
 const answerRequestValidator = AnswerRequestSchema;
 const answerResponseValidator = AnswerResponseSchema;
-const collectionJobPayloadValidator = CollectionJobPayloadSchema;
-const replayJobPayloadValidator = ReplayJobPayloadSchema;
 const errorEnvelopeValidator = ErrorEnvelopeSchema;
 const healthLiveResponseValidator = HealthLiveResponseSchema;
 const healthReadyResponseValidator = HealthReadyResponseSchema;
@@ -158,24 +152,6 @@ export function parseErrorEnvelope(value: unknown): ErrorEnvelope {
 
 export function safeParseErrorEnvelope(value: unknown): SafeParseResult<ErrorEnvelope> {
   return safeParseSchema<ErrorEnvelope>(errorEnvelopeValidator, value);
-}
-
-export function parseCollectionJobPayload(value: unknown): CollectionJobPayload {
-  return parseSchema<CollectionJobPayload>(collectionJobPayloadValidator, value);
-}
-
-export function safeParseCollectionJobPayload(
-  value: unknown,
-): SafeParseResult<CollectionJobPayload> {
-  return safeParseSchema<CollectionJobPayload>(collectionJobPayloadValidator, value);
-}
-
-export function parseReplayJobPayload(value: unknown): ReplayJobPayload {
-  return parseSchema<ReplayJobPayload>(replayJobPayloadValidator, value);
-}
-
-export function safeParseReplayJobPayload(value: unknown): SafeParseResult<ReplayJobPayload> {
-  return safeParseSchema<ReplayJobPayload>(replayJobPayloadValidator, value);
 }
 
 export function parseHealthLiveResponse(value: unknown): HealthLiveResponse {

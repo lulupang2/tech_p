@@ -2,7 +2,7 @@
 
 - 상태: Implementation backlog
 - 작성일: 2026-09-01
-- 현재 기준(2026-09-08): ADR-0015 A1–A6 설계 승인 완료, COV 구현은 아직 시작하지 않았다. 기존 DONE/검증 기록은 과거 baseline 범위이며 target별 예약·backfill·persistent budget·새 RAG 완성을 뜻하지 않는다. 확장 실행 순서는 §12, 소유권·세션 지시서는 [COVERAGE_IMPLEMENTATION](./docs/COVERAGE_IMPLEMENTATION.md)을 따른다.
+- 현재 기준(2026-09-10): COV-001~009, COV-011, DISC-003, DEC-007, DEC-012~013, AI-002, PIPE-008, EXP-002와 RAG-001~006을 완료했다. COV-011은 scoped count 수정·격리 PostgreSQL exact-count 테스트·정적 검사·문서 동기화를 완료했다. EVAL-002는 offline 실행기/예산 보강만 검증됐으며 정식 평가와 사람 검토는 미완료다. 과거 embedding 최소 195회가 DEC-013 총 100회 한도를 초과해 추가 유료 실행은 신규/변경 승인 전 차단된다. COV-010과 MVP-001은 BLOCKED다. 승인된 GitHub Releases 5개 target 외 source 활성화나 운영 배포는 실행하지 않았다. 확장 실행 순서는 §12, 소유권·세션 지시서는 [COVERAGE_IMPLEMENTATION](./docs/COVERAGE_IMPLEMENTATION.md)을 따른다.
 - 기준: [SSOT](./docs/SSOT.md), [PRD](./docs/PRD.md)
 
 ## 1. 사용 규칙
@@ -181,17 +181,17 @@
 | AI-001 | provider-neutral chat/embedding ports와 fakes | FND-001, CON-001, TST-001 | DONE | domain/RAG가 provider SDK를 import하지 않음; timeout/usage/model metadata contract와 deterministic fake가 테스트됨; 구현·review 완료 |
 | EVAL-001 | 골든 corpus와 질의 라벨 작성 | DEC-001, COL-002, COL-003 | DONE | [EVAL_GOLDEN_SET](./docs/EVAL_GOLDEN_SET.md)의 38개 질문과 5개 주입 항목에 relevance·allowed·forbidden claim 라벨이 채워짐; 검토자와 검토일 기록; `insufficient_evidence`·`unsupported_intent` 기대값이 6개 이상 |
 | EXP-003 | model provider 평가 실행 | AI-001, EVAL-001, PIPE-005 | DONE | 2 chat/2 embedding 후보를 43개 전 항목으로 측정. Embedding gate 통과, chat gate 실패; [EXP-003](./docs/experiments/EXP-003-model-providers.md) scorecard와 sanitized raw measurement 기록 (2026-09-02) |
-| DEC-007 | chat/embedding provider와 model 승인 | EXP-003 | GATE | Embedding recommendation은 유지. Chat 후보가 gate를 통과하지 못해 [ADR-0012](./docs/adr/0012-chat-provider-revalidation.md) Proposed; 새 chat 평가·사람 blind review·data policy/budget 승인 필요 |
-| AI-002 | 선택 provider adapter 구현 | DEC-007, AI-001 | BLOCKED | structured output, timeout, rate error, usage를 공통 contract로 변환; secret/log redaction; provider contract test 통과 |
-| PIPE-008 | 승인 model의 versioned embedding 통합 | AI-002, PIPE-005, DB-003, COV-005, COV-008 | BLOCKED | 완료 chunk/profile/input은 재호출 없음; 부분 실패·unknown outcome·차원 불일치 검증. lexical readiness는 embedding 없이 가능하고 vector readiness만 승인 profile의 필수 완료를 요구. COV fake 검증은 실모델 증빙을 대체하지 않음 |
-| RAG-001 | provider-neutral query intent/entity/time parser | DEC-003, CON-001, COV-001 | BLOCKED | 4개 intent·명시 기간·UTC/timezone·alias·모호성 결정적 검증. provider-neutral 경로는 AI-002 전 가능하며 실제 모델 parser 선택/호출은 DEC-007/AI-002 이후에만 허용 |
-| RAG-002 | metadata-filtered hybrid candidate retrieval | DB-006, COV-006, EVAL-001 | BLOCKED | FTS lexical readiness, vector profile readiness에 같은 time/rights/tombstone filter; provenance 보존과 time violation 0. provider-neutral seeded vector 검증 가능; live model 성능은 COV-009 이후 |
-| EXP-002 | retrieval/index 실험 실행 | RAG-002, COV-009 | BLOCKED | 기존 실험 variants·Recall/nDCG·query plan/latency를 실제 확장 corpus와 dataset hash로 측정. index/weight recommendation을 자동 승인하지 않음 |
-| RAG-003 | fusion, recency, cluster/source diversity | EXP-002 | BLOCKED | 승인 config로 RRF/boost/caps 구현; 점수는 사용자 관심도로 노출되지 않음; 골든셋 regression gate 통과 |
-| RAG-004 | evidence sufficiency와 context assembly | RAG-003 | BLOCKED | intent별 최소 근거, token budget, adjacent chunk merge, duplicate upstream 억제; 부족하면 기간을 몰래 넓히지 않고 abstain |
-| RAG-005 | answer generation과 citation validation workflow | RAG-001, RAG-004, AI-002 | BLOCKED | 승인 orchestration에서 parse→retrieve→generate→validate branch가 trace됨; fabricated/missing/out-of-range citation 차단; `verbatim_only` source 근거가 재서술 없이 원문 발췌로 제시되는지 후검증; retry 최대 1회 |
-| RAG-006 | comparison/trend computation | PIPE-006, RAG-001, RAG-004 | BLOCKED | 두 대상에 동일 기간·unit 적용; absolute value와 baseline 표시; missing/zero baseline 안전 처리; 서로 다른 metric 미합산 |
-| EVAL-002 | RAG regression harness와 release gate | RAG-005, RAG-006, EVAL-001 | BLOCKED | Harness와 commit/model/config artifact 출력은 구현됨. 2026-09-02 provider-proxy baseline은 retrieval gate만 통과하고 citation/unsupported/status/security gate 실패; production corpus 재평가 필요 |
+| DEC-007 | chat/embedding provider와 model 승인 | EXP-003 | DONE | 사용자 변경 승인(2026-09-10): RunInfra `nemotron-3-5-lightning-30b` + OpenRouter `perplexity/pplx-embed-v1-0.6b` 1024d. [ADR-0017](./docs/adr/0017-nemotron-chat-model.md) Accepted; chat 운영 출시는 기존 자동 gate와 blind review 통과 전 차단 |
+| AI-002 | 선택 provider adapter 구현 | DEC-007, AI-001 | DONE | RunInfra `nemotron-3-5-lightning-30b`와 OpenRouter Perplexity embedding을 exact allowlist composition으로 연결. JSON object/output cap, timeout, typed 429/Retry-After, provider-reported usage, secret/error-body 비노출, dimension 검증 및 budget actual-usage settlement contract test 통과 |
+| PIPE-008 | 승인 model의 versioned embedding 통합 | AI-002, PIPE-005, DB-003, COV-005, COV-008 | DONE | 완료 chunk/profile/input 재사용, 부분 실패·unknown outcome·차원/모델 불일치 fail-closed 검증. 연결 DB/Redis 통합과 승인 OpenRouter Perplexity live canary에서 1024차원·유한·비영 벡터 및 provider usage 확인 |
+| RAG-001 | provider-neutral query intent/entity/time parser | DEC-003, CON-001, COV-001 | DONE | 결정적 parser가 4개 intent, canonical entity/original alias, 명시 기간 우선, rolling 상대 기간, UTC/IANA timezone, 언어와 모호한 단독 alias를 구조화하며 answer service 검색 범위와 coverage topic에 연결됨 |
+| RAG-002 | metadata-filtered hybrid candidate retrieval | DB-006, COV-006, EVAL-001 | DONE | RAG 경로가 FTS/vector에 동일 status/time/topic/fail-closed rights filter를 적용하고 immutable provenance를 반환. vector는 provider/model/dimension/profile/input hash와 revision 전체 chunk 완료를 강제하며 연결된 PostgreSQL+pgvector 격리 DB에서 time violation 0·rights/tombstone/profile 격리 검증 통과 |
+| EXP-002 | retrieval/index 실험 실행 | RAG-002, COV-009 | DONE | COV-009 고정 28 revisions/500 chunks에서 FTS/vector exact/chunk-level RRF 39문항 측정. Hybrid Recall@10 0.6936, nDCG@10 0.4823, DB p95 1,086ms로 DEC-013 gate 미달; 기간/provenance 위반 0, query embedding 39 calls/1,258 tokens/USD 0.000006. exact pgvector 유지와 RAG-003 revision/cluster/source-aware RRF 개선을 권고 |
+| RAG-003 | fusion, recency, cluster/source diversity | EXP-002 | DONE | lexical/vector 각 30개 후보를 RRF(k=60), bounded 30일 recency, revision·duplicate cluster당 2개와 다중 source 60% cap으로 결합. exact pgvector와 immutable provenance를 유지하고 전용 regression 4개 및 RAG 72개 테스트 통과; score는 내부 순위에만 사용 |
+| RAG-004 | evidence sufficiency와 context assembly | RAG-003 | DONE | intent별 독립 근거 최소치, 기본 4,000 token context budget, same-revision ordinal/heading 인접 chunk 병합, duplicate cluster·완전 중복 억제를 answer flow에 적용. budget/dedup 후 재판정하며 부족 시 기간 확장 없이 abstain; RAG 76개 테스트와 rag/database/domain typecheck 통과, 최소 질문 `최근 Playwright 릴리스의 주요 변경점을 알려줘.`가 answered+citation 회귀 통과 |
+| RAG-005 | answer generation과 citation validation workflow | RAG-001, RAG-004, AI-002 | DONE | generate 후 citation allowlist·기간·`verbatim_only` 원문 포함을 결정적으로 후검증하고 실패 시 재생성은 최대 1회만 허용. fabricated/missing citation 회귀를 유지하며 전용 validator와 retry 테스트 포함 RAG 81개 테스트 및 typecheck 통과 |
+| RAG-006 | comparison/trend computation | PIPE-006, RAG-001, RAG-004 | DONE | 동일 subject의 current/baseline을 같은 기간 길이와 metric+unit별로만 집계하고 absolute value를 보존. baseline 누락/0은 `change=null`, incomplete observation 제외, 서로 다른 metric/unit 미합산을 전용 테스트로 검증하고 bounded 기간의 compare/trend answer observation 경로에 연결 |
+| EVAL-002 | RAG regression harness와 release gate | RAG-005, RAG-006, EVAL-001 | READY | 앱 내부 엄격 실행기·누적 예산·고정 corpus/라벨 membership과 DEC-014 추가 allowance를 구현·검증했다. ADR-0019 대표 8문항 live 자동 gate는 2026-09-11 통과: hybrid Recall@10 1.0, DB p95 282ms, answered 4/4, abstention 4/4, structured 100%, answer p95 4.92s, time/rights/profile/provenance violation 0. 43항목 전체 회귀는 진단 자산으로 보존. 실제 answer/evidence semantic review와 live label 사람 검토만 남아 READY 유지 |
 
 ## 7. API, security, and web
 
@@ -251,7 +251,7 @@ flowchart TD
 
 ## 10. 현재 상태와 다음 행동
 
-**ADR-0015 설계는 승인됐고 구현은 대기 중이다.** COV-001만 즉시 착수 가능한 새 구현 task다. 기존 DONE은 과거 baseline 기록이며 scheduler·replay runtime 연결, 중복 embedding 과금, lexical/vector 준비, persistent 비용 통제의 잔여 작업은 §11~12에서 명시한다. DEC-007과 실제 corpus 평가가 끝나지 않아 MVP-001은 BLOCKED다.
+**COV-008 runtime과 COV-009 제한된 live corpus는 완료됐으며 DEC-013도 승인됐다.** EXP-002 실험 완료는 품질 gate 통과가 아니다. EVAL-002의 정식 평가·사람 검토와 COV-010 최종 acceptance가 남아 MVP-001은 BLOCKED다. 과거 DEC-013 embedding 호출은 최소 195회로 승인 100회를 초과했으며, [누적 사용량 감사](./docs/experiments/eval-002/historical-usage-audit.json)에 근거를 남겼다. 추가 유료 호출은 신규/변경 승인 전 금지한다.
 
 ### 확정된 기술 스택
 
@@ -265,9 +265,7 @@ flowchart TD
 | Database | PostgreSQL + pgvector; Drizzle ORM + Drizzle Kit |
 
 
-미결정은 chat provider 승인(`DEC-007`은 embedding만 검증됨, chat 재승인은 ADR-0012), embedding adapter(`AI-002`), production corpus RAG gate(`EVAL-002`)다.
-
-미결정은 LLM·embedding provider(`DEC-007`)와 secret manager의 구체 제품이다. production hosting과 배포 adapter는 `DEC-009`/`OPS-004`로 해소됐다.
+잔여 항목은 production corpus RAG gate(`EVAL-002`)와 secret manager의 구체 제품이다. production hosting과 배포 adapter는 `DEC-009`/`OPS-004`로 해소됐다.
 
 
 ### 구현 순서
@@ -278,13 +276,13 @@ flowchart TD
 
 | 항목 | 필요 시점 |
 |---|---|
-| `DEC-007` chat provider 승인·지출 승인 (embedding은 EXP-003 통과) | `AI-002`, `EVAL-002` |
-| `EXP-002` retrieval 실험 (실제 corpus 필요) | `COL-*` corpus 확보 후 |
+| 과거 사용량 정산과 추가 평가 allowance 명시 승인 | 추가 유료 EVAL-002 실행 전; 정산만으로 소진된 호출 한도를 복구하지 않음 |
+| live 라벨 검토·reviewed digest와 의미적 인용/unsupported claim 검토 | EVAL-002/COV-010 최종 gate |
 | 라이선스 귀속 설계 | 발췌 표시 기능 출시 |
 
 ### corpus가 필요한 작업
 
-`EXP-002`는 실제 수집 retrieval corpus가 준비된 뒤 실행한다. `EXP-004`는 문서화된 synthetic/redacted metadata-only dataset으로 완료되었고, `EVAL-001`은 [EVAL_GOLDEN_SET](./docs/EVAL_GOLDEN_SET.md)의 골든셋 작성이 완료되었으므로 두 task는 실제 수집 데이터 대기 항목이 아니다.
+`EXP-002`는 고정 COV-009 corpus에서 완료했지만 당시 품질/지연 gate는 미달이었다. 새 live 라벨 초안은 39개 answerable retrieval + 6개 negative이며, 답변용 12개 subset과 구분한다. 추가 평가도 기존 corpus를 유지한다. `EXP-004`와 `EVAL-001`은 완료됐으며 재착수하지 않는다. release-only corpus로 입증할 수 없는 다중 출처·지표 질문은 coverage gap으로 남긴다.
 
 ### PIPE-004 완료 증빙 (2026-09-02)
 
@@ -461,7 +459,7 @@ Docker Compose 전체 stack(api/web/worker/postgres/redis, 5 컨테이너 health
 - **파이프라인 진행**: DB 관측 raw_items 170, document_revisions 10(7 searchable/3 pending), chunks 8, embeddings 4(openrouter pplx-embed 1024dim), duplicate_clusters 1. normalization pipeline_events 136(78 success/58 failed) → embedding 단계가 부분적으로만 완료.
 - **query 흐름**: `/api/v1/answers`가 결정적으로 200 `insufficient_evidence`(documentsConsidered 0, citations [])를 반환 — RAG answer quality gate를 충족하는 grounded 답변은 아직 없음.
 - **보안 픽스**: `.dockerignore` 추가(이미지 내 .env 번들링 차단), stack-exchange URL 오류 key 노출 제거, XFF 마지막 홉 신뢰 + ops 레이트 리밋 적용, abuse control env(`API_RATE_LIMIT_*`/`API_MAX_CONCURRENT_ANSWERS`/`API_MAX_DAILY_ANSWER_BUDGET`)를 createApp에 배선, 수집기 런타임에 `createHardenedFetch` 연결.
-- **결론**: MVP-001은 **BLOCKED 유지**. 파이프라인 기계는 실행되지만 승인된 chat provider(DEC-007 GATE)와 production corpus 기반 EVAL-002 release gate가 없어 grounded 사용자 예시 4개와 freshness/cost 보고서 acceptance를 충족하지 못한다. 후속: ADR-0012 승인 → AI-002/PIPE-008/RAG 통합 → 실제 corpus 평가.
+- **결론**: MVP-001은 **BLOCKED 유지**. DEC-007, DEC-012, AI-002와 COV-009는 완료됐지만 DEC-013/COV-010/EVAL-002 release gate가 남아 grounded 사용자 예시 4개와 freshness/cost 보고서 acceptance를 충족하지 못한다.
 
 ## 11. Baseline과 새 acceptance의 경계
 
@@ -473,35 +471,127 @@ Docker Compose 전체 stack(api/web/worker/postgres/redis, 5 컨테이너 health
 | PIPE-007 | replay contract/service와 실행 consumer 연결은 별개 | COV-004, COV-008 |
 | DB-003, PIPE-005, PIPE-008 | raw/chunk 존재와 lexical/vector readiness를 분리해야 함 | COV-002, COV-005, COV-006 |
 | API-003, SEC-001 | answer idempotency 없음; daily budget은 in-memory query count | COV-005, COV-008; answer cache는 별도 결정 |
-| OPS-002, OPS-003 | metric/retention adapter 존재가 runtime 자동 실행 증빙은 아님; retention 기간은 SSOT gate 유지 | COV-008, DEC-012 |
+| OPS-002, OPS-003 | metric/retention adapter 존재가 runtime 자동 실행 증빙은 아님; DEC-012 retention 적용 검증 필요 | COV-008, DEC-012, COV-009 |
 | AI-002, RAG-001~RAG-006, EVAL-002 | live adapter/RAG 코드가 있어도 provider 승인·quality gate 완료 아님 | 기존 gate 유지; COV-009 및 COV-010과 연결 |
 | DEC-010 | TASKS의 ADR-0014 참조와 현재 문서 부재 대조 필요 | DISC-003에서 최신 결정·권리 근거 대조; 승인 추정 금지 |
 
 ## 12. Coverage redesign implementation (ADR-0015)
 
-기준: [공통 계약](./docs/COLLECTION_CONTRACTS.md), [병렬 코딩 지시서](./docs/COVERAGE_IMPLEMENTATION.md). 후속 사용자 지시로 현재 세션의 코드 구현·테스트가 허용됐다. 별도 source/provider/지출 gate는 유지한다. `COV-*`는 FR-015~FR-018과 기존 요구의 확장 acceptance다.
+기준: [공통 계약](./docs/COLLECTION_CONTRACTS.md), [병렬 코딩 지시서](./docs/COVERAGE_IMPLEMENTATION.md). 후속 사용자 지시로 현재 세션의 코드 구현·테스트가 허용됐다. DEC-007/DEC-012 승인 범위 밖의 source/provider/지출 gate는 유지한다. `COV-*`는 FR-015~FR-018과 기존 요구의 확장 acceptance다.
 
 | ID | Task | Dependencies | Status | Acceptance criteria |
 |---|---|---|---|---|
 | DEC-011 | A1–A6 수집·검색 설계 승인 | - | DONE | 2026-09-08 사용자 승인; ADR-0015 Accepted 및 SSOT 반영. 권리/provider/지출 gate·세션 미실행 유지 |
 | COV-001 | 공통 domain/TypeBox 계약과 contract manifest | DEC-011, CON-001, AI-001 | DONE | COLLECTION_CONTRACTS typed ports, v2 ID-only delivery, COVERAGE_CONTRACT_MANIFEST 및 ops schemas 완료; domain/contracts focused tests 통과 |
 | COV-002 | DB schema와 원자적 persistence primitives | COV-001, DB-005 | DONE | 0007~0011 forward migrations, PostgreSQL+pgvector 실제 integration, page/checkpoint/outbox 원자성·fencing·budget/work state·기존 citation 보존 검증 완료; 공통 persistence adapter exports 동결 |
-| COV-003 | 단일 target 역사 수집과 발견/search adapter | COV-002, COL-001 | READY | 기존 adapter를 target/page/timeWindow 계약으로 전환; 설정만 추가한 두 target 독립 cursor; pagination·빈 filtered page·API cap/history unsupported partial 검증; approved source-search/discovery 실제 HTTP adapter를 fixture transport로 검증, 신규 권리/live 호출 승인 없음 |
-| COV-004 | partition planner·scheduler·outbox·replay 실행 서비스 | COV-002, QUE-001, PIPE-001 | READY | durable due planning, checkpoint/continuation, source disable, normalization/replay delivery, Redis 손실/중복 dispatcher/worker kill 후 DB pending 복구; backfill/incremental starvation 방지; entrypoint 연결은 COV-008 |
-| COV-005 | provider-neutral embedding work와 예산 서비스 | COV-002, AI-001 | READY | 완료 결과 재사용·동시 worker 호출 소유권·calling timeout/commit 전 crash unknown 보류; UTC 경계/재시작에도 reservation 유지; 승인/price/token cap 미설정 시 fail closed; 실제 신규 provider 선택·호출 없이 fake로 검증 |
-| COV-006 | lexical/vector readiness·coverage·cohort 조회 | COV-002, DB-006, PIPE-006 | READY | lexical 준비 문서가 embedding 없이 FTS 검색; profile vector·rights/time/tombstone 필터; 네 부족 원인/unknown 구분; on-demand 추가만으로 cohort 값 불변·공통 분모·partial 표시 검증 |
-| COV-007 | bounded acquisition과 RAG 서비스 연결 | COV-003, COV-004, COV-005, COV-006 | BLOCKED | 기존 live fallback을 승인 source port·공통 ingest로 교체; local sufficient 외부 0, 1/2/3/8/10초 상한·bytes/token/budget·악성 URL·권리·citation 검증; provider-neutral fake/injected transport로 실제 workflow 검증; 기존 model gate 유지 |
-| COV-008 | runtime·API/web·운영 cutover와 통합 검증 | COV-007 | BLOCKED | worker scheduler/outbox/stage/embedding·API coverage/answer/ops·web 한계 표시·usage 관측·실제 health 연결; v1 job producer/export 제거와 v2 복구; 실제 PG+Redis+API/web/worker stack에 fixture source/fake provider 주입해 restart·재개·API/UI proof; 전체 static/unit/관련 integration/E2E 최종 검증 |
-| DISC-003 | target별 권리·capability·활성화 후보 조사 | COV-001 | READY | seed/후보 target의 최신 공식 근거, fetch/store/model-input/embed/display/retention 범위·history capability·unknown 기록; ADR-0014 참조 불일치 대조. 조사 완료가 새로운 권리 승인이나 enable은 아님 |
-| DEC-012 | 확장 source·운영 계획·예산 활성화 승인 | DISC-003, COV-008 | GATE | 사용자가 허용 target/policy scope, cadence·API/byte/token/spend 한도·currency·승인 provider mapping·데이터 보존 범위를 명시 승인. 신규 권리/유료 provider는 별도 결정 근거를 연결하고 DEC-007을 대체하지 않음 |
-| COV-009 | 승인 범위 live backfill·재개·baseline 측정 | COV-008, DISC-003, DEC-007, DEC-012, AI-002 | BLOCKED | 승인된 실제 API 낮은 rate canary 후 90일 지원 범위 backfill·incremental·on-demand 관측, partial/gap·독립 근거·실제 usage/raw measurement 기록; 모델 미승인/지원 불가를 가짜 corpus로 대체하지 않음 |
-| DEC-013 | 확장 corpus 품질·성능 acceptance 승인 | COV-009 | GATE | baseline dataset·질문·model/config 고정 후 Recall/nDCG·abstention/citation·latency·비용 기준을 사용자 승인; 기존 hard security/time/provenance invariant 완화 없음 |
-| COV-010 | 확장 corpus 품질과 최종 acceptance | COV-009, DEC-013, EVAL-002 | BLOCKED | 고정 baseline/expanded corpus·별도 라벨 확장 비교, 필수 예시 4개·43항목 baseline·신규 부족 사례·비용/coverage 보고서; 최종 thresholds·source/provider/운영 gate 충족; 미충족이면 MVP BLOCKED 유지 |
+| COV-003 | 단일 target 역사 수집과 발견/search adapter | COV-002, COL-001 | DONE | 기존 adapter를 target/page/timeWindow 계약으로 전환; 설정만 추가한 두 target 독립 cursor; pagination·빈 filtered page·API cap/history unsupported partial 검증; approved source-search/discovery 실제 HTTP adapter를 fixture transport로 검증, 신규 권리/live 호출 승인 없음 |
+| COV-004 | partition planner·scheduler·outbox·replay 실행 서비스 | COV-002, QUE-001, PIPE-001 | DONE | durable due planning, checkpoint/continuation, source disable, normalization/replay delivery, Redis 손실/중복 dispatcher/worker kill 후 DB pending 복구; backfill/incremental starvation 방지; entrypoint 연결은 COV-008 |
+| COV-005 | provider-neutral embedding work와 예산 서비스 | COV-002, AI-001 | DONE | 완료 결과 재사용·동시 worker 호출 소유권·calling timeout/commit 전 crash unknown 보류; UTC 경계/재시작에도 reservation 유지; 승인/price/token cap 미설정 시 fail closed; 실제 신규 provider 선택·호출 없이 fake로 검증 |
+| COV-006 | lexical/vector readiness·coverage·cohort 조회 | COV-002, DB-006, PIPE-006 | DONE | lexical 준비 문서가 embedding 없이 FTS 검색; profile vector·rights/time/tombstone 필터; 네 부족 원인/unknown 구분; on-demand 추가만으로 cohort 값 불변·공통 분모·partial 표시 검증 |
+
+| COV-007 | bounded acquisition과 RAG 서비스 연결 | COV-003, COV-004, COV-005, COV-006 | DONE | 기존 live fallback을 승인 source port·공통 ingest로 교체; local sufficient 외부 0, 1/2/3/8/10초 상한·bytes/token/budget·악성 URL·권리·citation 검증; provider-neutral fake/injected transport로 실제 workflow 검증; 기존 model gate 유지 |
+| COV-008 | runtime·API/web·운영 cutover와 통합 검증 | COV-007 | DONE | v2 worker scheduler/outbox/stage/embedding, API coverage/answer/ops, web 준비성·한계 표시와 health 연결 완료. 격리된 실제 PG+pgvector/Redis에 fixture source/fake provider를 주입해 checkpoint 중단·worker 재시작·incremental 우선·backfill 재개·embedding 재사용·grounded citation/coverage·v2 outbox 복구·실제 브라우저 UI를 검증하고 static/unit/관련 integration을 통과함 |
+| DISC-003 | target별 권리·capability·활성화 후보 조사 | COV-001 | DONE | seed/후보 전체 inventory의 최신 공식 근거, fetch/store/model-input/embed/display/retention 범위·history capability·unknown 기록; ADR-0014 참조 불일치 대조. 조사 완료가 새로운 권리 승인이나 enable은 아님 |
+| DEC-012 | 확장 source·운영 계획·예산 활성화 승인 | DISC-003, COV-008 | DONE | 사용자 승인(2026-09-10): [ADR-0016](./docs/adr/0016-low-cost-live-activation.md) Accepted. GitHub Releases 5개 target, 6시간 cadence, API/byte/token/retention 및 COV-009 USD 2 hard cap |
+| COV-009 | 승인 범위 live backfill·재개·baseline 측정 | COV-008, DISC-003, DEC-007, DEC-012, AI-002 | DONE | 승인된 실제 API 낮은 rate canary 후 GitHub Releases 5개 target의 90일 backfill·incremental을 concurrency 1로 완료. on-demand 비활성, partition partial/failed 0, target별 독립 partition, `pgvector/pgvector` retained release 0건 coverage gap, 재시작 후 outbox 복구를 관측했고 실제 source/provider usage와 dataset hash를 `docs/experiments/cov-009/`에 기록 |
+| DEC-013 | 확장 corpus 품질·성능 acceptance 승인 | COV-009 | DONE | 사용자 승인(2026-09-10): [ADR-0018](./docs/adr/0018-expanded-corpus-quality-acceptance.md) Accepted. baseline dataset·질문·model/config, 기존 43개 회귀와 live 평가 분리, Recall/nDCG·abstention/citation·latency 및 USD 0.25 일회성 평가 한도 고정; 기존 hard security/time/provenance invariant 완화 없음 |
+| DEC-014 | 추가 EVAL-002 allowance 승인 | DEC-013 | DONE | 사용자 확정(2026-09-11): [ADR-0020](./docs/adr/0020-additional-evaluation-allowance.md) Accepted. 과거 사용량/미정산 상태를 보존하고 별도 USD 0.25, embedding 100 calls/100k input, chat 60 calls/300k input/30k output, concurrency 1, retry/fallback 0 tranche를 `dec-014-*` manifest/ledger로 추적 |
+| COV-010 | 확장 corpus 품질과 최종 acceptance | COV-009, DEC-013, EVAL-002, COV-011 | BLOCKED | 고정 baseline/expanded corpus·별도 라벨 확장 비교, 필수 예시 4개·43항목 baseline·신규 부족 사례·비용/coverage 보고서; 최종 thresholds·source/provider/운영 gate 충족; 미충족이면 MVP BLOCKED 유지 |
+| COV-011 | coverage target/profile count 누출 수정 | COV-006 | DONE | raw/lexical/vector와 partition의 동일 target/topic/scope 집계, canonical target 식별, disabled/미검토 source·target/raw 권리·publication window·approved profile/input hash 분리 완료. 격리 PostgreSQL 검색/coverage 9 tests와 전체 static 통과, 문서 동기화 완료. 0건·두 target·on-demand/반복 membership·labeled miss 범위를 exact count로 검증. COV-010 live·사람 검토 gate를 대체하지 않음 |
+### DISC-003 완료 증빙 (2026-09-09)
+
+- 전체 seed·후보 inventory 73개 target을 공식 공개 정책/capability 문서로 조사한 별도 보고서 [`docs/experiments/DISC-003-source-rights-and-capability-investigation.md`](./docs/experiments/DISC-003-source-rights-and-capability-investigation.md)에 source/target별 URL·조회일·권리 적용 단위·fetch/store/model-input/embed/display/retention·history/pagination/rate/auth·unknown·enable 상태를 기록했다.
+- `docs/adr/`에 `0014-*.md`가 존재하지 않음을 확인했다. Reddit은 `enabled=false`/BLOCKED로 유지했다. DEC-007과 DEC-012는 2026-09-10 승인됐다.
+### COV-008 이전 잔여 검증 기록 (2026-09-09, 아래 최종 증빙으로 해소)
+
+- `pnpm run static`: 10/10 workspace typecheck, ESLint, Prettier 모두 통과했다.
+- `pnpm run test`를 disposable PostgreSQL database와 Redis 환경변수로 실행했으나 `packages/database/test/search.integration.test.ts`가 FTS 결과 `0 !== 1`로 실패해 전체 acceptance는 미완료다. 환경변수 없이 실행하면 readiness integration이 필수 PostgreSQL 설정 누락을 오류로 보고한다.
+- 이 시점의 FTS 실패와 end-to-end 미완료는 아래 COV-008 최종 통합 증빙에서 해소했다.
+### COV-003~006 완료 증빙 (2026-09-09)
+
+- COV-003: `packages/collectors/test/coverage-targets.test.ts` 포함 collectors focused run에서 14 files·177 tests passed(1 skipped); fixture HTTP로 target isolation, pagination, filtered empty page, cap/history partial, URL guard, search/discovery를 검증했다.
+- COV-004: `apps/worker/test/partition-runtime.test.ts` 8 tests와 worker focused suite 12 files·53 tests passed(4 Redis integration skipped); duplicate dispatch, sent-only outbox recovery, kill/restart, disable, stale lease, downstream recovery, lane fairness를 검증했다.
+- COV-005: domain focused suite 19 files·164 tests passed; completed replay, concurrency, unknown outcome, UTC budget, duplicate reservation, missing usage/overspend, fail-closed fake provider를 검증했다.
+- COV-006: domain focused suite에 coverage-service 11 tests, database readiness integration test는 환경상 0 tests로 skip됐다. 실제 PostgreSQL+pgvector/Redis runtime은 Compose persistent profile health, PostgreSQL vector extension `0.8.6`, Redis `PONG`으로 별도 확인했다.
+- 당시 통합 static은 통과했다. COV-007/008은 이후 완료됐으며 live/provider/운영 gate는 유지한다.
+### COV-007 완료 증빙 (2026-09-09)
+
+- `packages/rag/src/acquisition.ts`에 `BoundedAcquisitionService`/`createBoundedAcquisitionService`를 구현해 `BoundedAcquisitionPort.acquire`를 소비한다. hard ceilings는 1 round, 2 searches, 3 fetches, 8 HTTP attempts(redirect 포함), 외부 10초 및 남은 deadline이며 byte/context/output budget·abort·source policy·persistent budget gate를 fail closed로 적용한다.
+- 기존 `packages/rag/src/live-search.ts`의 npm/GitHub/Wikipedia 임의 fallback을 제거하고 acquisition port + persisted lexical re-search 경로로 교체했다. `answer-service.ts`는 local sufficient일 때 acquisition을 호출하지 않고, verified insufficient일 때만 호출한 뒤 정확히 한 번 재검색한다.
+- 검증: `pnpm --filter @techpulse/rag exec vitest run test/acquisition.test.ts test/answer-service.test.ts test/live-search.test.ts test/prompt-injection.test.ts` — 4 files, 48 tests passed. acquisition suite는 local-first, caps/no-retry, SSRF/redirect/prompt injection/rights, immutable persistence/citation eligibility를 fake transport로 검증했다.
+- 당시 미수행이던 COV-008 runtime cutover는 아래 최종 증빙에서 완료했다. `DEC-007`, `AI-002`, live corpus/운영 budget gate는 유지한다.
+
+### COV-008 통합 증빙 (2026-09-09)
+
+- 구현: worker v2 runtime/health/embedding fail-closed wiring, API coverage and protected ops routes, web readiness/limitation rendering, shared domain/database exports and web TypeBox dependency.
+- API 원인 수정: `apps/api/test/security-abuse.test.ts` fixture가 `SearchHit.headingPath`를 누락해 AnswerService가 500을 내던 문제였다. 유효 fixture와 200/200/429 행동 회귀 검증을 추가했고 `pnpm --filter @techpulse/api exec vitest run test/security-abuse.test.ts`는 6 tests PASS.
+- DB 원인 수정: persistent DB 자체를 변경하지 않고 migration/readiness integration fixture를 UUID 기반 disposable database로 격리했다. journal을 조작하거나 적용 migration을 재작성하지 않았으며, 빈 DB forward migration·baseline→forward citation 보존·pgvector readiness를 별도 검증한다.
+- DB 검증: `pnpm --filter @techpulse/database exec vitest run test/migration.test.ts test/coverage-migration.integration.test.ts test/coverage-readiness.integration.test.ts`는 3 files/12 tests PASS(실제 PostgreSQL+pgvector).
+- 최신 이미지: `docker compose --profile stack build --no-cache api web worker` 성공 후 `docker compose --profile stack up -d --wait`로 재기동했다. persistent PostgreSQL/Redis 데이터와 volume은 보존됐다. API/web/worker/postgres/redis 모두 healthy.
+- 실제 최신 컨테이너 smoke: `/health/live` 200, `/health/ready` 200, `/api/v1/coverage` 200, `/api/v1/answers` 503(승인되지 않은 chat provider가 fail-closed인 정상 결과), 보호 ops `/api/v1/ops/status` 401, web `/` 200. 브라우저에서 최신 web dashboard를 시각 확인했다.
+- 전체 static: `pnpm run static`의 typecheck 10/10, lint, Prettier check PASS. 전체 `pnpm run test`는 기존 `tooling/test-harness/test/ops-config.test.ts` OPS-004 assertion이 production compose의 quoted port 표현을 기대해 1 test 실패했으며, 이번 API/DB 수정 원인과 무관하다.
+- 최종 runtime proof: `tooling/smoke-runner-cov008.ts`를 빈 `cov008_*` PostgreSQL database와 전용 Redis logical DB에서 실행했다. target 등록/활성화, page 0 checkpoint, 강제 deferred와 worker 재시작, incremental 우선 완료, 저장 cursor 기반 backfill page 1 재개, lexical/vector readiness, `/coverage`, fake chat 기반 grounded citation과 원 source URL·license, 완료 embedding 무호출 재사용, pending v2 outbox 복구가 모두 PASS했다. 스크립트는 기존 DB/Redis가 비어 있지 않으면 실행을 거부한다.
+- 실제 UI proof: 같은 실행 중 SvelteKit preview를 기동하고 mock route 없이 API에 연결한 Chromium 테스트가 persisted citation link와 lexical/vector coverage 표시를 확인했다(1 test PASS). 기존 fixture UI suite도 4 tests PASS했다.
+- 관련 PostgreSQL+pgvector integration은 coverage/search/readiness 14 tests PASS, database 전체 55 tests PASS(환경 조건 1 skip)로 확인했다. API 전체 60 tests와 worker runtime 관련 29 tests도 PASS했다.
+- 당시 최종 검증: `pnpm run static`은 typecheck 10/10, ESLint, 전체 Prettier check를 통과했고 `pnpm test`도 10/10 workspace task가 성공했다. COV-008은 DONE이며 이후 DEC-007, DEC-012, AI-002와 COV-009가 완료됐다. 운영 배포 gate는 유지한다.
+
+### AI-002 완료 증빙 (2026-09-10)
+
+- `packages/domain/src/ai.ts`: JSON object와 output cap, timeout/abort, typed 429와 `Retry-After`, provider-reported chat/embedding usage, dimension 및 safe HTTP error contract를 구현했다.
+- `apps/api/src/approved-models.ts`: 승인된 RunInfra/OpenRouter endpoint와 두 model이 모두 정확히 일치할 때만 binding을 만들며 보수적 micro-USD price와 DEC-012 scope를 고정한다.
+- worker는 승인된 Perplexity profile에만 1024 dimensions, DEC reference, price version과 scope defaults를 적용하고 OpenRouter endpoint 불일치 시 비활성화한다.
+- 검증: domain AI/budget/embedding 47 tests, API config/binding/runtime 12 tests, worker config/runtime 23 tests 통과. workspace typecheck 10/10 통과. 실제 network/model 호출 없음.
+
+### PIPE-008 완료 증빙 (2026-09-10)
+
+- embedding service는 동일 chunk/input/profile 완료 결과를 재사용하고, batch 부분 실패와 provider/commit 결과 불명확 상태를 `outcome_unknown`으로 고정해 자동 재호출·환불을 막는다. 승인 profile과 다른 provider metadata model/dimensions도 budget hold와 함께 fail closed하도록 보완했다.
+- worker runtime은 승인된 Perplexity 1024-dimension profile, price/scope/approval reference가 모두 일치할 때만 adapter를 구성한다. 연결된 Redis에서 고유 queue/key prefix로 v2 중복 억제, v1 거부, concurrency lease와 SIGKILL 후 복구 4 tests를 통과했으며 test key는 정리한다.
+- RAG-002의 연결 PostgreSQL+pgvector 검증에서 lexical readiness는 embedding 없이 유지되고 vector readiness는 동일 profile의 revision 전체 chunk 완료에만 성립함을 확인했다.
+- 사용자가 실제 외부 모델 canary 제한을 해제한 뒤 `tooling/live-model-canary.ts`를 승인 endpoint/model로 실행했다. OpenRouter Perplexity는 입력 5 tokens, 1024차원·유한·비영 벡터를 반환했다. provider가 응답하는 축약 모델명 `pplx-embed-v1-0.6b`는 명시적 alias allowlist로만 승인 모델명에 정규화하고 다른 응답 모델은 거부한다. domain 170 tests와 typecheck가 통과했다.
+- 이전 RunInfra `deepseek-v4-flash`는 `/models` 인증 성공 후에도 최소 chat completion이 두 번 HTTP 503이었다. ADR-0017로 변경한 `nemotron-3-5-lightning-30b`는 최소 JSON canary에서 837ms, input 28/output 6 tokens로 성공했다. 이는 연결 증빙이며 골든셋 품질 gate나 COV-009 실행을 대체하지 않는다.
+
+### RAG-001 완료 증빙 (2026-09-10)
+
+- `packages/rag/src/query-parser.ts`에 provider 호출이 없는 구조화 parser를 추가했다. 네 intent, taxonomy 기반 canonical entity와 원문 alias, `ko`/`en`, 명시 기간 우선, rolling 시간·일·주·30일 월 기간, UTC/IANA timezone을 결정적으로 반환한다.
+- taxonomy에서 단독 사용을 금지한 alias는 entity로 승격하지 않고 후보 ID가 포함된 `ambiguous_entity`로 반환한다. 부분 기간, offset 없는 timestamp, 역전 구간과 잘못된 IANA timezone은 fail closed 한다.
+- answer service는 같은 parser 결과를 검색 시간 filter, coverage window와 acquisition topic ID에 사용한다. focused parser/answer 검증 28 tests와 package typecheck를 통과했으며 실제 network/model 호출은 없었다.
+
+### RAG-002 완료 증빙 (2026-09-10)
+
+- `SearchFilter.requireApprovedRights`를 RAG의 lexical/vector/re-search 모든 경로에서 활성화했다. 양쪽 SQL은 활성·정책 검토 source와 raw의 approved/store/modelInput/displayExcerpt를 요구하고 vector는 embed 권리도 요구한다.
+- vector 검색은 승인 provider/model/dimensions/profile hash, embedding input hash와 현재 chunk content hash 일치뿐 아니라 revision의 모든 chunk에 같은 profile의 유효 embedding이 있는지 확인한다. 검색 결과는 immutable revision/chunk와 raw canonical URL, source, license provenance를 유지한다.
+- 연결된 PostgreSQL+pgvector에서 매 실행 고유 격리 DB를 생성해 FTS/exact vector, lexical readiness, 전체 chunk vector readiness, 권리 거부, tombstone과 잘못된 profile 제외를 검증했다(3 tests PASS). SQL 계약 5 tests와 RAG parser/answer 28 tests도 통과했다. 외부 source/model 호출은 없었다.
+
+### COV-009 완료 증빙 (2026-09-10)
+
+- Docker를 사용하지 않고 연결된 PostgreSQL+pgvector와 Redis에서 승인된 GitHub Releases 5개 target을 각각 독립 backfill/incremental partition으로 실행했다. 10/10 partition과 11 checkpoints가 완료됐고 partial/failed/cancelled 및 on-demand partition은 0이었다. `pgvector/pgvector`는 정상 완료됐지만 90일 구간 retained release가 0개여서 coverage gap으로 기록했다.
+- 최초 인증 설정 오류로 명시적 HTTP 401이 난 28개 work/reservation만 실제 사용량 0임을 확인해 복구했다. 비재시도 provider 오류는 `failed`와 `released`로 종료하도록 보완해 결과 불명확 상태와 구분했다.
+- worker 중단·재시작 후 DB outbox에서 이어서 처리했으며 최종 raw item/revision 28개, chunks/embeddings 500/500, pending delivery 0, unknown reservation 0을 확인했다. 기존 완료 work는 재사용했고 재실행 중 GitHub 호출은 0이었다.
+- 실제 source usage는 11 requests와 1,274,586 bytes, embedding usage는 188,073 tokens와 USD 0.000912였다. dataset SHA-256은 `0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f`이며 raw measurement는 [`docs/experiments/cov-009/live-measurement.json`](./docs/experiments/cov-009/live-measurement.json)에 있다.
+- 최종 static은 typecheck 10/10, ESLint, Prettier를 통과했다. API 63, worker 60(연결 Redis integration 4 포함), test-harness 26 tests와 domain 171 tests가 통과했다. 연결 DB URL로 실행한 database suite는 48 tests가 통과했지만 원격 URL에서 로컬 격리 DB 생성을 의도적으로 거부한 3 tests, 공유 DB의 5초 timeout 3건과 기존 fixture policy 충돌 1건 때문에 workspace 전체 `pnpm test`는 통과로 표시하지 않는다. COV-009 live runtime의 연결 DB 검증은 위 측정으로 완료됐다.
+- DEC-013 검토를 위해 [`docs/experiments/cov-009/live-eval-set.proposed.json`](./docs/experiments/cov-009/live-eval-set.proposed.json)을 생성했다. 실제 evidence가 있는 4개 target의 12개 retrieval 질문은 28 revisions/500 chunks를 모두 참조하고, `pgvector/pgvector` 0건과 범위 밖 질문을 포함한 coverage-negative 6개는 `insufficient_evidence`로 고정했다. 기존 43개 골든셋 라벨은 변경하지 않았다.
+
+### COV-011 완료 및 EVAL-002 offline 검증 증빙 (2026-09-10)
+
+- COV-011의 count는 같은 target/topic/scope와 acquisition membership을 공유하며 승인 embedding profile의 모든 chunk/input hash가 준비된 revision만 vector-ready로 센다. scope 밖·0건 target을 다른 target의 count로 채우지 않는다. 미검토/disabled source, target/raw 권리, publication window, labeled miss의 정확한 범위를 fixture PostgreSQL에서 검증했다.
+- 마지막 COV-011 코드/fixture 변경 후 `pnpm --filter @techpulse/database exec vitest run test/search.integration.test.ts test/coverage-readiness.integration.test.ts --fileParallelism=false`는 고유 격리 DB에서 2 files/9 tests PASS. 원래 fixed Neon DB에는 쓰지 않았다.
+- EVAL-002의 동기 abort·non-cooperative timeout·불완전 journal LF·unknown reservation 보존·모델/output cap·foreign evidence membership·43항목 분모 보존을 보강했다. 중첩 runtime budget에서 요청 output 12가 2000으로 확대되는 실패를 먼저 재현했으며, provider budget이 두 상한의 최솟값을 예약/전달하도록 수정한 뒤 회귀가 PASS했다.
+- 최종 focused 검증: API release/binding/runtime 4 files/41 tests, domain budget/coverage 2 files/28 tests, RAG 14 files/89 tests PASS. 위 PG 9개와 합쳐 167개이며, workspace 전체 unit/E2E 또는 실제 43개 모델 회귀를 실행했다는 뜻은 아니다.
+- `fnm exec --using=26.5.0 -- pnpm run static` 최종 PASS: 10/10 workspace typecheck, root ESLint, root Prettier. 기존 미커밋 변경을 유지하며 남은 포맷만 정리했고 migration JSON 값의 동일성을 검사했다. 새 runtime 설치·SQL migration 변경·배포·provider 호출·corpus 재임베딩은 없었다.
+- 43개 골든 라벨과 live draft의 SHA-256이 이전 preflight 기록과 동일했다. 실제 CLI의 credential-free plan과 `release_budget_exhausted` 차단 결과는 [EVAL-002 실행 기록](./docs/experiments/eval-002/README.md), 검증 요약은 [offline-validation-2026-09-10.json](./docs/experiments/eval-002/offline-validation-2026-09-10.json)에 기록한다. 새 예산 ledger를 만들거나 과거 unknown을 환불하지 않았다.
+- EVAL-002는 READY(offline 구현만 가능), COV-010/MVP-001은 BLOCKED를 유지한다. 추가 유료 평가 allowance의 영속 반영, 대표 8문항 live 평가와 최소 semantic review가 남아 있다. 43개 전체 회귀는 MVP blocker가 아니다.
 
 ### 의존성과 검증 운영
 
 - COV-001/002의 공통 mutable 경계는 직렬이다. COV-002 완료 후 COV-003~006만 동시에 편집한다. COV-007은 그 결과를 소비하고 COV-008은 단일 integration owner다.
 - DISC-003은 문서 조사로 병행 가능하다. 운영 권리·지출 승인이 없으면 fixture/fake 검증만 가능하며 live 실행은 금지한다.
-- 기존 RAG-001/002의 provider-neutral 작업은 COV 공통 계약 뒤 가능하다. EXP-002→RAG-003/004→RAG-005/006→EVAL-002는 COV-009 corpus와 기존 provider gate 이후 별도 품질 closure로 진행한다. 같은 RAG 파일을 COV-007과 동시에 수정하지 않는다.
+- RAG-001~002는 완료됐다. EXP-002→RAG-003/004→RAG-005/006→EVAL-002는 COV-009 corpus와 기존 provider gate 이후 별도 품질 closure로 진행한다.
 - 편집 중 formatter/linter/project-wide suite는 실행하지 않는다. 공유 checkout의 병렬 편집 중 build/test도 생략하고, 완료 후 validation window 또는 격리 환경에서 focused 검증한다. COV-008이 전체 검증을 한 번 수행한다.
 - acceptance 증거 없는 task는 DONE 금지다. common 계약 변경은 해당 소유자의 manifest 수정 후 소비자를 일괄 이행한다.
+
+### EVAL-002 L-001 단일 resume 검증 (2026-09-11 03:25 UTC)
+
+- 최신 자동 후보는 `docs/experiments/eval-002/eval002-2026-09-11T03-25-45-334Z-live/report.json`이다. 원본 `02-31-29-990Z` 보고서, retrieval 결과와 나머지 7개 answer row를 보존하고 L-001만 재평가했다. `automatedMvpGatePassed=true`, 남은 blocker는 live label 및 semantic answer 사람 검토 2개다.
+- DEC-014 추가 사용은 embedding 1회와 chat 1회이며 누적 97/100·32/60, unknown reservation 0이다. 원장 기존 prefix와 과거 사용량은 보존했다. 전체 live 재실행, budget 증액, commit, 운영 배포는 하지 않았다.
+- RAG 103/103, API 177/177 tests, 두 package typecheck·ESLint·Prettier와 `git diff --check`를 통과했다. 해시·개수·지표 증빙은 `docs/experiments/eval-002/resume-validation-2026-09-11T03-25-45-334Z.json`에 기록했다.
+- 8개 label과 6개 citation 근거의 해시를 대조하고 터미널에서 표시했다. 새 L-001 답변은 확인 가능하지만 재사용한 L-007/L-014/L-017 원문은 현재 연결된 세션 기록에 없어 원래 터미널 출력 복구가 필요하다. 원문 확보와 명시적 사람 승인 전에는 human-review JSON/attestation을 만들지 않는다. EVAL-002 READY, COV-010/MVP-001 BLOCKED를 유지한다.

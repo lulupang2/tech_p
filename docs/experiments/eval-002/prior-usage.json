@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "decision": "DEC-013",
+  "datasetSha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+  "reconciled": false,
+  "reconciliationReference": null,
+  "usage": {
+    "microUsd": 6,
+    "embeddingCalls": 195,
+    "embeddingInputTokens": 6290,
+    "chatCalls": 0,
+    "chatInputTokens": 0,
+    "chatOutputTokens": 0
+  },
+  "usageMeaning": "VERIFIED LOWER BOUND ONLY. Embedding counters include five independent executions. microUsd retains only the original EXP-002 monetary record. Zero chat counters mean unaccounted here, not no historical chat calls.",
+  "verifiedEvidence": [
+    "docs/experiments/exp-002/live-measurement.json:queryEmbeddingUsage",
+    "docs/experiments/eval-002/historical-usage-audit.json",
+    "2026-09-10-da56e01a/TC1+TC4",
+    "2026-09-10-da56e01a/TCD+TCE",
+    "2026-09-10-da56e01a/TCL",
+    "2026-09-10-da56e01a/TCN"
+  ],
+  "unreconciledEvidence": [
+    "Four additional 39-query runs are independently verified; exact totals beyond these five executions remain unknown.",
+    "Negative smoke TD2 and historical minimum-answer calls lack complete call/token/cost receipts.",
+    "Some ad-hoc calls may bypass the normal DB budget ledger. DB totals alone cannot establish complete evaluation usage."
+  ],
+  "liveExecutionAllowed": false,
+  "note": "At least 195 successful embedding calls exceed the approved TOTAL 100 by at least 95. Keep reconciled=false: exact totals and chat/cost usage remain unknown. Further paid evaluation requires explicit new or amended approval; reconciliation alone cannot restore headroom. Do not reset counters, initialize a zero ledger, refund unknown reservations or infer approval from continuation."
+}

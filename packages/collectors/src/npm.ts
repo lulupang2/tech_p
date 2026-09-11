@@ -2,12 +2,18 @@ import type {
   CollectionContext,
   CollectionResult,
   CollectedRawItem,
+  CollectorPort,
+  CollectorPagePort,
+  CollectionPageRequest,
+  CollectionPageResult,
   PolicyGuardPort,
   SourcePolicy,
 } from '@techpulse/domain';
+import { assertCollectableTarget, validatePageResult } from '@techpulse/domain';
 import { BaseCollector } from './base.js';
 import { SOURCE_POLICIES } from './policies.js';
 import { encodeOpaqueCursor, decodeOpaqueCursor } from './cursor.js';
+import { createHardenedFetch } from './guard.js';
 
 /**
  * Default target packages for npm collection per SOURCE_CATALOG §9.
@@ -111,7 +117,10 @@ export interface NpmRegistryCursor extends Record<string, unknown> {
  * Collector adapter for npm_registry per SOURCE_CATALOG §9 and SECURITY.md §8.
  * Fetches package and version metadata, stripping PII maintainer emails before raw hashing.
  */
-export class NpmRegistryCollector extends BaseCollector {
+export class NpmRegistryCollector
+  extends BaseCollector
+  implements CollectorPort, CollectorPagePort
+{
   readonly sourceKey = 'npm_registry' as const;
   readonly policy: SourcePolicy = SOURCE_POLICIES.npm_registry;
 
@@ -128,22 +137,19 @@ export class NpmRegistryCollector extends BaseCollector {
 
   async collect(context: CollectionContext): Promise<CollectionResult> {
     const startTime = Date.now();
-    let cursorData: NpmRegistryCursor | null = null;
+    let totalBytesFetched = 0;
+
+    // Decode cursor if provided
+    let cursorData: NpmRegistryCursor = {};
     if (context.cursor) {
-      cursorData = decodeOpaqueCursor<NpmRegistryCursor>(context.cursor);
+      cursorData = decodeOpaqueCursor<NpmRegistryCursor>(context.cursor) ?? {};
     }
 
-    const packages =
-      cursorData && Array.isArray(cursorData['packages']) && cursorData['packages'].length > 0
-        ? (cursorData['packages'] as readonly string[])
-        : this.defaultPackages;
-    const startIndex =
-      typeof cursorData?.['packageIndex'] === 'number' ? cursorData['packageIndex'] : 0;
-    const rawEtags = cursorData?.['etags'];
-    const etags: Record<string, string> =
-      rawEtags && typeof rawEtags === 'object' ? { ...(rawEtags as Record<string, string>) } : {};
+    const packages: readonly string[] =
+      cursorData.packages ?? this.defaultPackages ?? DEFAULT_NPM_PACKAGES;
+    const startIndex = cursorData.packageIndex ?? 0;
 
-    if (startIndex >= packages.length) {
+    if (packages.length === 0) {
       return {
         sourceKey: this.sourceKey,
         items: [],
@@ -159,179 +165,193 @@ export class NpmRegistryCollector extends BaseCollector {
 
     const limit = context.limit ?? 1;
     const targetPackages = packages.slice(startIndex, startIndex + limit);
+
+    const fetchClient = createHardenedFetch({
+      guard: this.guard,
+      policy: this.policy,
+      baseFetch: this.fetchFn,
+    });
+
     const items: CollectedRawItem[] = [];
-    let totalBytesFetched = 0;
+    const etags: Record<string, string> = { ...(cursorData.etags ?? {}) };
 
     for (const pkg of targetPackages) {
-      const encodedPkg = encodePackageName(pkg);
+      const encodedPkg = pkg.startsWith('@')
+        ? `@${encodeURIComponent(pkg.slice(1))}`
+        : encodeURIComponent(pkg);
       const url = `${this.baseUrl}/${encodedPkg}`;
-
-      const validation = this.guard.validateUrl(url, this.policy);
-      if (!validation.valid) {
+      const urlValidation = this.guard.validateUrl(url, this.policy);
+      if (!urlValidation.valid) {
         throw new NpmCollectorError(
-          `URL validation failed for npm_registry: ${validation.reason ?? 'Unknown reason'} (${url})`,
+          `URL validation failed for npm_registry package '${pkg}': ${urlValidation.reason}`,
         );
       }
 
       const headers: Record<string, string> = {
         Accept: 'application/json',
+        'User-Agent': 'Signal Archive-Collector/1.0',
       };
+
       if (etags[pkg]) {
         headers['If-None-Match'] = etags[pkg]!;
       }
 
-      const requestInit: RequestInit = {
-        headers,
-        ...(context.signal ? { signal: context.signal } : {}),
-      };
+      const requestInit: RequestInit = { headers };
+      if (context.signal) {
+        requestInit.signal = context.signal;
+      }
 
-      const response = await this.fetchFn(url, requestInit);
+      let response: Response;
+      try {
+        response = await fetchClient(url, requestInit);
+      } catch (err) {
+        if (err instanceof NpmCollectorError) throw err;
+        throw new NpmCollectorError(
+          `Network error fetching npm_registry for package '${pkg}': ${err instanceof Error ? err.message : String(err)}`,
+          err,
+        );
+      }
+
+      if (response.status === 304) {
+        continue;
+      }
 
       if (response.status === 429) {
-        const retryAfter = response.headers?.get?.('retry-after') ?? null;
+        const retryAfter = response.headers.get('retry-after');
         throw new NpmRateLimitError(
-          `NPM registry rate limit exceeded (HTTP 429) for package '${pkg}'`,
+          `NPM API rate limit exceeded (HTTP 429) for package '${pkg}'`,
           429,
           retryAfter,
         );
       }
 
       if (response.status === 404) {
-        throw new NpmPackageNotFoundError(
-          pkg,
-          `NPM package '${pkg}' not found in registry (HTTP 404)`,
-          404,
-        );
-      }
-
-      if (response.status === 304) {
-        // ETag match: no changes, 304 Not Modified
-        continue;
+        throw new NpmPackageNotFoundError(pkg);
       }
 
       if (!response.ok) {
-        throw new NpmHttpError(
-          response.status,
-          response.statusText,
-          url,
-          `NPM registry request failed: HTTP ${response.status} ${response.statusText} for package '${pkg}'`,
-        );
+        throw new NpmHttpError(response.status, response.statusText, url);
       }
 
-      const etag = response.headers?.get?.('etag');
-      if (etag) {
-        etags[pkg] = etag;
+      const etagHeader = response.headers.get('etag');
+      if (etagHeader) {
+        etags[pkg] = etagHeader;
       }
 
-      const text = await response.text();
-      totalBytesFetched += Buffer.byteLength(text, 'utf8');
-
-      let body: Record<string, unknown>;
+      let text: string;
       try {
-        body = JSON.parse(text) as Record<string, unknown>;
+        text = await response.text();
       } catch (err) {
         throw new NpmCollectorError(
-          `Failed to parse JSON response from npm_registry for package '${pkg}'`,
+          `Failed to read response body for npm_registry package '${pkg}'`,
           err,
         );
       }
 
-      if (body['error'] && typeof body['error'] === 'string') {
-        const errorMsg = body['error'];
-        if (/not found/i.test(errorMsg)) {
-          throw new NpmPackageNotFoundError(
-            pkg,
-            `NPM registry package not found: ${errorMsg}`,
-            404,
-          );
-        }
-        throw new NpmCollectorError(`NPM registry returned error: ${errorMsg}`);
+      totalBytesFetched += Buffer.byteLength(text, 'utf8');
+
+      let doc: Record<string, unknown>;
+      try {
+        doc = JSON.parse(text) as Record<string, unknown>;
+      } catch (err) {
+        throw new NpmCollectorError(
+          `Failed to parse JSON document for npm_registry package '${pkg}'`,
+          err,
+        );
       }
 
-      const pkgName = typeof body['name'] === 'string' ? body['name'] : pkg;
-      const versionsObj =
-        body['versions'] && typeof body['versions'] === 'object'
-          ? (body['versions'] as Record<string, Record<string, unknown>>)
-          : {};
-      const timeObj =
-        body['time'] && typeof body['time'] === 'object'
-          ? (body['time'] as Record<string, string>)
-          : {};
-      const distTags =
-        body['dist-tags'] && typeof body['dist-tags'] === 'object'
-          ? (body['dist-tags'] as Record<string, string>)
-          : {};
+      const timeMap = (doc['time'] as Record<string, string> | undefined) ?? {};
+      const versionsMap =
+        (doc['versions'] as Record<string, Record<string, unknown>> | undefined) ?? {};
+      const distTags = (doc['dist-tags'] as Record<string, string> | undefined) ?? {};
+      const latestVersion = distTags['latest'];
 
-      const versionKeys = Object.keys(versionsObj);
+      const versionEntries = Object.entries(versionsMap);
+      const matchingVersions: Array<{ version: string; data: Record<string, unknown> }> = [];
 
-      let matchingVersions = versionKeys;
       if (context.timeWindow) {
-        const fromMs = context.timeWindow.from.getTime();
-        const toMs = context.timeWindow.to.getTime();
-        matchingVersions = versionKeys.filter((v) => {
-          const t = timeObj[v];
-          if (!t) return true;
-          const timeMs = new Date(t).getTime();
-          return timeMs >= fromMs && timeMs <= toMs;
-        });
+        const { from, to } = context.timeWindow;
+        for (const [ver, verData] of versionEntries) {
+          const timeStr = timeMap[ver];
+          if (!timeStr) continue;
+          const pubDate = new Date(timeStr);
+          if (pubDate >= from && pubDate <= to) {
+            matchingVersions.push({ version: ver, data: verData });
+          }
+        }
+      } else {
+        for (const [ver, verData] of versionEntries) {
+          matchingVersions.push({ version: ver, data: verData });
+        }
       }
 
-      for (const v of matchingVersions) {
-        const versionData = versionsObj[v] ?? {};
-        const publishedAtStr = timeObj[v] ?? timeObj['modified'];
+      if (matchingVersions.length === 0) {
+        const publishedAtStr = timeMap['modified'] ?? timeMap['created'];
         const publishedAt = publishedAtStr ? new Date(publishedAtStr) : null;
-
-        const externalId = `${pkgName}@${v}`;
-        const canonicalUrl = `https://www.npmjs.com/package/${pkgName}`;
+        const externalId = `${pkg}:package`;
 
         const metadata: Record<string, unknown> = {
-          package: pkgName,
-          version: v,
+          package: pkg,
+          name: doc['name'] ?? pkg,
+          description: doc['description'],
+          license: doc['license'],
           distTags,
-          isLatest: distTags['latest'] === v,
-          license: versionData['license'] ?? body['license'] ?? null,
-          description: versionData['description'] ?? body['description'] ?? null,
-          dependenciesCount: Object.keys(
-            (versionData['dependencies'] as Record<string, string>) ?? {},
-          ).length,
-          devDependenciesCount: Object.keys(
-            (versionData['devDependencies'] as Record<string, string>) ?? {},
-          ).length,
-          peerDependenciesCount: Object.keys(
-            (versionData['peerDependencies'] as Record<string, string>) ?? {},
-          ).length,
-          canonicalUrl,
+          modified: timeMap['modified'],
+          created: timeMap['created'],
+          canonicalUrl: `https://www.npmjs.com/package/${pkg}`,
           sourceKey: this.sourceKey,
-        };
-
-        const payload: Record<string, unknown> = {
-          name: pkgName,
-          version: v,
-          description: versionData['description'] ?? body['description'],
-          main: versionData['main'],
-          module: versionData['module'],
-          types: versionData['types'] ?? versionData['typings'],
-          license: versionData['license'] ?? body['license'],
-          author: versionData['author'] ?? body['author'],
-          maintainers: versionData['maintainers'] ?? body['maintainers'],
-          publisher: versionData['publisher'] ?? versionData['_npmUser'] ?? body['_npmUser'],
-          _npmUser: versionData['_npmUser'] ?? body['_npmUser'],
-          contributors: versionData['contributors'] ?? body['contributors'],
-          dependencies: versionData['dependencies'],
-          devDependencies: versionData['devDependencies'],
-          peerDependencies: versionData['peerDependencies'],
-          dist: versionData['dist'],
-          repository: versionData['repository'] ?? body['repository'],
-          homepage: versionData['homepage'] ?? body['homepage'],
-          bugs: versionData['bugs'] ?? body['bugs'],
-          keywords: versionData['keywords'] ?? body['keywords'],
-          publishedAt: publishedAtStr,
         };
 
         const rawItem = this.createRawItem({
           externalId,
-          payload,
-          publishedAt: publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null,
+          payload: doc,
+          publishedAt,
+          cursor: null,
+          metadata,
+        });
+
+        items.push(rawItem);
+        continue;
+      }
+
+      for (const v of matchingVersions) {
+        const verStr = v.version;
+        const verData = v.data;
+        const publishedAtStr = timeMap[verStr];
+        const publishedAt = publishedAtStr ? new Date(publishedAtStr) : null;
+        const externalId = `${pkg}@${verStr}`;
+
+        const versionPayload: Record<string, unknown> = {
+          ...verData,
+          _npmVersionDoc: {
+            name: doc['name'] ?? pkg,
+            description: doc['description'],
+            distTags,
+            time: publishedAtStr,
+          },
+        };
+
+        const metadata: Record<string, unknown> = {
+          package: pkg,
+          version: verStr,
+          name: verData['name'] ?? doc['name'] ?? pkg,
+          description: verData['description'] ?? doc['description'],
+          license: verData['license'] ?? doc['license'],
+          isLatest: verStr === latestVersion,
+          dependenciesCount: Object.keys(
+            (verData['dependencies'] as Record<string, unknown> | undefined) ?? {},
+          ).length,
+          devDependenciesCount: Object.keys(
+            (verData['devDependencies'] as Record<string, unknown> | undefined) ?? {},
+          ).length,
+          canonicalUrl: `https://www.npmjs.com/package/${pkg}`,
+          sourceKey: this.sourceKey,
+        };
+
+        const rawItem = this.createRawItem({
+          externalId,
+          payload: versionPayload,
+          publishedAt,
           cursor: null,
           metadata,
         });
@@ -363,6 +383,109 @@ export class NpmRegistryCollector extends BaseCollector {
       },
     };
   }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+    const pkg =
+      request.target.selector.kind === 'package'
+        ? request.target.selector.name
+        : (this.defaultPackages[0] ?? 'typescript');
+
+    const encodedPkg = pkg.startsWith('@')
+      ? `@${encodeURIComponent(pkg.slice(1))}`
+      : encodeURIComponent(pkg);
+    const url = `${this.baseUrl}/${encodedPkg}`;
+
+    const urlValidation = this.guard.validateUrl(url, this.policy);
+    if (!urlValidation.valid) {
+      throw new Error(`SSRF guard rejected URL: ${urlValidation.reason}`);
+    }
+
+    const fetchClient = createHardenedFetch({
+      guard: this.guard,
+      policy: this.policy,
+      baseFetch: this.fetchFn,
+    });
+
+    const response = await fetchClient(url, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Signal Archive-Collector/1.0',
+      },
+      ...(request.signal ? { signal: request.signal } : {}),
+    });
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('retry-after');
+      const retryAt = retryAfter
+        ? new Date(request.now().getTime() + Number.parseInt(retryAfter, 10) * 1000)
+        : new Date(request.now().getTime() + 60000);
+      const result: CollectionPageResult = {
+        items: [],
+        nextCursor: null,
+        disposition: 'deferred',
+        reason: null,
+        retryAt,
+        requests: 1,
+        bytes: 0,
+      };
+      validatePageResult(request.partition, result);
+      return result;
+    }
+
+    if (response.status === 404) {
+      throw new NpmPackageNotFoundError(pkg);
+    }
+
+    if (!response.ok) {
+      throw new NpmHttpError(response.status, response.statusText, url);
+    }
+
+    const text = await response.text();
+    const bytesFetched = Buffer.byteLength(text, 'utf8');
+    const doc = JSON.parse(text) as Record<string, unknown>;
+
+    const timeMap = (doc['time'] as Record<string, string> | undefined) ?? {};
+    const publishedAtStr = timeMap['modified'] ?? timeMap['created'];
+    const publishedAt = publishedAtStr ? new Date(publishedAtStr) : null;
+
+    const rawItem = this.createRawItem({
+      externalId: `npm_registry:${pkg}`,
+      payload: doc,
+      publishedAt,
+      cursor: null,
+      metadata: {
+        package: pkg,
+        canonicalUrl: `https://www.npmjs.com/package/${pkg}`,
+      },
+    });
+
+    let disposition: CollectionPageResult['disposition'] = 'complete';
+    let reason: string | null = null;
+
+    if (
+      request.target.capability.historyMode === 'snapshot_only' &&
+      request.partition.mode === 'backfill'
+    ) {
+      disposition = 'partial';
+      reason = 'history_unsupported';
+    }
+
+    const result: CollectionPageResult = {
+      items: [rawItem],
+      nextCursor: null,
+      disposition,
+      reason,
+      retryAt: null,
+      requests: 1,
+      bytes: bytesFetched,
+    };
+    validatePageResult(request.partition, result);
+    return result;
+  }
 }
 
 export interface NpmDownloadsCollectorOptions {
@@ -387,52 +510,43 @@ export interface NpmDownloadsCursor extends Record<string, unknown> {
  * Collects package download metrics (unit: downloads, metricType: package_downloads)
  * over period ranges or points without converting missing/error responses to zero.
  */
-export class NpmDownloadsCollector extends BaseCollector {
+export class NpmDownloadsCollector
+  extends BaseCollector
+  implements CollectorPort, CollectorPagePort
+{
   readonly sourceKey = 'npm_downloads' as const;
   readonly policy: SourcePolicy = SOURCE_POLICIES.npm_downloads;
 
   private readonly fetchFn: typeof globalThis.fetch;
   private readonly defaultPackages: readonly string[];
   private readonly defaultPeriod: string;
-  private readonly defaultMode: 'point' | 'range';
+  private readonly mode: 'point' | 'range';
   private readonly baseUrl: string;
 
   constructor(options: NpmDownloadsCollectorOptions = {}) {
     super(options.guard);
     this.fetchFn = options.fetch ?? globalThis.fetch.bind(globalThis);
     this.defaultPackages = options.defaultPackages ?? DEFAULT_NPM_PACKAGES;
-    this.defaultPeriod = options.defaultPeriod ?? 'last-week';
-    this.defaultMode = options.mode ?? 'point';
+    this.defaultPeriod = options.defaultPeriod ?? 'last-month';
+    this.mode = options.mode ?? 'point';
     this.baseUrl = (options.baseUrl ?? 'https://api.npmjs.org').replace(/\/+$/, '');
   }
 
   async collect(context: CollectionContext): Promise<CollectionResult> {
     const startTime = Date.now();
-    let cursorData: NpmDownloadsCursor | null = null;
+    let totalBytesFetched = 0;
+
+    let cursorData: NpmDownloadsCursor = {};
     if (context.cursor) {
-      cursorData = decodeOpaqueCursor<NpmDownloadsCursor>(context.cursor);
+      cursorData = decodeOpaqueCursor<NpmDownloadsCursor>(context.cursor) ?? {};
     }
 
-    const packages =
-      cursorData && Array.isArray(cursorData['packages']) && cursorData['packages'].length > 0
-        ? (cursorData['packages'] as readonly string[])
-        : this.defaultPackages;
-    const startIndex =
-      typeof cursorData?.['packageIndex'] === 'number' ? cursorData['packageIndex'] : 0;
-    const mode =
-      cursorData?.['mode'] === 'range' || cursorData?.['mode'] === 'point'
-        ? cursorData['mode']
-        : this.defaultMode;
+    const packages: readonly string[] =
+      cursorData.packages ?? this.defaultPackages ?? DEFAULT_NPM_PACKAGES;
+    const startIndex = cursorData.packageIndex ?? 0;
+    const mode = cursorData.mode ?? this.mode;
 
-    let period =
-      typeof cursorData?.['period'] === 'string' ? cursorData['period'] : this.defaultPeriod;
-    if (context.timeWindow) {
-      const fromStr = context.timeWindow.from.toISOString().slice(0, 10);
-      const toStr = context.timeWindow.to.toISOString().slice(0, 10);
-      period = `${fromStr}:${toStr}`;
-    }
-
-    if (startIndex >= packages.length) {
+    if (packages.length === 0) {
       return {
         sourceKey: this.sourceKey,
         items: [],
@@ -446,56 +560,86 @@ export class NpmDownloadsCollector extends BaseCollector {
       };
     }
 
+    let period = cursorData.period ?? this.defaultPeriod;
+    if (context.timeWindow) {
+      const fromStr = context.timeWindow.from.toISOString().slice(0, 10);
+      const toStr = context.timeWindow.to.toISOString().slice(0, 10);
+      period = `${fromStr}:${toStr}`;
+    }
+
     const limit = context.limit ?? 1;
     const targetPackages = packages.slice(startIndex, startIndex + limit);
+
+    const fetchClient = createHardenedFetch({
+      guard: this.guard,
+      policy: this.policy,
+      baseFetch: this.fetchFn,
+    });
+
     const items: CollectedRawItem[] = [];
-    let totalBytesFetched = 0;
 
     for (const pkg of targetPackages) {
-      const encodedPkg = encodePackageName(pkg);
-      const url = `${this.baseUrl}/downloads/${mode}/${period}/${encodedPkg}`;
+      const encodedPkg = pkg.startsWith('@')
+        ? `@${encodeURIComponent(pkg.slice(1))}`
+        : encodeURIComponent(pkg);
+      const endpoint = mode === 'point' ? 'point' : 'range';
+      const url = `${this.baseUrl}/downloads/${endpoint}/${period}/${encodedPkg}`;
 
-      const validation = this.guard.validateUrl(url, this.policy);
-      if (!validation.valid) {
-        throw new NpmCollectorError(
-          `URL validation failed for npm_downloads: ${validation.reason ?? 'Unknown reason'} (${url})`,
+      const urlValidation = this.guard.validateUrl(url, this.policy);
+      if (!urlValidation.valid) {
+        throw new Error(
+          `Security violation: URL '${url}' rejected by policy guard: ${urlValidation.reason}`,
         );
       }
 
       const requestInit: RequestInit = {
-        headers: { Accept: 'application/json' },
-        ...(context.signal ? { signal: context.signal } : {}),
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'Signal Archive-Collector/1.0',
+        },
       };
+      if (context.signal) {
+        requestInit.signal = context.signal;
+      }
 
-      const response = await this.fetchFn(url, requestInit);
+      let response: Response;
+      try {
+        response = await fetchClient(url, requestInit);
+      } catch (err) {
+        if (err instanceof NpmCollectorError) throw err;
+        throw new NpmCollectorError(
+          `Network error fetching npm_downloads for package '${pkg}': ${err instanceof Error ? err.message : String(err)}`,
+          err,
+        );
+      }
 
       if (response.status === 429) {
-        const retryAfter = response.headers?.get?.('retry-after') ?? null;
+        const retryAfter = response.headers.get('retry-after');
         throw new NpmRateLimitError(
-          `NPM downloads rate limit exceeded (HTTP 429) for package '${pkg}'`,
+          `NPM API rate limit exceeded (HTTP 429) for package '${pkg}' downloads`,
           429,
           retryAfter,
         );
       }
 
       if (response.status === 404) {
-        throw new NpmPackageNotFoundError(
-          pkg,
-          `NPM downloads not found for package '${pkg}' (HTTP 404)`,
-          404,
-        );
+        throw new NpmPackageNotFoundError(pkg);
       }
 
       if (!response.ok) {
-        throw new NpmHttpError(
-          response.status,
-          response.statusText,
-          url,
-          `NPM downloads request failed: HTTP ${response.status} ${response.statusText} for package '${pkg}'`,
+        throw new NpmHttpError(response.status, response.statusText, url);
+      }
+
+      let text: string;
+      try {
+        text = await response.text();
+      } catch (err) {
+        throw new NpmCollectorError(
+          `Failed to read response body for npm_downloads package '${pkg}'`,
+          err,
         );
       }
 
-      const text = await response.text();
       totalBytesFetched += Buffer.byteLength(text, 'utf8');
 
       let body: Record<string, unknown>;
@@ -612,8 +756,8 @@ export class NpmDownloadsCollector extends BaseCollector {
 
           const payload: Record<string, unknown> = {
             package: pkgName,
-            day,
             downloads: dayDownloads,
+            day,
             rangeStart,
             rangeEnd,
           };
@@ -621,7 +765,7 @@ export class NpmDownloadsCollector extends BaseCollector {
           const rawItem = this.createRawItem({
             externalId,
             payload,
-            publishedAt: !Number.isNaN(publishedAt.getTime()) ? publishedAt : null,
+            publishedAt,
             cursor: null,
             metadata,
           });
@@ -654,6 +798,121 @@ export class NpmDownloadsCollector extends BaseCollector {
         durationMs: Date.now() - startTime,
       },
     };
+  }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+    const pkg =
+      request.target.selector.kind === 'package'
+        ? request.target.selector.name
+        : (this.defaultPackages[0] ?? 'typescript');
+
+    const fromDay = request.partition.window.from.toISOString().slice(0, 10);
+    const toDay = new Date(request.partition.window.to.getTime() - 1).toISOString().slice(0, 10);
+    const period = `${fromDay}:${toDay}`;
+
+    const encodedPkg = pkg.startsWith('@')
+      ? `@${encodeURIComponent(pkg.slice(1))}`
+      : encodeURIComponent(pkg);
+    const url = `${this.baseUrl}/downloads/range/${period}/${encodedPkg}`;
+
+    const urlValidation = this.guard.validateUrl(url, this.policy);
+    if (!urlValidation.valid) {
+      throw new Error(`SSRF guard rejected URL: ${urlValidation.reason}`);
+    }
+
+    const fetchClient = createHardenedFetch({
+      guard: this.guard,
+      policy: this.policy,
+      baseFetch: this.fetchFn,
+    });
+
+    const response = await fetchClient(url, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Signal Archive-Collector/1.0',
+      },
+      ...(request.signal ? { signal: request.signal } : {}),
+    });
+
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('retry-after');
+      const retryAt = retryAfter
+        ? new Date(request.now().getTime() + Number.parseInt(retryAfter, 10) * 1000)
+        : new Date(request.now().getTime() + 60000);
+      const result: CollectionPageResult = {
+        items: [],
+        nextCursor: null,
+        disposition: 'deferred',
+        reason: null,
+        retryAt,
+        requests: 1,
+        bytes: 0,
+      };
+      validatePageResult(request.partition, result);
+      return result;
+    }
+
+    if (response.status === 404) {
+      throw new NpmPackageNotFoundError(pkg);
+    }
+
+    if (!response.ok) {
+      throw new NpmHttpError(response.status, response.statusText, url);
+    }
+
+    const text = await response.text();
+    const bytesFetched = Buffer.byteLength(text, 'utf8');
+    const body = JSON.parse(text) as Record<string, unknown>;
+
+    const rangeDownloads = (body['downloads'] as Array<Record<string, unknown>> | undefined) ?? [];
+    const items: CollectedRawItem[] = [];
+    const canonicalUrl = `https://www.npmjs.com/package/${pkg}`;
+
+    for (const entry of rangeDownloads) {
+      const day = typeof entry['day'] === 'string' ? entry['day'] : null;
+      const dayDownloads = entry['downloads'];
+      if (!day || typeof dayDownloads !== 'number') continue;
+
+      const publishedAt = new Date(`${day}T23:59:59.999Z`);
+      if (
+        publishedAt.getTime() < request.partition.window.from.getTime() ||
+        publishedAt.getTime() >= request.partition.window.to.getTime()
+      ) {
+        continue;
+      }
+
+      const externalId = `npm_downloads:${pkg}:${day}`;
+      const rawItem = this.createRawItem({
+        externalId,
+        payload: entry,
+        publishedAt,
+        cursor: day,
+        metadata: {
+          package: pkg,
+          metric: 'package_downloads',
+          day,
+          downloads: dayDownloads,
+          canonicalUrl,
+        },
+      });
+      items.push(rawItem);
+    }
+
+    const result: CollectionPageResult = {
+      items,
+      nextCursor: null,
+      disposition: 'complete',
+      reason: null,
+      retryAt: null,
+      requests: 1,
+      bytes: bytesFetched,
+    };
+    validatePageResult(request.partition, result);
+    return result;
   }
 }
 
@@ -706,19 +965,4 @@ export class NpmCollector extends BaseCollector {
   collect(context: CollectionContext): Promise<CollectionResult> {
     return this.delegate.collect(context);
   }
-}
-
-/**
- * Encodes package name safely for URLs, preserving @ for scoped packages.
- */
-function encodePackageName(pkg: string): string {
-  if (pkg.startsWith('@')) {
-    const slashIdx = pkg.indexOf('/');
-    if (slashIdx !== -1) {
-      const scope = pkg.slice(0, slashIdx);
-      const name = pkg.slice(slashIdx + 1);
-      return `${scope}%2F${encodeURIComponent(name)}`;
-    }
-  }
-  return encodeURIComponent(pkg);
 }

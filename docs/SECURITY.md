@@ -204,8 +204,15 @@ Replay events contain IDs, disposition, UTC time, and bounded redacted summaries
 - 공개 데모 인증과 quota 식별자
 - 기존 보호 ops 확장의 입력·audit 상세는 COV-001 manifest로 고정하며 공개 데모 인증 방식과 혼동하지 않는다.
 - secret manager의 구체 제품 및 서버 hardening 세부값
-- 사용자 질문·답변 보존 여부
-- provider 데이터 처리 조건
 - 라이선스 귀속을 UI·API에서 표시하는 방식
 
+## 14. DEC-012 승인 통제
+
+- COV-009 provider 지출은 전체 USD 2.00 hard cap이며 unknown outcome도 소비액으로 유지한다.
+- 승인 model과 5개 GitHub Releases target만 allowlist에 넣고 불일치 시 fail closed한다.
+- Raw/document/chunk/embedding 120일, metric 365일, question/answer/prompt 30일, log 14일을
+  상한으로 적용한다. Secret, 전체 raw payload와 전체 prompt는 log에 남기지 않는다.
+- 이 승인은 운영 배포, 월간 반복 지출, 추가 target 또는 자동 fallback 권한을 주지 않는다.
+
 source 구성은 [ADR-0004](./adr/0004-initial-data-sources.md)를 따른다.
+- COV-007 (2026-09-09): fixture transport 회귀가 SSRF/private redirect, prompt injection, rights/model/budget fail-closed, byte/deadline/HTTP cap 및 immutable citation eligibility를 검증했다. live/provider enable은 하지 않았으며 COV-008 runtime gate는 남아 있다.

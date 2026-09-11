@@ -9,25 +9,90 @@ import { createDatabaseClient, DEFAULT_MIGRATIONS_FOLDER } from '../src/index.js
 const databaseUrl = process.env['DATABASE_URL_DIRECT'] ?? process.env['DATABASE_URL'];
 const suite = databaseUrl ? describe : describe.skip;
 suite('coverage forward migration', () => {
-  it('preserves an existing immutable citation while upgrading the baseline database', async () => {
+  it('applies all forward migrations cleanly to an isolated empty database with vector readiness', async () => {
     const rootUrl = new URL(databaseUrl as string);
-    if (!['127.0.0.1','localhost','postgres','postgres-persistent'].includes(rootUrl.hostname)) throw new Error('Forward migration drill requires a local isolated PostgreSQL server');
+    const isLocal =
+      ['127.0.0.1', 'localhost', '::1', 'postgres', 'postgres-persistent'].includes(
+        rootUrl.hostname,
+      ) || rootUrl.hostname.startsWith('postgres-');
+    if (!isLocal)
+      throw new Error('Forward migration drill requires a local isolated PostgreSQL server');
     const admin = createDatabaseClient(rootUrl.toString());
-    const databaseName = `coverage_forward_${randomUUID().replaceAll('-', '')}`;
-    const temporaryFolder = await mkdtemp(join(tmpdir(), 'coverage-baseline-'));
-    const url = new URL(rootUrl); url.pathname = `/${databaseName}`;
+    const databaseName = `coverage_empty_${randomUUID().replaceAll('-', '')}`;
+    const url = new URL(rootUrl);
+    url.pathname = `/${databaseName}`;
     const client = createDatabaseClient(url.toString());
     let created = false;
     try {
       await admin.db.execute(sql.raw(`CREATE DATABASE "${databaseName}"`));
       created = true;
-      const journal = JSON.parse(await readFile(join(DEFAULT_MIGRATIONS_FOLDER, 'meta', '_journal.json'), 'utf8')) as { version: string; dialect: string; entries: { idx: number; tag: string }[] };
+
+      const migResult = await client.migrate();
+      expect(migResult.applied).toBe(true);
+
+      const vectorInfo = await client.checkVector();
+      expect(vectorInfo.installed).toBe(true);
+      expect(vectorInfo.version).toBeDefined();
+
+      const journal = JSON.parse(
+        await readFile(join(DEFAULT_MIGRATIONS_FOLDER, 'meta', '_journal.json'), 'utf8'),
+      ) as { entries: { idx: number; tag: string }[] };
+
+      const appliedMigrations = await client.pool.query<{
+        id: number;
+        hash: string;
+        created_at: string;
+      }>('SELECT id, hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id ASC;');
+
+      expect(appliedMigrations.rows.length).toBe(journal.entries.length);
+
+      const smokeVector = await client.pool.query<{ dist: number }>(
+        "SELECT ('[1,0,0]'::vector <=> '[1,0,0]'::vector) AS dist;",
+      );
+      expect(smokeVector.rows.length).toBe(1);
+      expect(Number(smokeVector.rows[0]?.dist)).toBe(0);
+    } finally {
+      await client.close();
+      if (created) await admin.db.execute(sql.raw(`DROP DATABASE "${databaseName}"`));
+      await admin.close();
+    }
+  }, 30000);
+
+  it('preserves an existing immutable citation while upgrading the baseline database', async () => {
+    const rootUrl = new URL(databaseUrl as string);
+    const isLocal =
+      ['127.0.0.1', 'localhost', '::1', 'postgres', 'postgres-persistent'].includes(
+        rootUrl.hostname,
+      ) || rootUrl.hostname.startsWith('postgres-');
+    if (!isLocal)
+      throw new Error('Forward migration drill requires a local isolated PostgreSQL server');
+    const admin = createDatabaseClient(rootUrl.toString());
+    const databaseName = `coverage_forward_${randomUUID().replaceAll('-', '')}`;
+    const temporaryFolder = await mkdtemp(join(tmpdir(), 'coverage-baseline-'));
+    const url = new URL(rootUrl);
+    url.pathname = `/${databaseName}`;
+    const client = createDatabaseClient(url.toString());
+    let created = false;
+    try {
+      await admin.db.execute(sql.raw(`CREATE DATABASE "${databaseName}"`));
+      created = true;
+      const journal = JSON.parse(
+        await readFile(join(DEFAULT_MIGRATIONS_FOLDER, 'meta', '_journal.json'), 'utf8'),
+      ) as { version: string; dialect: string; entries: { idx: number; tag: string }[] };
       journal.entries = journal.entries.filter((entry) => entry.idx <= 6);
       await mkdir(join(temporaryFolder, 'meta'));
       await writeFile(join(temporaryFolder, 'meta', '_journal.json'), JSON.stringify(journal));
-      for (const entry of journal.entries) await copyFile(join(DEFAULT_MIGRATIONS_FOLDER, `${entry.tag}.sql`), join(temporaryFolder, `${entry.tag}.sql`));
+      for (const entry of journal.entries)
+        await copyFile(
+          join(DEFAULT_MIGRATIONS_FOLDER, `${entry.tag}.sql`),
+          join(temporaryFolder, `${entry.tag}.sql`),
+        );
       await client.migrate({ migrationsFolder: temporaryFolder });
-      const seeded = await client.db.execute<{ id: string; chunk_id: string; document_revision_id: string }>(sql`
+      const seeded = await client.db.execute<{
+        id: string;
+        chunk_id: string;
+        document_revision_id: string;
+      }>(sql`
         WITH d AS (INSERT INTO documents(artifact_type, canonical_url) VALUES ('article','https://example.com/authored-migration-fixture') RETURNING id),
         r AS (INSERT INTO document_revisions(document_id,title,body_text,normalized_hash,normalizer_version,status)
           SELECT id,'Authored fixture','Immutable citation body',repeat('a',64),'1','searchable' FROM d RETURNING id),
@@ -40,12 +105,25 @@ suite('coverage forward migration', () => {
       const original = seeded.rows[0];
       expect(original).toBeDefined();
       await client.migrate();
-      const checked = await client.db.execute<{ id: string; chunk_id: string; document_revision_id: string; excerpt: string; content: string; canonical_url: string; lexical_ready_at: Date | null }>(sql`
+      const checked = await client.db.execute<{
+        id: string;
+        chunk_id: string;
+        document_revision_id: string;
+        excerpt: string;
+        content: string;
+        canonical_url: string;
+        lexical_ready_at: Date | null;
+      }>(sql`
         SELECT a.id,a.chunk_id,a.document_revision_id,a.excerpt,c.content,d.canonical_url,r.lexical_ready_at
         FROM answer_citations a JOIN chunks c ON c.id=a.chunk_id JOIN document_revisions r ON r.id=a.document_revision_id JOIN documents d ON d.id=r.document_id
         WHERE a.id=${original?.id}`);
-      expect(checked.rows[0]).toMatchObject({ ...original, excerpt: 'Immutable citation body', content: 'Immutable citation body',
-        canonical_url: 'https://example.com/authored-migration-fixture', lexical_ready_at: null });
+      expect(checked.rows[0]).toMatchObject({
+        ...original,
+        excerpt: 'Immutable citation body',
+        content: 'Immutable citation body',
+        canonical_url: 'https://example.com/authored-migration-fixture',
+        lexical_ready_at: null,
+      });
       expect((await client.checkVector()).installed).toBe(true);
     } finally {
       await client.close();

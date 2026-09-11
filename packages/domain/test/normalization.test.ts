@@ -26,7 +26,7 @@ describe('PIPE-002 Deterministic Normalization Service', () => {
       payloadHash: 'a'.repeat(64),
       publishedAt: '2026-08-31T12:00:00.000Z',
       collectedAt: '2026-09-01T00:00:00.000Z',
-      rightsMetadata: { license_id: 'MIT' },
+      rightsMetadata: { licenseId: 'MIT' },
       payload: {
         id: 12345678,
         tag_name: 'v19.0.0',

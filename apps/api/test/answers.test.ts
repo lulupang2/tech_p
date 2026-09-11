@@ -40,7 +40,21 @@ describe('API-003 answers endpoint (POST /api/v1/answers)', () => {
     const chatPort = createDeterministicChatPort({
       response: 'Bun 1.1은 Node.js 호환성을 유지하면서 빠른 시작 속도를 제공합니다 [C1].',
     });
-    const searchService = createFakeSearchService(sampleHits);
+    const comparisonHits: SearchHit[] = [
+      ...sampleHits,
+      {
+        chunkId: 'chunk-102',
+        documentId: 'doc-102',
+        documentRevisionId: 'rev-102',
+        title: 'Node.js Runtime Baseline 2026',
+        content:
+          'Node.js provides the compatibility baseline used when comparing Bun startup and runtime behavior.',
+        headingPath: ['Runtime', 'Compatibility'],
+        score: 0.9,
+        publishedAt: new Date('2026-08-21T00:00:00.000Z'),
+      },
+    ];
+    const searchService = createFakeSearchService(comparisonHits);
     const answerService = createAnswerService({
       chatPort,
       searchService,
@@ -86,7 +100,7 @@ describe('API-003 answers endpoint (POST /api/v1/answers)', () => {
     assert.equal(parsed.resolvedTimeRange.to, '2026-09-01T00:00:00.000Z');
     assert.equal(parsed.resolvedTimeRange.timezone, 'Asia/Seoul');
     assert.equal(parsed.coverage.sourcesUsed, 1);
-    assert.equal(parsed.coverage.documentsConsidered, 1);
+    assert.equal(parsed.coverage.documentsConsidered, 2);
   });
 
   test('POST /api/v1/answers returns 200 OK with insufficient_evidence when no data matches', async () => {

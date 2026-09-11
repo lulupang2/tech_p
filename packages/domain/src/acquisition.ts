@@ -44,7 +44,13 @@ export interface DiscoveryCandidateRecord extends DiscoveredTarget {
 export interface DiscoveryStatePort {
   recordCandidate(candidate: DiscoveredTarget, now: Date): Promise<DiscoveryCandidateRecord>;
   listCandidates(limit: number, after?: string): Promise<readonly DiscoveryCandidateRecord[]>;
-  reviewCandidate(id: string, decision: 'accepted' | 'rejected', targetId: string | null, actor: string, now: Date): Promise<void>;
+  reviewCandidate(
+    id: string,
+    decision: 'accepted' | 'rejected',
+    targetId: string | null,
+    actor: string,
+    now: Date,
+  ): Promise<void>;
 }
 export interface AcquisitionRequest {
   readonly queryRunId: string;

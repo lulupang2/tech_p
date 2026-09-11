@@ -4,6 +4,7 @@ import {
   MetricAggregationError,
   aggregateMetricObservations,
   validateMetricObservation,
+  validateCohortMetricType,
   type MetricAggregationObservation,
 } from '../src/index.js';
 
@@ -150,6 +151,19 @@ describe('PIPE-006 deterministic metric aggregation', () => {
     assert.throws(
       () => aggregateMetricObservations([metric({ windowStart: end, windowEnd: start })]),
       /valid UTC dates/u,
+    );
+  });
+
+  test('validates cohort metric types and units deterministically', () => {
+    assert.doesNotThrow(() => validateCohortMetricType('release_activity', 'releases'));
+    assert.doesNotThrow(() => validateCohortMetricType('package_downloads', 'downloads'));
+    assert.throws(
+      () => validateCohortMetricType('unsupported_metric', 'count'),
+      /Unsupported metric type/u,
+    );
+    assert.throws(
+      () => validateCohortMetricType('release_activity', 'invalid_unit'),
+      /Invalid unit/u,
     );
   });
 });

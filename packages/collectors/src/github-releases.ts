@@ -3,8 +3,17 @@ import type {
   CollectionResult,
   CollectedRawItem,
   CollectorPort,
+  CollectorPagePort,
+  CollectionPageRequest,
+  CollectionPageResult,
   PolicyGuardPort,
   SourcePolicy,
+} from '@techpulse/domain';
+import {
+  assertCollectableTarget,
+  decodePageCursor,
+  encodePageCursor,
+  validatePageResult,
 } from '@techpulse/domain';
 import { BaseCollector } from './base.js';
 import { SOURCE_POLICIES } from './policies.js';
@@ -57,7 +66,10 @@ export interface GitHubReleasePayload {
   [key: string]: unknown;
 }
 
-export class GitHubReleasesCollector extends BaseCollector implements CollectorPort {
+export class GitHubReleasesCollector
+  extends BaseCollector
+  implements CollectorPort, CollectorPagePort
+{
   readonly sourceKey = 'github_releases' as const;
   readonly policy: SourcePolicy = SOURCE_POLICIES.github_releases;
 
@@ -278,6 +290,219 @@ export class GitHubReleasesCollector extends BaseCollector implements CollectorP
         durationMs: Date.now() - startedAt,
       },
     };
+  }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+    const targetOwner =
+      request.target.selector.kind === 'repository'
+        ? request.target.selector.owner
+        : (this.config.owner ?? 'microsoft');
+    const targetRepo =
+      request.target.selector.kind === 'repository'
+        ? request.target.selector.repository
+        : (this.config.repo ?? 'playwright');
+
+    const baseFetch = this.customFetch ?? globalThis.fetch;
+    const fetchFn = createHardenedFetch({ guard: this.guard, policy: this.policy, baseFetch });
+    const pat = this.config.pat ?? process.env['GITHUB_PAT'];
+    const perPage = request.limit > 0 ? Math.min(request.limit, 100) : (this.config.perPage ?? 30);
+
+    // Decode cursor
+    let page = 1;
+    let etag: string | undefined = undefined;
+    if (request.partition.cursor) {
+      const decoded = decodePageCursor(request.partition, request.target.capability.cursorVersion);
+      if (decoded) {
+        try {
+          const parsed = JSON.parse(decoded) as { page?: number; etag?: string };
+          if (typeof parsed.page === 'number' && parsed.page >= 1) {
+            page = parsed.page;
+          }
+          if (typeof parsed.etag === 'string') {
+            etag = parsed.etag;
+          }
+        } catch {
+          // Non-JSON fallback
+        }
+      }
+    }
+
+    const url = new URL(`https://api.github.com/repos/${targetOwner}/${targetRepo}/releases`);
+    url.searchParams.set('per_page', perPage.toString());
+    if (page > 1) {
+      url.searchParams.set('page', page.toString());
+    }
+
+    const urlValidation = this.guard.validateUrl(url.toString(), this.policy);
+    if (!urlValidation.valid) {
+      throw new Error(`SSRF guard rejected URL: ${urlValidation.reason}`);
+    }
+
+    const headers: Record<string, string> = {
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'Signal Archive-Collector/1.0',
+    };
+    if (pat) {
+      headers['Authorization'] = `Bearer ${pat}`;
+    }
+    if (etag) {
+      headers['If-None-Match'] = etag;
+    }
+
+    const requestInit: RequestInit = { method: 'GET', headers };
+    if (request.signal) {
+      requestInit.signal = request.signal;
+    }
+
+    const response = await fetchFn(url.toString(), requestInit);
+
+    // Handle 304 Not Modified
+    if (response.status === 304) {
+      const result: CollectionPageResult = {
+        items: [],
+        nextCursor: null,
+        disposition: 'complete',
+        reason: null,
+        retryAt: null,
+        requests: 1,
+        bytes: 0,
+      };
+      validatePageResult(request.partition, result);
+      return result;
+    }
+
+    // Handle 403 / 429 Rate Limit
+    if (response.status === 403 || response.status === 429) {
+      const resetHeader = response.headers.get('x-ratelimit-reset');
+      const retryAfterHeader = response.headers.get('retry-after');
+      let retryAt: Date;
+      if (resetHeader) {
+        const resetSeconds = Number.parseInt(resetHeader, 10);
+        retryAt = Number.isFinite(resetSeconds)
+          ? new Date(resetSeconds * 1000)
+          : new Date(request.now().getTime() + 60000);
+      } else if (retryAfterHeader) {
+        const afterSeconds = Number.parseInt(retryAfterHeader, 10);
+        retryAt = Number.isFinite(afterSeconds)
+          ? new Date(request.now().getTime() + afterSeconds * 1000)
+          : new Date(request.now().getTime() + 60000);
+      } else {
+        retryAt = new Date(request.now().getTime() + 60000);
+      }
+
+      const result: CollectionPageResult = {
+        items: [],
+        nextCursor: null,
+        disposition: 'deferred',
+        reason: null,
+        retryAt,
+        requests: 1,
+        bytes: 0,
+      };
+      validatePageResult(request.partition, result);
+      return result;
+    }
+
+    if (!response.ok) {
+      throw new Error(`GitHub Releases API error ${response.status}: ${response.statusText}`);
+    }
+
+    const responseText = await response.text();
+    const bytesFetched = Buffer.byteLength(responseText, 'utf8');
+    const responseEtag = response.headers.get('etag') ?? undefined;
+    const releases = JSON.parse(responseText) as GitHubReleasePayload[];
+
+    const linkHeader = response.headers.get('link');
+    const hasNextPage = linkHeader
+      ? linkHeader.includes('rel="next"')
+      : releases.length === perPage;
+
+    const items: CollectedRawItem[] = [];
+    const window = request.partition.window;
+    let reachedOlderThanWindow = false;
+
+    for (const release of releases) {
+      if (release.draft) {
+        continue;
+      }
+
+      const publishedAtStr = release.published_at;
+      const publishedAt = publishedAtStr ? new Date(publishedAtStr) : null;
+      if (!publishedAt) {
+        continue;
+      }
+
+      if (publishedAt.getTime() >= window.to.getTime()) {
+        continue;
+      }
+      if (publishedAt.getTime() < window.from.getTime()) {
+        reachedOlderThanWindow = true;
+        continue;
+      }
+
+      const payload: Record<string, unknown> = { ...release };
+      delete payload['created_at'];
+      const rawItem = this.createRawItem({
+        externalId: `github_releases:${targetOwner}/${targetRepo}:${release.id}`,
+        payload,
+        publishedAt,
+        cursor: release.published_at ?? release.id.toString(),
+        metadata: {
+          canonicalUrl: release.html_url,
+          tagName: release.tag_name,
+          repository: `${targetOwner}/${targetRepo}`,
+        },
+      });
+      items.push(rawItem);
+    }
+
+    let disposition: CollectionPageResult['disposition'];
+    let nextCursor: string | null = null;
+    let reason: string | null = null;
+
+    if (reachedOlderThanWindow) {
+      disposition = 'complete';
+      nextCursor = null;
+    } else if (hasNextPage) {
+      disposition = 'continue';
+      const nextCursorPayload = JSON.stringify({
+        page: page + 1,
+        ...(responseEtag ? { etag: responseEtag } : {}),
+      });
+      nextCursor = encodePageCursor(
+        request.partition,
+        request.target.capability.cursorVersion,
+        nextCursorPayload,
+      );
+    } else {
+      if (
+        request.target.capability.historyMode === 'feed_only' &&
+        request.partition.mode === 'backfill'
+      ) {
+        disposition = 'partial';
+        reason = 'history_unsupported';
+      } else {
+        disposition = 'complete';
+      }
+      nextCursor = null;
+    }
+
+    const result: CollectionPageResult = {
+      items,
+      nextCursor,
+      disposition,
+      reason,
+      retryAt: null,
+      requests: 1,
+      bytes: bytesFetched,
+    };
+    validatePageResult(request.partition, result);
+    return result;
   }
 }
 function readRateLimit(headers: Headers): GitHubRateLimit {

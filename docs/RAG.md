@@ -4,6 +4,10 @@
 - 작성일: 2026-09-01
 - 관련 문서: [PRD.md](./PRD.md), [DATABASE.md](./DATABASE.md)
 - 2026-09-08: [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md) A1–A6 승인. 확장 workflow는 COV 구현 대기이며 [공통 계약](./COLLECTION_CONTRACTS.md)을 따른다.
+- 2026-09-10: RAG-001의 provider-neutral 결정적 질의 parser를 구현했다. 명시 기간은 자연어 기간보다 우선하고, 모호한 단독 alias는 canonical entity로 단정하지 않는다.
+- 2026-09-10: RAG-002의 metadata-filtered hybrid candidate retrieval을 완료했다. lexical/vector는 같은 time/topic/rights/tombstone 경계를 사용하며 vector는 승인 profile과 revision 전체 chunk readiness를 요구한다.
+- 2026-09-10: RAG-005/006을 완료했다. 생성 답변은 citation allowlist·기간·verbatim-only 원문 보존을 후검증하고 실패 시 최대 1회만 재생성한다. 비교/트렌드 metric은 동일 기간 길이의 baseline과 같은 metric+unit끼리만 계산하며 baseline 0/누락은 `change=null`로 반환한다.
+- 2026-09-10: RAG-003의 RRF/recency/revision·cluster·source diversity와 RAG-004의 evidence sufficiency/context assembly를 완료했다. context는 최대 4,000 token 기본 예산 안에서 인접 chunk를 병합하고 duplicate upstream을 독립 근거로 중복 계산하지 않으며, intent별 최소 근거 미달 시 기간 확장 없이 abstain한다.
 
 ## 1. 목표와 비목표
 
@@ -94,15 +98,16 @@ MVP 초기 데이터가 작을 때는 exact vector search를 우선한다. HNSW/
 5. source와 날짜 diversity 확보
 6. 필요할 때만 bounded reranker 적용
 
-가중치, 후보 수, decay half-life는 [EXP-002](./experiments/EXP-002-retrieval.md)에서 결정한다. 최종 score는 사용자에게 “관심도”로 표시하지 않는다.
+EXP-002 실패 분석을 반영한 RAG-003의 고정 구성은 lexical/vector 후보 각 30개, RRF `k=60`, recency half-life 30일, revision·duplicate cluster당 최대 2개다. 둘 이상의 source가 있을 때 한 source는 최종 후보의 60%까지만 허용한다. 후보가 한 source뿐이면 해당 cap을 적용하지 않아 근거를 불필요하게 버리지 않는다. 최종 score는 사용자에게 “관심도”로 표시하지 않는다.
 
 ### 5.3 Context assembly
 
 - chunk별 stable citation ID를 부여한다.
-- 같은 document의 인접 chunk는 token budget 안에서 합친다.
+- 같은 revision에서 ordinal이 연속되고 heading path가 같은 인접 chunk는 token budget 안에서 합친다.
 - title, source, published_at, canonical URL, excerpt를 모델 context와 분리된 metadata로 전달한다.
-- 여러 출처가 같은 upstream 발표를 복제하면 하나의 독립 근거로 과대계산하지 않는다.
-- context 예산의 일부를 상충 근거와 데이터 한계에 확보한다.
+- `duplicateClusterId`가 같은 upstream 복제본은 하나만 남기고, cluster metadata가 없는 경우 동일 title+content의 완전 중복도 억제한다.
+- 기본 context 예산은 4,000 token이며 명시된 더 작은 예산도 그대로 지켜 초과하지 않는다. 예산 초과 후보는 우선순위를 유지한 채 제외한다.
+- budget 적용과 duplicate suppression 이후의 최종 evidence 집합으로 충분성을 다시 판정한다.
 
 ### 5.4 Coverage와 제한적 근거 취득
 
@@ -161,9 +166,10 @@ Stack Exchange가 이 규칙의 적용 대상이다.
 
 ## 8. 근거 부족과 충돌
 
-- 최소 독립 근거 수는 query intent별로 설정하고 평가로 확정한다.
-- 공식 업데이트 질문은 공식 source 하나만으로도 답할 수 있으나 그 성격을 표시한다.
-- 트렌드 일반화는 source diversity가 부족하면 “관찰된 소스 내”로 범위를 제한한다.
+- `recent_updates`, `trend_summary`는 최소 1개 독립 document revision을 요구한다.
+- `compare_interest`는 최소 2개이며, 파싱된 비교 entity 수가 2보다 많으면 그 수만큼 독립 document revision을 요구한다.
+- `emerging_topics`는 최소 2개 독립 document revision을 요구한다.
+- 공식 업데이트 질문은 공식 source 하나만으로도 답할 수 있다. 트렌드 일반화는 source diversity가 부족하면 “관찰된 소스 내”로 범위를 제한한다.
 - 상충하는 버전·날짜는 한쪽을 임의 선택하지 않고 양쪽을 인용한다.
 - 최근 데이터가 없으면 검색 기간을 몰래 넓히지 않는다. 제안은 할 수 있지만 사용한 기간을 명시한다.
 
@@ -214,6 +220,12 @@ Stack Exchange가 이 규칙의 적용 대상이다.
 
 질문 목록과 라벨 규칙은 [EVAL_GOLDEN_SET.md](./EVAL_GOLDEN_SET.md)에 있다. 사용자 예시 4개를 포함해 한국어·영어, 기간 경계, 별칭, 데이터 없음, 상충 출처, prompt injection 문서, 라이선스 제약 source를 포함한다. 상세 프로토콜은 [EXP-002](./experiments/EXP-002-retrieval.md)와 [EXP-003](./experiments/EXP-003-model-providers.md)에 있다.
 
+### EVAL-002 execution boundary
+
+앱 내부 [release runner](./experiments/eval-002/README.md)는 평가에서 embedding→FTS fallback, 추가 lexical 검색, acquisition과 답변 재생성을 끈다. 제품의 기존 recovery 옵션을 전역으로 제거한 것이 아니다. 실제 첫 10개 chunk rank에서 revision별 relevance gain을 한 번만 부여하는 `chunk-cutoff10-unique-revision-v2`를 기록하고 이전 dedup-first 점수와 직접 비교하지 않는다.
+
+고정 label membership·target·window는 DB snapshot에 대조한다. 카운트 일치만으로 corpus completeness를 선언하지 않는다. 43개 applicability는 기존 라벨을 유지한 draft이며, citation identity가 맞다는 이유만으로 의미적 precision/coverage를 계산하거나 사람 검토를 대신하지 않는다. 과거 누적 call cap 초과 때문에 추가 live 실행은 신규/변경 승인 전 차단된다.
+
 ## 12. Alternatives와 Recommendation
 
 | 선택 | Alternatives | Recommendation | 상태 |
@@ -229,3 +241,4 @@ Stack Exchange가 이 규칙의 적용 대상이다.
 - [LangGraph.js overview](https://docs.langchain.com/oss/javascript/langgraph/overview)
 - [LangGraph workflows and agents](https://docs.langchain.com/oss/javascript/langgraph/workflows-agents)
 - [pgvector hybrid search and indexing](https://github.com/pgvector/pgvector)
+- COV-007 (2026-09-09): 임의 live fallback을 `BoundedAcquisitionPort` 기반으로 교체했다. local evidence 충분 시 외부 호출 0회, 부족 branch만 1회 재검색과 승인된 bounded limits를 사용한다. COV-008 runtime cutover 및 provider/live gate는 미완료다.

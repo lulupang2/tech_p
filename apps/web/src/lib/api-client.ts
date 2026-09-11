@@ -1,5 +1,8 @@
+import { Value } from '@sinclair/typebox/value';
 import {
   ContractValidationError,
+  COVERAGE_ROUTES,
+  CoverageReportSchema,
   parseAnswerResponse,
   parseHealthLiveResponse,
   parseHealthReadyResponse,
@@ -9,6 +12,8 @@ import {
   safeParseErrorEnvelope,
   type AnswerRequest,
   type AnswerResponse,
+  type CoverageQuery,
+  type CoverageReportResponse,
   type ErrorCode,
   type ErrorEnvelope,
   type HealthLiveResponse,
@@ -227,6 +232,40 @@ export class ApiClient {
     }
   }
 
+  /**
+   * Query corpus data coverage report over a specified time range.
+   * GET /api/v1/coverage
+   */
+  async getCoverage(
+    query: CoverageQuery,
+    options?: RequestOptions,
+  ): Promise<CoverageReportResponse> {
+    const searchParams = new URLSearchParams();
+    searchParams.set('from', query.from);
+    searchParams.set('to', query.to);
+    if (query.topicId) {
+      searchParams.set('topicId', query.topicId);
+    }
+
+    const path = `${COVERAGE_ROUTES.coverage}?${searchParams.toString()}`;
+    const url = this.buildUrl(path);
+    const json = await this.request(url, options);
+
+    try {
+      if (!Value.Check(CoverageReportSchema, json)) {
+        const issues: ValidationIssue[] = [...Value.Errors(CoverageReportSchema, json)].map(
+          (err) => ({
+            path: err.path,
+            reason: err.message || 'invalid_coverage_report',
+          }),
+        );
+        throw new ContractValidationError(issues);
+      }
+      return json as CoverageReportResponse;
+    } catch (err) {
+      throw this.createContractValidationError(err, 'CoverageReportResponse');
+    }
+  }
   /**
    * Natural-language Q&A answer endpoint status.
    * Following API-003 integration, the answer endpoint is operational.

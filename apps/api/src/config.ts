@@ -74,19 +74,21 @@ export function loadApiConfig(env: Environment = process.env): ApiConfig {
   const port = parsePort(env['PORT'], issues);
   if (issues.length > 0) throw new ApiConfigError(issues);
   const aiChatApiKey = env['AI_CHAT_API_KEY'] || env['RUNINFRA_API_KEY'] || env['OPENAI_API_KEY'];
-  const aiChatBaseUrl = env['AI_CHAT_BASE_URL'];
-  const aiChatModel = env['AI_CHAT_MODEL'];
+  const aiChatBaseUrl = env['AI_CHAT_BASE_URL'] || env['OPENAI_BASE_URL'];
+  const aiChatModel = env['AI_CHAT_MODEL'] || env['OPENAI_CHAT_MODEL'];
   const aiChatTimeoutMs =
     env['AI_CHAT_TIMEOUT_MS'] && /^\d+$/u.test(env['AI_CHAT_TIMEOUT_MS'])
       ? Number(env['AI_CHAT_TIMEOUT_MS'])
       : undefined;
 
-  const aiEmbeddingApiKey = env['AI_EMBEDDING_API_KEY'] || env['OPENROUTER_API_KEY'];
-  const aiEmbeddingBaseUrl = env['AI_EMBEDDING_BASE_URL'];
-  const aiEmbeddingModel = env['AI_EMBEDDING_MODEL'];
+  const aiEmbeddingApiKey =
+    env['AI_EMBEDDING_API_KEY'] || env['EMBEDDING_API_KEY'] || env['OPENROUTER_API_KEY'];
+  const aiEmbeddingBaseUrl = env['AI_EMBEDDING_BASE_URL'] || env['EMBEDDING_BASE_URL'];
+  const aiEmbeddingModel = env['AI_EMBEDDING_MODEL'] || env['EMBEDDING_MODEL'];
   const aiEmbeddingDimensions =
-    env['AI_EMBEDDING_DIMENSIONS'] && /^\d+$/u.test(env['AI_EMBEDDING_DIMENSIONS'])
-      ? Number(env['AI_EMBEDDING_DIMENSIONS'])
+    (env['AI_EMBEDDING_DIMENSIONS'] || env['EMBEDDING_DIMENSIONS']) &&
+    /^\d+$/u.test((env['AI_EMBEDDING_DIMENSIONS'] || env['EMBEDDING_DIMENSIONS'])!)
+      ? Number(env['AI_EMBEDDING_DIMENSIONS'] || env['EMBEDDING_DIMENSIONS'])
       : undefined;
   const corsRaw = env['CORS_ALLOWED_ORIGINS'] || env['API_CORS_ALLOWED_ORIGINS'];
   const corsAllowedOrigins = corsRaw

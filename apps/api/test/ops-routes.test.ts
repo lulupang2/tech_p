@@ -8,6 +8,8 @@ import {
   type SourceRepositoryPort,
   type CollectionRunRecord,
   type CollectionRunRepositoryPort,
+  type CollectionStatePort,
+  type CollectionTargetRevision,
   type TombstoneServicePort,
   type CreateTombstoneInput,
   type TombstoneResult,
@@ -332,11 +334,15 @@ describe('API-004 Protected Operations Interface and Authentication Controls', (
     };
     const publishedJobs: unknown[] = [];
     const replayPublisher: ReplayPublisherPort = {
-      async publish(job) {
+      async replan(request) {
+        publishedJobs.push(request);
+        return { duplicate: false, deliveryIds: ['11111111-1111-4111-8111-111111111111'] };
+      },
+      async publish(job: unknown) {
         publishedJobs.push(job);
         return { duplicate: false };
       },
-    };
+    } as unknown as ReplayPublisherPort;
     const replayService = createReplayService({
       targets: replayTargets,
       publisher: replayPublisher,
@@ -415,7 +421,7 @@ describe('API-004 Protected Operations Interface and Authentication Controls', (
     assert.equal(resOk.status, 200);
     const bodyOk = (await resOk.json()) as Record<string, unknown>;
     assert.equal(bodyOk['status'], 'queued');
-    assert.equal(bodyOk['replayId'], 'replay:v1:stage:raw-item-99:normalization');
+    assert.equal(bodyOk['replayId'], 'replay:v2:stage:raw-item-99:normalization');
     assert.equal(bodyOk['jobsCount'], 1);
 
     // Check audit logs
@@ -424,6 +430,23 @@ describe('API-004 Protected Operations Interface and Authentication Controls', (
     const latestAudit = replayAudits[replayAudits.length - 1]!;
     assert.equal(latestAudit.actor, 'replay_admin');
     assert.equal(latestAudit.data['stage'], 'normalization');
+    // 5. Unbound replay service -> 503 DEPENDENCY_UNAVAILABLE
+    const unboundApp = createApp({ opsApiKey: 'valid-secret-ops-key' });
+    const unboundRes = await unboundApp.handle(
+      new Request('http://localhost/api/v1/ops/pipeline-replays', {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer valid-secret-ops-key',
+          'content-type': 'application/json',
+          'idempotency-key': 'idem-replay-unbound',
+        },
+        body: JSON.stringify({
+          scope: 'run',
+          targetId: 'run-123',
+        }),
+      }),
+    );
+    assert.equal(unboundRes.status, 503);
   });
 
   test('source enable and disable operations with tombstone and reindex', async () => {
@@ -651,11 +674,27 @@ describe('API-004 Protected Operations Interface and Authentication Controls', (
     const sourceRepo = createFakeSourceRepository(sampleSources);
     const runRepo = createFakeCollectionRunRepository();
     const tombstoneService = createFakeTombstoneService();
+    const replayService = createReplayService({
+      targets: {
+        async exists() {
+          return true;
+        },
+        async isEnabled() {
+          return true;
+        },
+      },
+      publisher: {
+        async replan() {
+          return { duplicate: false, deliveryIds: ['11111111-1111-4111-8111-111111111111'] };
+        },
+      },
+    });
 
     const app = createApp({
       sourceRepository: sourceRepo,
       collectionRunRepository: runRepo,
       tombstoneService,
+      replayService,
       opsApiKey: 'cli-secret-key-99',
     });
 
@@ -690,7 +729,7 @@ describe('API-004 Protected Operations Interface and Authentication Controls', (
       { appHandler },
     );
     assert.equal(replayRes.exitCode, 0);
-    assert.equal((replayRes.output as Record<string, unknown>)['status'], 'accepted');
+    assert.equal((replayRes.output as Record<string, unknown>)['status'], 'queued');
 
     // 6. Source disable command
     const disableRes = await runOpsCli(
@@ -707,5 +746,152 @@ describe('API-004 Protected Operations Interface and Authentication Controls', (
     );
     assert.equal(enableRes.exitCode, 0);
     assert.equal((enableRes.output as Record<string, unknown>)['enabled'], true);
+  });
+
+  test('Target registration: uses RegisterTargetSchema, enforces enabled:false, resolves trusted policy', async () => {
+    const targets = new Map<string, CollectionTargetRevision>();
+    const fakeCollectionStatePort: CollectionStatePort = {
+      async registerTarget(input) {
+        const targetId = '11111111-1111-4111-8111-111111111111';
+        const revisionId = '22222222-2222-4222-8222-222222222222';
+        const record: CollectionTargetRevision = {
+          id: revisionId,
+          targetId,
+          sourceId: input.sourceId,
+          sourceKey: input.sourceKey,
+          canonicalIdentity: input.canonicalIdentity,
+          configHash: 'hash123',
+          selector: input.selector,
+          capability: input.capability,
+          policy: input.policy,
+          topicIds: input.topicIds,
+          taxonomyVersion: input.taxonomyVersion,
+          enabled: false,
+          cadenceMs: input.cadenceMs,
+          overlapMs: input.overlapMs,
+          createdAt: new Date(),
+        };
+        targets.set(targetId, record);
+        return record;
+      },
+      async getTargetRevision(id) {
+        return targets.get(id) ?? null;
+      },
+      async setTargetEnabled(targetId, enabled) {
+        const existing = targets.get(targetId);
+        if (existing) {
+          targets.set(targetId, { ...existing, enabled });
+        }
+      },
+      async listTargets() {
+        return Array.from(targets.values());
+      },
+    } as unknown as CollectionStatePort;
+
+    const app = createApp({
+      collectionStatePort: fakeCollectionStatePort,
+      opsApiKey: 'ops-target-secret',
+    });
+
+    const validTargetPayload = {
+      sourceId: '11111111-1111-4111-8111-111111111111',
+      sourceKey: 'github_releases',
+      canonicalIdentity: 'github_releases:facebook:react',
+      selector: { kind: 'repository', owner: 'facebook', repository: 'react' },
+      capability: {
+        historyMode: 'paginated_history',
+        timeBasis: 'published_at',
+        cursorVersion: 1,
+        canSearch: true,
+        canDiscover: true,
+        stablePagination: true,
+        canCollect: true,
+        reviewedAt: '2026-09-08T00:00:00.000Z',
+        earliestAvailableAt: null,
+      },
+      policyVersion: '1.0.0',
+      topicIds: ['22222222-2222-4222-8222-222222222222'],
+      taxonomyVersion: '1.0.0',
+      enabled: false,
+      cadenceMs: 3600000,
+      overlapMs: 300000,
+    };
+
+    // 1. Attempt to register target with enabled: true -> 400 rejection
+    const enabledReqRes = await app.handle(
+      new Request('http://localhost/api/v1/ops/targets', {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer ops-target-secret',
+          'content-type': 'application/json',
+          'idempotency-key': 'idem-target-1',
+        },
+        body: JSON.stringify({ ...validTargetPayload, enabled: true }),
+      }),
+    );
+    assert.equal(enabledReqRes.status, 400);
+
+    // 2. Attempt to register with unreviewed policy version -> 400 rejection
+    const invalidPolicyVerRes = await app.handle(
+      new Request('http://localhost/api/v1/ops/targets', {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer ops-target-secret',
+          'content-type': 'application/json',
+          'idempotency-key': 'idem-target-2',
+        },
+        body: JSON.stringify({ ...validTargetPayload, policyVersion: '99.9.9' }),
+      }),
+    );
+    assert.equal(invalidPolicyVerRes.status, 400);
+
+    // 3. Register target successfully with trusted server-resolved policy
+    const successRes = await app.handle(
+      new Request('http://localhost/api/v1/ops/targets', {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer ops-target-secret',
+          'content-type': 'application/json',
+          'idempotency-key': 'idem-target-3',
+        },
+        body: JSON.stringify(validTargetPayload),
+      }),
+    );
+    assert.equal(successRes.status, 200);
+    const targetResult = (await successRes.json()) as CollectionTargetRevision;
+    assert.equal(targetResult.targetId, '11111111-1111-4111-8111-111111111111');
+    assert.equal(targetResult.enabled, false);
+    assert.equal(targetResult.policy.approved, true);
+    assert.equal(targetResult.policy.version, '1.0.0');
+
+    // 4. Enable registered target
+    const enableRes = await app.handle(
+      new Request(`http://localhost/api/v1/ops/targets/${targetResult.targetId}/enable`, {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer ops-target-secret',
+          'idempotency-key': 'idem-target-4',
+        },
+      }),
+    );
+    assert.equal(enableRes.status, 200);
+    const enableBody = (await enableRes.json()) as Record<string, unknown>;
+    assert.equal(enableBody['status'], 'ok');
+    assert.equal(enableBody['enabled'], true);
+
+    // 5. Disable target
+    const disableRes = await app.handle(
+      new Request(`http://localhost/api/v1/ops/targets/${targetResult.targetId}/disable`, {
+        method: 'POST',
+        headers: {
+          authorization: 'Bearer ops-target-secret',
+          'idempotency-key': 'idem-target-5',
+        },
+      }),
+    );
+    assert.equal(disableRes.status, 200);
+    const disableBody = (await disableRes.json()) as Record<string, unknown>;
+    assert.equal(disableBody['status'], 'ok');
+    assert.equal(disableBody['enabled'], false);
   });
 });

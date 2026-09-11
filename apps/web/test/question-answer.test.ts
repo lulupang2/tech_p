@@ -580,5 +580,78 @@ describe('QuestionAnswer Component & QA Flow', () => {
       assert.equal(html.includes('unbounded-tag'), false);
       assert.equal(html.includes('전체 기간 (최신 데이터)'), false);
     });
+
+    it('truthfully renders coverage limitation reasons (processing_pending, raw_shortage, period_gap, unknown)', () => {
+      const limitedResponse: AnswerResponse = {
+        requestId: 'req_limited',
+        answerId: 'ans_limited',
+        status: 'insufficient_evidence',
+        intent: 'trend_summary',
+        resolvedTimeRange: {
+          from: '2026-08-01T00:00:00.000Z',
+          to: '2026-09-01T00:00:00.000Z',
+          timezone: 'UTC',
+        },
+        answer: null,
+        observations: [],
+        citations: [],
+        coverage: {
+          dataFreshThrough: '2026-09-01T00:00:00.000Z',
+          sourcesUsed: 2,
+          documentsConsidered: 15,
+          limitations: [
+            'processing_pending: 3 partitions still indexing',
+            'raw_shortage: sparse collection in 2026-08',
+            'period_gap: no documents between 2026-08-15 and 2026-08-20',
+          ],
+        },
+      };
+
+      const { html } = render(QuestionAnswer, {
+        props: {
+          client: dummyClient,
+          initialResponse: limitedResponse,
+        },
+      });
+
+      assert.ok(html.includes('Insufficient Evidence') || html.includes('근거 부족'));
+      assert.ok(html.includes('processing_pending'));
+      assert.ok(html.includes('raw_shortage'));
+      assert.ok(html.includes('period_gap'));
+      assert.ok(html.includes('2026-08-01 00:00:00 UTC'));
+      assert.ok(html.includes('2026-09-01 00:00:00 UTC'));
+    });
+
+    it('truthfully renders unsupported_intent status notice', () => {
+      const unsupportedResponse: AnswerResponse = {
+        requestId: 'req_unsupported',
+        answerId: 'ans_unsupported',
+        status: 'unsupported_intent',
+        intent: 'unsupported_intent',
+        resolvedTimeRange: {
+          from: '2026-08-01T00:00:00.000Z',
+          to: '2026-09-01T00:00:00.000Z',
+          timezone: 'UTC',
+        },
+        answer: null,
+        observations: [],
+        citations: [],
+        coverage: {
+          dataFreshThrough: '2026-09-01T00:00:00.000Z',
+          sourcesUsed: 0,
+          documentsConsidered: 0,
+          limitations: [],
+        },
+      };
+
+      const { html } = render(QuestionAnswer, {
+        props: {
+          client: dummyClient,
+          initialResponse: unsupportedResponse,
+        },
+      });
+
+      assert.ok(html.includes('Unsupported Intent') || html.includes('지원하지 않는 질문'));
+    });
   });
 });

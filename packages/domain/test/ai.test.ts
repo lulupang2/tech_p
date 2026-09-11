@@ -1,6 +1,7 @@
 import { describe, expect, test, vi } from 'vitest';
 import {
   AiProviderError,
+  AiRateLimitError,
   AiTimeoutError,
   UnsupportedAiInputError,
   createDeterministicChatPort,
@@ -31,7 +32,12 @@ describe('provider-neutral deterministic AI ports', () => {
     const second = await embedding.embed(request);
     expect(second).toEqual(first);
     expect(first.vector).toHaveLength(4);
-    expect(first.metadata).toEqual({ model: 'test-embed', dimensions: 4, latencyMs: 0 });
+    expect(first.metadata).toEqual({
+      model: 'test-embed',
+      dimensions: 4,
+      latencyMs: 0,
+      usage: { inputTokens: 2, totalTokens: 2 },
+    });
   });
 
   test('timeout rejects after deterministic fake latency elapses', async () => {
@@ -148,6 +154,7 @@ describe('OpenAI-compatible HTTP AI ports', () => {
       model: 'custom-model',
       messages: [{ role: 'user', content: 'What is Bun?' }],
       temperature: 0.2,
+      response_format: { type: 'json_object' },
     });
   });
 
@@ -196,6 +203,7 @@ describe('OpenAI-compatible HTTP AI ports', () => {
         JSON.stringify({
           model: 'perplexity/pplx-embed-v1-0.6b',
           data: [{ embedding: [0.1, 0.2, 0.3, 0.4] }],
+          usage: { prompt_tokens: 2, total_tokens: 2 },
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } },
       );
@@ -213,5 +221,90 @@ describe('OpenAI-compatible HTTP AI ports', () => {
     expect(result.vector).toEqual([0.1, 0.2, 0.3, 0.4]);
     expect(result.metadata.dimensions).toBe(4);
     expect(result.metadata.model).toBe('perplexity/pplx-embed-v1-0.6b');
+    expect(result.metadata.usage).toEqual({ inputTokens: 2, totalTokens: 2 });
+  });
+
+  test('maps an explicitly accepted provider model alias to the configured model', async () => {
+    const embedding = createOpenAiCompatibleEmbeddingPort({
+      apiKey: 'openrouter-key',
+      model: 'perplexity/pplx-embed-v1-0.6b',
+      dimensions: 2,
+      acceptedResponseModels: ['pplx-embed-v1-0.6b'],
+      fetchFn: async () =>
+        new Response(
+          JSON.stringify({
+            model: 'pplx-embed-v1-0.6b',
+            data: [{ embedding: [0.1, 0.2] }],
+            usage: { prompt_tokens: 1, total_tokens: 1 },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+    });
+
+    const result = await embedding.embed({ input: 'test' });
+    expect(result.metadata.model).toBe('perplexity/pplx-embed-v1-0.6b');
+  });
+
+  test('rejects a provider model outside the explicit response allowlist', async () => {
+    const embedding = createOpenAiCompatibleEmbeddingPort({
+      apiKey: 'openrouter-key',
+      model: 'perplexity/pplx-embed-v1-0.6b',
+      dimensions: 2,
+      acceptedResponseModels: ['pplx-embed-v1-0.6b'],
+      fetchFn: async () =>
+        new Response(
+          JSON.stringify({
+            model: 'other/model',
+            data: [{ embedding: [0.1, 0.2] }],
+            usage: { prompt_tokens: 1, total_tokens: 1 },
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+    });
+
+    await expect(embedding.embed({ input: 'test' })).rejects.toMatchObject({
+      name: 'AiProviderError',
+      message: 'AI provider response model mismatch',
+    });
+  });
+
+  test('normalizes HTTP 429 and Retry-After without reading provider error bodies', async () => {
+    const chat = createOpenAiCompatibleChatPort({
+      apiKey: 'rate-secret',
+      fetchFn: async () =>
+        new Response('sensitive upstream body', {
+          status: 429,
+          headers: { 'Retry-After': '7' },
+        }),
+    });
+
+    await expect(
+      chat.complete({ messages: [{ role: 'user', content: 'hi' }] }),
+    ).rejects.toMatchObject({
+      name: 'AiRateLimitError',
+      kind: 'rate_limited',
+      retryable: true,
+      retryAfterMs: 7000,
+      message: 'AI provider rate limit exceeded',
+    });
+    expect(AiRateLimitError).toBeDefined();
+  });
+
+  test('rejects successful responses with missing billing usage', async () => {
+    const chat = createOpenAiCompatibleChatPort({
+      apiKey: 'test-key',
+      fetchFn: async () =>
+        new Response(JSON.stringify({ choices: [{ message: { content: '{}' } }] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    });
+
+    await expect(
+      chat.complete({ messages: [{ role: 'user', content: 'hi' }] }),
+    ).rejects.toMatchObject({
+      name: 'AiProviderError',
+      message: 'AI provider response missing valid usage',
+    });
   });
 });

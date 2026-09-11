@@ -1,14 +1,33 @@
 import { and, eq, sql } from 'drizzle-orm';
-import { collectionHash, ProviderBudgetError, type EmbeddingWorkPort, type EmbeddingWork, type EmbeddingWorkState } from '@techpulse/domain';
+import {
+  collectionHash,
+  ProviderBudgetError,
+  type EmbeddingWorkPort,
+  type EmbeddingWork,
+  type EmbeddingWorkState,
+} from '@techpulse/domain';
 import type { DatabaseClient } from './client.js';
-import { embeddingWorkItems, embeddings, providerBudgetReservations, providerBudgetScopes, chunks } from './schema/index.js';
+import {
+  embeddingWorkItems,
+  embeddings,
+  providerBudgetReservations,
+  providerBudgetScopes,
+  chunks,
+} from './schema/index.js';
 
 type Database = DatabaseClient['db'];
 type Executor = Pick<Database, 'select' | 'execute'>;
 type WorkRow = typeof embeddingWorkItems.$inferSelect;
 function workRecord(row: WorkRow, vector: readonly number[] | null = null): EmbeddingWork {
-  return { id: row.id, key: { chunkId: row.chunkId, inputHash: row.inputHash, profile: row.profile },
-    state: row.state as EmbeddingWorkState, epoch: row.leaseEpoch, leaseUntil: row.leaseUntil, vector, reservationId: row.reservationId };
+  return {
+    id: row.id,
+    key: { chunkId: row.chunkId, inputHash: row.inputHash, profile: row.profile },
+    state: row.state as EmbeddingWorkState,
+    epoch: row.leaseEpoch,
+    leaseUntil: row.leaseUntil,
+    vector,
+    reservationId: row.reservationId,
+  };
 }
 async function checkWorkRights(tx: Executor, row: WorkRow): Promise<void> {
   const result = await tx.execute(sql`SELECT c.id FROM chunks c
@@ -33,74 +52,236 @@ export function createEmbeddingWorkRepository(db: Database): EmbeddingWorkPort {
   return {
     async claimOrReadCompleted(key, now, leaseMs) {
       const profile = key.profile;
-      if (!profile.provider || !profile.model || !profile.version || !profile.priceVersion || !profile.tokenizerVersion || !profile.approvalReference ||
-        !Number.isSafeInteger(profile.dimensions) || profile.dimensions < 1 || profile.dimensions > 16000 ||
-        !Number.isSafeInteger(leaseMs) || leaseMs < 1000 || leaseMs > 300000) throw new ProviderBudgetError('invalid_usage');
+      if (
+        !profile.provider ||
+        !profile.model ||
+        !profile.version ||
+        !profile.priceVersion ||
+        !profile.tokenizerVersion ||
+        !profile.approvalReference ||
+        !Number.isSafeInteger(profile.dimensions) ||
+        profile.dimensions < 1 ||
+        profile.dimensions > 16000 ||
+        !Number.isSafeInteger(leaseMs) ||
+        leaseMs < 1000 ||
+        leaseMs > 300000
+      )
+        throw new ProviderBudgetError('invalid_usage');
       const workKey = collectionHash(key);
       return db.transaction(async (tx) => {
-        const [chunk] = await tx.select({ hash: chunks.contentHash }).from(chunks).where(eq(chunks.id, key.chunkId));
+        const [chunk] = await tx
+          .select({ hash: chunks.contentHash })
+          .from(chunks)
+          .where(eq(chunks.id, key.chunkId));
         if (!chunk || chunk.hash !== key.inputHash) throw new ProviderBudgetError('stale_work');
-        await tx.insert(embeddingWorkItems).values({ workKey, chunkId: key.chunkId, inputHash: key.inputHash, profile: key.profile, createdAt: now, updatedAt: now }).onConflictDoNothing();
-        const [row] = await tx.select().from(embeddingWorkItems).where(eq(embeddingWorkItems.workKey, workKey)).for('update');
+        await tx
+          .insert(embeddingWorkItems)
+          .values({
+            workKey,
+            chunkId: key.chunkId,
+            inputHash: key.inputHash,
+            profile: key.profile,
+            createdAt: now,
+            updatedAt: now,
+          })
+          .onConflictDoNothing();
+        const [row] = await tx
+          .select()
+          .from(embeddingWorkItems)
+          .where(eq(embeddingWorkItems.workKey, workKey))
+          .for('update');
         if (!row) throw new ProviderBudgetError('stale_work');
         await checkWorkRights(tx, row);
         if (row.state === 'completed') {
-          const [embedding] = await tx.select().from(embeddings).where(eq(embeddings.id, row.embeddingId ?? '00000000-0000-0000-0000-000000000000'));
-          if (!embedding || embedding.dimensions !== profile.dimensions || embedding.profileHash !== collectionHash(profile)) throw new ProviderBudgetError('stale_work');
+          const [embedding] = await tx
+            .select()
+            .from(embeddings)
+            .where(eq(embeddings.id, row.embeddingId ?? '00000000-0000-0000-0000-000000000000'));
+          if (
+            !embedding ||
+            embedding.dimensions !== profile.dimensions ||
+            embedding.profileHash !== collectionHash(profile)
+          )
+            throw new ProviderBudgetError('stale_work');
           return workRecord(row, embedding.embedding);
         }
         if (row.state === 'outcome_unknown') return workRecord(row);
+        if (row.state === 'failed') return workRecord(row);
         if (row.leaseUntil && row.leaseUntil > now) return null;
         if (row.state === 'calling') {
-          const [unknown] = await tx.update(embeddingWorkItems).set({ state: 'outcome_unknown', updatedAt: now }).where(eq(embeddingWorkItems.id, row.id)).returning();
-          if (row.reservationId) await tx.update(providerBudgetReservations).set({ state: 'outcome_unknown', updatedAt: now })
-            .where(and(eq(providerBudgetReservations.id, row.reservationId), eq(providerBudgetReservations.state, 'reserved')));
+          const [unknown] = await tx
+            .update(embeddingWorkItems)
+            .set({ state: 'outcome_unknown', updatedAt: now })
+            .where(eq(embeddingWorkItems.id, row.id))
+            .returning();
+          if (row.reservationId)
+            await tx
+              .update(providerBudgetReservations)
+              .set({ state: 'outcome_unknown', updatedAt: now })
+              .where(
+                and(
+                  eq(providerBudgetReservations.id, row.reservationId),
+                  eq(providerBudgetReservations.state, 'reserved'),
+                ),
+              );
           if (!unknown) throw new ProviderBudgetError('stale_work');
           return workRecord(unknown);
         }
-        const [claimed] = await tx.update(embeddingWorkItems).set({ state: 'claimed', leaseEpoch: row.leaseEpoch + 1,
-          leaseUntil: new Date(now.getTime() + leaseMs), reservationId: null, updatedAt: now }).where(eq(embeddingWorkItems.id, row.id)).returning();
+        const [claimed] = await tx
+          .update(embeddingWorkItems)
+          .set({
+            state: 'claimed',
+            leaseEpoch: row.leaseEpoch + 1,
+            leaseUntil: new Date(now.getTime() + leaseMs),
+            reservationId: null,
+            updatedAt: now,
+          })
+          .where(eq(embeddingWorkItems.id, row.id))
+          .returning();
         if (!claimed) throw new ProviderBudgetError('stale_work');
         return workRecord(claimed);
       });
     },
     async beginCall(id, epoch, reservationId, now) {
       await db.transaction(async (tx) => {
-        const [work] = await tx.select().from(embeddingWorkItems).where(eq(embeddingWorkItems.id, id)).for('update');
-        if (!work || work.state !== 'claimed' || work.leaseEpoch !== epoch || !work.leaseUntil || work.leaseUntil <= now) throw new ProviderBudgetError('stale_work');
-        const [candidate] = await tx.select({ scopeId: providerBudgetReservations.scopeId }).from(providerBudgetReservations).where(eq(providerBudgetReservations.id, reservationId));
+        const [work] = await tx
+          .select()
+          .from(embeddingWorkItems)
+          .where(eq(embeddingWorkItems.id, id))
+          .for('update');
+        if (
+          !work ||
+          work.state !== 'claimed' ||
+          work.leaseEpoch !== epoch ||
+          !work.leaseUntil ||
+          work.leaseUntil <= now
+        )
+          throw new ProviderBudgetError('stale_work');
+        const [candidate] = await tx
+          .select({ scopeId: providerBudgetReservations.scopeId })
+          .from(providerBudgetReservations)
+          .where(eq(providerBudgetReservations.id, reservationId));
         if (!candidate) throw new ProviderBudgetError('reservation_conflict');
-        const [scope] = await tx.select().from(providerBudgetScopes).where(eq(providerBudgetScopes.id, candidate.scopeId)).for('update');
-        const [reservation] = await tx.select().from(providerBudgetReservations).where(eq(providerBudgetReservations.id, reservationId)).for('update');
-        if (!reservation || reservation.state !== 'reserved' || reservation.lane !== 'ingestion_embedding' ||
-            reservation.attemptId !== `${id}:${epoch}`) throw new ProviderBudgetError('reservation_conflict');
-        if (!scope?.approved || scope.blocked || !scope.approvedModelProfiles.includes(collectionHash(work.profile))) throw new ProviderBudgetError('approval_required');
+        const [scope] = await tx
+          .select()
+          .from(providerBudgetScopes)
+          .where(eq(providerBudgetScopes.id, candidate.scopeId))
+          .for('update');
+        const [reservation] = await tx
+          .select()
+          .from(providerBudgetReservations)
+          .where(eq(providerBudgetReservations.id, reservationId))
+          .for('update');
+        if (
+          !reservation ||
+          reservation.state !== 'reserved' ||
+          reservation.lane !== 'ingestion_embedding' ||
+          reservation.attemptId !== `${id}:${epoch}`
+        )
+          throw new ProviderBudgetError('reservation_conflict');
+        if (
+          !scope?.approved ||
+          scope.blocked ||
+          !scope.approvedModelProfiles.includes(collectionHash(work.profile))
+        )
+          throw new ProviderBudgetError('approval_required');
         await checkWorkRights(tx, work);
-        await tx.update(embeddingWorkItems).set({ state: 'calling', reservationId, updatedAt: now }).where(eq(embeddingWorkItems.id, id));
+        await tx
+          .update(embeddingWorkItems)
+          .set({ state: 'calling', reservationId, updatedAt: now })
+          .where(eq(embeddingWorkItems.id, id));
       });
     },
     async completeWork(id, epoch, vector, now) {
       await db.transaction(async (tx) => {
-        const [work] = await tx.select().from(embeddingWorkItems).where(eq(embeddingWorkItems.id, id)).for('update');
-        if (!work || work.leaseEpoch !== epoch || work.state !== 'calling' || !work.leaseUntil || work.leaseUntil <= now) throw new ProviderBudgetError('stale_work');
-        if (vector.length !== work.profile.dimensions || vector.some((value) => !Number.isFinite(value)) || !vector.some((value) => value !== 0)) throw new ProviderBudgetError('invalid_usage');
+        const [work] = await tx
+          .select()
+          .from(embeddingWorkItems)
+          .where(eq(embeddingWorkItems.id, id))
+          .for('update');
+        if (
+          !work ||
+          work.leaseEpoch !== epoch ||
+          work.state !== 'calling' ||
+          !work.leaseUntil ||
+          work.leaseUntil <= now
+        )
+          throw new ProviderBudgetError('stale_work');
+        if (
+          vector.length !== work.profile.dimensions ||
+          vector.some((value) => !Number.isFinite(value)) ||
+          !vector.some((value) => value !== 0)
+        )
+          throw new ProviderBudgetError('invalid_usage');
         await checkWorkRights(tx, work);
         const profileHash = collectionHash(work.profile);
-        await tx.insert(embeddings).values({ chunkId: work.chunkId, provider: work.profile.provider, model: work.profile.model,
-          profileHash, dimensions: work.profile.dimensions, embedding: [...vector], inputHash: work.inputHash }).onConflictDoNothing();
-        const [embedding] = await tx.select({ id: embeddings.id }).from(embeddings).where(and(eq(embeddings.chunkId, work.chunkId),
-          eq(embeddings.provider, work.profile.provider), eq(embeddings.model, work.profile.model), eq(embeddings.profileHash, profileHash), eq(embeddings.inputHash, work.inputHash)));
+        await tx
+          .insert(embeddings)
+          .values({
+            chunkId: work.chunkId,
+            provider: work.profile.provider,
+            model: work.profile.model,
+            profileHash,
+            dimensions: work.profile.dimensions,
+            embedding: [...vector],
+            inputHash: work.inputHash,
+          })
+          .onConflictDoNothing();
+        const [embedding] = await tx
+          .select({ id: embeddings.id })
+          .from(embeddings)
+          .where(
+            and(
+              eq(embeddings.chunkId, work.chunkId),
+              eq(embeddings.provider, work.profile.provider),
+              eq(embeddings.model, work.profile.model),
+              eq(embeddings.profileHash, profileHash),
+              eq(embeddings.inputHash, work.inputHash),
+            ),
+          );
         if (!embedding) throw new ProviderBudgetError('stale_work');
-        await tx.update(embeddingWorkItems).set({ state: 'completed', embeddingId: embedding.id, leaseUntil: null, updatedAt: now }).where(eq(embeddingWorkItems.id, id));
+        await tx
+          .update(embeddingWorkItems)
+          .set({ state: 'completed', embeddingId: embedding.id, leaseUntil: null, updatedAt: now })
+          .where(eq(embeddingWorkItems.id, id));
       });
     },
     async markOutcomeUnknown(id, epoch, now) {
       await db.transaction(async (tx) => {
-        const [work] = await tx.select().from(embeddingWorkItems).where(eq(embeddingWorkItems.id, id)).for('update');
+        const [work] = await tx
+          .select()
+          .from(embeddingWorkItems)
+          .where(eq(embeddingWorkItems.id, id))
+          .for('update');
         if (!work || work.leaseEpoch !== epoch || work.state !== 'calling') return;
-        await tx.update(embeddingWorkItems).set({ state: 'outcome_unknown', updatedAt: now }).where(eq(embeddingWorkItems.id, id));
-        if (work.reservationId) await tx.update(providerBudgetReservations).set({ state: 'outcome_unknown', updatedAt: now })
-          .where(and(eq(providerBudgetReservations.id, work.reservationId), eq(providerBudgetReservations.state, 'reserved')));
+        await tx
+          .update(embeddingWorkItems)
+          .set({ state: 'outcome_unknown', updatedAt: now })
+          .where(eq(embeddingWorkItems.id, id));
+        if (work.reservationId)
+          await tx
+            .update(providerBudgetReservations)
+            .set({ state: 'outcome_unknown', updatedAt: now })
+            .where(
+              and(
+                eq(providerBudgetReservations.id, work.reservationId),
+                eq(providerBudgetReservations.state, 'reserved'),
+              ),
+            );
+      });
+    },
+    async markFailed(id, epoch, now) {
+      await db.transaction(async (tx) => {
+        const [work] = await tx
+          .select()
+          .from(embeddingWorkItems)
+          .where(eq(embeddingWorkItems.id, id))
+          .for('update');
+        if (!work || work.leaseEpoch !== epoch || work.state !== 'calling') return;
+        await tx
+          .update(embeddingWorkItems)
+          .set({ state: 'failed', leaseUntil: null, updatedAt: now })
+          .where(eq(embeddingWorkItems.id, id));
       });
     },
   };

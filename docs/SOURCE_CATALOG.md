@@ -1,6 +1,6 @@
 # Signal Archive Source Catalog
 
-- 상태: 대상 source와 호출·저장 baseline은 `EXP-001`에서 검증됨(2026-09-01). **schedule 값은 여전히 제안**이며 [SSOT §5](./SSOT.md)의 미결정 항목이다
+- 상태: 대상 source와 호출·저장 baseline은 `EXP-001`에서 검증됨(2026-09-01). COV-009의 제한된 schedule과 target은 [ADR-0016](./adr/0016-low-cost-live-activation.md)에서 승인됐고, 그 밖의 값은 제안이다
 - 작성일: 2026-09-01
 - 기준: [ADR-0004](./adr/0004-initial-data-sources.md) (Accepted)
 
@@ -17,7 +17,15 @@
 - GitHub release pagination은 기간 완료까지 재개하되 release 없는 target은 별도 표시한다. Stack Exchange/arXiv는 기간 전달·날짜 경계·필터 이후 빈 page 진전을 검증한다.
 - RSS 최신 목록은 전체 archive가 아니다. feed-only target의 기간 coverage는 partial이며 새로운 archive/sitemap 경로는 별도 정책 검토 후 추가한다. metric snapshot의 과거 값을 backfill로 합성하지 않는다.
 - 발견 후보는 metadata 수준으로 검토 대기한다. issue/discussion 본문·model card·새 blog·제외 source의 저장/embedding 허용을 기존 metric/API 승인에서 추론하지 않는다.
-- TASKS가 참조하는 ADR-0014 파일은 이번 조사 경로에 없었다. Reddit 관련 최신 사용자 결정과 문서 근거를 DISC-003에서 대조하고 불명확 범위를 자동 활성화하지 않는다.
+- TASKS가 참조하는 ADR-0014 파일은 이번 조사에서 실제 부재를 확인했다. 전체 결과는 [DISC-003 조사 보고서](./experiments/DISC-003-source-rights-and-capability-investigation.md)에 기록했으며, Reddit과 권리·capability 불명확 target은 자동 활성화하지 않는다.
+
+### DEC-012 활성 범위 (2026-09-10)
+
+COV-009에서는 `github_releases`의 `microsoft/TypeScript`, `nodejs/node`,
+`microsoft/playwright`, `facebook/react`, `pgvector/pgvector`만 활성화한다. 각 target은 최근 90일
+backfill 1회와 6시간 incremental cadence(±15분 deterministic jitter)를 사용한다. 전체 API/
+byte/model budget과 retention은 [ADR-0016](./adr/0016-low-cost-live-activation.md)을 단일 기준으로
+삼는다. 이 목록 밖의 target과 discovery 결과는 계속 `enabled=false`다.
 
 ## 1. 공통 규칙
 

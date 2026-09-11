@@ -2,7 +2,11 @@
   import { onMount } from 'svelte';
   import { locale, type Locale } from '$lib/i18n.js';
   import { ApiClient, ApiClientError } from '../api-client.js';
-  import type { HealthLiveResponse, HealthReadyResponse } from '@techpulse/contracts';
+  import type {
+    CoverageReportResponse,
+    HealthLiveResponse,
+    HealthReadyResponse,
+  } from '@techpulse/contracts';
 
   interface Props {
     client: ApiClient;
@@ -16,14 +20,58 @@
   let refreshing = $state(false);
   let liveStatus = $state<HealthLiveResponse | null>(null);
   let readyStatus = $state<HealthReadyResponse | null>(null);
+  let coverageReport = $state<CoverageReportResponse | null>(null);
   let errorMessage = $state<string | null>(null);
   let lastCheckedAt = $state<string | null>(null);
+
+  function formatUtcDateTime(isoString: string | null | undefined): string {
+    if (!isoString) return currentLocale === 'ko' ? '날짜 미지정' : 'Date not specified';
+    try {
+      const d = new Date(isoString);
+      if (Number.isNaN(d.getTime())) return isoString;
+      return d.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    } catch {
+      return String(isoString);
+    }
+  }
+
+  function formatReasonLabel(reason: string): string {
+    const koMap: Record<string, string> = {
+      raw_shortage: '원본 데이터 부족 (Raw Shortage)',
+      processing_pending: '처리 대기 중 (Processing Pending)',
+      period_gap: '기간 공백 (Period Gap)',
+      retrieval_miss: '검색 누락 (Retrieval Miss)',
+      unknown: '알 수 없음 (Unknown)',
+    };
+    const enMap: Record<string, string> = {
+      raw_shortage: 'Raw Shortage',
+      processing_pending: 'Processing Pending',
+      period_gap: 'Period Gap',
+      retrieval_miss: 'Retrieval Miss',
+      unknown: 'Unknown Limitation',
+    };
+    return (currentLocale === 'ko' ? koMap[reason] : enMap[reason]) || reason;
+  }
+
+  let isCorpusReady = $derived.by(() => {
+    if (!coverageReport) return false;
+    return (
+      coverageReport.partitionsChecked > 0 &&
+      coverageReport.partitionsCompleted === coverageReport.partitionsChecked &&
+      coverageReport.partitionsPartial === 0 &&
+      coverageReport.vectorDocuments > 0 &&
+      coverageReport.reasons.length === 0
+    );
+  });
 
   async function checkHealth() {
     refreshing = true;
     errorMessage = null;
     try {
-      const [live, ready] = await Promise.all([
+      const now = new Date();
+      const past30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+      const [live, ready, coverage] = await Promise.all([
         client.getHealthLive(),
         client.getHealthReady().catch((err) => {
           if (err instanceof ApiClientError && err.status === 503) {
@@ -35,9 +83,16 @@
           }
           throw err;
         }),
+        client
+          .getCoverage({
+            from: past30d.toISOString(),
+            to: now.toISOString(),
+          })
+          .catch(() => null),
       ]);
       liveStatus = live;
       readyStatus = ready;
+      coverageReport = coverage;
       lastCheckedAt = new Date().toISOString();
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -158,6 +213,126 @@
         </p>
       </div>
     </div>
+
+    {#if coverageReport}
+      <div class="coverage-overview-card" role="region" aria-label="Corpus Coverage & Readiness">
+        <div class="coverage-overview-header">
+          <div>
+            <h3 class="coverage-overview-title">
+              {currentLocale === 'ko'
+                ? '말뭉치 수집 및 색인 준비도'
+                : 'Corpus Coverage & Index Readiness'}
+            </h3>
+            <p class="coverage-overview-desc">
+              {currentLocale === 'ko'
+                ? 'PostgreSQL 원본/어휘/벡터 파티션의 완료 상태와 데이터 한계를 모니터링합니다.'
+                : 'Monitors PostgreSQL raw/lexical/vector partition completion and data limitations.'}
+            </p>
+          </div>
+          <span
+            class="status-indicator"
+            class:ok={isCorpusReady}
+            class:warn={!isCorpusReady && coverageReport.partitionsPartial > 0}
+            class:danger={!isCorpusReady && coverageReport.vectorDocuments === 0}
+            aria-label={`Corpus readiness: ${isCorpusReady ? 'ready' : 'partial_or_pending'}`}
+          >
+            {#if isCorpusReady}
+              {currentLocale === 'ko' ? '준비 완료' : 'Corpus Ready'}
+            {:else if coverageReport.reasons.includes('processing_pending')}
+              {currentLocale === 'ko' ? '처리 대기 중' : 'Processing Pending'}
+            {:else if coverageReport.partitionsPartial > 0}
+              {currentLocale === 'ko' ? '부분 준비됨' : 'Partial Readiness'}
+            {:else}
+              {currentLocale === 'ko' ? '준비 중' : 'Pending'}
+            {/if}
+          </span>
+        </div>
+
+        <!-- Resolved UTC Window -->
+        <div class="coverage-period-row">
+          <span class="period-label"
+            >{currentLocale === 'ko' ? '확인된 UTC 구간:' : 'Resolved UTC Window:'}</span
+          >
+          <span class="period-value">
+            <strong>{formatUtcDateTime(coverageReport.from)}</strong>
+            &nbsp;→&nbsp;
+            <strong>{formatUtcDateTime(coverageReport.to)}</strong>
+          </span>
+        </div>
+
+        <!-- Document Readiness Counts -->
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <span class="metric-num">{coverageReport.rawDocuments.toLocaleString()}</span>
+            <span class="metric-name"
+              >{currentLocale === 'ko' ? '수집된 원본 문서' : 'Raw Documents'}</span
+            >
+          </div>
+          <div class="metric-item">
+            <span class="metric-num">{coverageReport.lexicalDocuments.toLocaleString()}</span>
+            <span class="metric-name"
+              >{currentLocale === 'ko' ? '어휘 색인 문서' : 'Lexical Documents'}</span
+            >
+          </div>
+          <div class="metric-item">
+            <span class="metric-num">{coverageReport.vectorDocuments.toLocaleString()}</span>
+            <span class="metric-name"
+              >{currentLocale === 'ko' ? '벡터 임베딩 문서' : 'Vector Documents'}</span
+            >
+          </div>
+        </div>
+
+        <!-- Partition Progress -->
+        <div class="partition-stats-row">
+          <div class="partition-stat">
+            <span class="p-label"
+              >{currentLocale === 'ko' ? '확인된 파티션:' : 'Partitions Checked:'}</span
+            >
+            <span class="p-val">{coverageReport.partitionsChecked}</span>
+          </div>
+          <div class="partition-stat">
+            <span class="p-label">{currentLocale === 'ko' ? '완료된 파티션:' : 'Completed:'}</span>
+            <span class="p-val completed">{coverageReport.partitionsCompleted}</span>
+          </div>
+          <div class="partition-stat">
+            <span class="p-label">{currentLocale === 'ko' ? '부분/진행 중:' : 'Partial:'}</span>
+            <span class="p-val" class:warn-text={coverageReport.partitionsPartial > 0}
+              >{coverageReport.partitionsPartial}</span
+            >
+          </div>
+        </div>
+
+        <!-- Limitation reasons -->
+        {#if coverageReport.reasons.length > 0}
+          <div class="reasons-box" role="region" aria-label="Coverage limitation reasons">
+            <span class="reasons-heading"
+              >{currentLocale === 'ko'
+                ? '데이터 범위 한계 및 사유:'
+                : 'Coverage Limitations & Advisories:'}</span
+            >
+            <div class="reasons-tags">
+              {#each coverageReport.reasons as reason (reason)}
+                <span
+                  class="reason-tag"
+                  class:tag-pending={reason === 'processing_pending'}
+                  class:tag-shortage={reason === 'raw_shortage'}
+                  class:tag-gap={reason === 'period_gap'}
+                >
+                  {formatReasonLabel(reason)}
+                </span>
+              {/each}
+            </div>
+            {#if !isCorpusReady}
+              <p class="unready-warning">
+                ⚠ {currentLocale === 'ko'
+                  ? '수집 말뭉치가 부분 완료 상태입니다. 미완료 파티션 또는 처리 대기 문서가 존재하여 일부 질문에 대한 답변 근거가 제한될 수 있습니다.'
+                  : 'Corpus is only partially ready. Pending processing or partial partitions may limit evidence sufficiency.'}
+              </p>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
 
     {#if lastCheckedAt}
       <p class="last-checked" aria-live="polite">
@@ -388,5 +563,174 @@
     to {
       transform: rotate(360deg);
     }
+  }
+
+  .coverage-overview-card {
+    margin-top: 20px;
+    background: #1e293b60;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .coverage-overview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .coverage-overview-title {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+
+  .coverage-overview-desc {
+    margin: 0;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  .coverage-period-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #cbd5e1;
+    margin-bottom: 16px;
+    background: #0f172a80;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #33415560;
+  }
+
+  .period-label {
+    color: #94a3b8;
+  }
+
+  .period-value strong {
+    color: #38bdf8;
+  }
+
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .metric-item {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .metric-num {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+
+  .metric-name {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  .partition-stats-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: #0f172a60;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid #1e293b;
+    margin-bottom: 16px;
+  }
+
+  .partition-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .p-label {
+    color: #94a3b8;
+  }
+
+  .p-val {
+    font-weight: 700;
+    color: #e2e8f0;
+  }
+
+  .p-val.completed {
+    color: #34d399;
+  }
+
+  .warn-text {
+    color: #fbbf24;
+  }
+
+  .reasons-box {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #33415580;
+  }
+
+  .reasons-heading {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+  }
+
+  .reasons-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .reason-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #334155;
+    color: #e2e8f0;
+  }
+
+  .reason-tag.tag-pending {
+    background: #854d0e40;
+    border: 1px solid #a16207;
+    color: #fef08a;
+  }
+
+  .reason-tag.tag-shortage {
+    background: #7c2d1240;
+    border: 1px solid #c2410c;
+    color: #fdba74;
+  }
+
+  .reason-tag.tag-gap {
+    background: #701a7540;
+    border: 1px solid #a21caf;
+    color: #f5d0fe;
+  }
+
+  .unready-warning {
+    margin: 8px 0 0 0;
+    font-size: 12px;
+    color: #fbbf24;
+    line-height: 1.5;
   }
 </style>

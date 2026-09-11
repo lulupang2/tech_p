@@ -3,9 +3,14 @@ import type {
   CollectionContext,
   CollectionResult,
   CollectedRawItem,
+  CollectorPort,
+  CollectorPagePort,
+  CollectionPageRequest,
+  CollectionPageResult,
   PolicyGuardPort,
   SourceKey,
 } from '@techpulse/domain';
+import { assertCollectableTarget, validatePageResult } from '@techpulse/domain';
 import { BaseCollector } from './base.js';
 import { DefaultPolicyGuard } from './guard.js';
 import { SOURCE_POLICIES } from './policies.js';
@@ -996,7 +1001,7 @@ export class ArticleExtractionService {
 // Unified Article Collector
 // ---------------------------------------------------------------------------
 
-export class ArticleCollector extends BaseCollector {
+export class ArticleCollector extends BaseCollector implements CollectorPort, CollectorPagePort {
   readonly sourceKey: SourceKey;
   readonly policy: SourcePolicy;
   readonly config: ArticleSourceConfig;
@@ -1178,5 +1183,42 @@ export class ArticleCollector extends BaseCollector {
         durationMs: Date.now() - startTime,
       },
     };
+  }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+
+    const res = await this.collect({
+      sourceKey: this.sourceKey,
+      cursor: null,
+      timeWindow: request.partition.window,
+      limit: request.limit,
+      ...(request.signal !== undefined ? { signal: request.signal } : {}),
+    });
+
+    let disposition: CollectionPageResult['disposition'] = 'complete';
+    let reason: string | null = null;
+    if (
+      request.target.capability.historyMode === 'feed_only' &&
+      request.partition.mode === 'backfill'
+    ) {
+      disposition = 'partial';
+      reason = 'history_unsupported';
+    }
+
+    const result: CollectionPageResult = {
+      items: res.items,
+      nextCursor: null,
+      disposition,
+      reason,
+      retryAt: null,
+      requests: 1,
+      bytes: res.metrics?.bytesFetched ?? 0,
+    };
+    validatePageResult(request.partition, result);
+    return result;
   }
 }

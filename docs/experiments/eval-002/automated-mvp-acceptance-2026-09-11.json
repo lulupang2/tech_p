@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "status": "automated_gate_passed_human_semantic_review_pending",
+  "decision": "ADR-0019",
+  "allowanceDecision": "DEC-014",
+  "sourceReport": "eval002-2026-09-11T00-50-33-713Z-live/report.json",
+  "datasetSha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+  "retrieval": {
+    "sampleCount": 4,
+    "hybridRecallAt10": 1,
+    "hybridDiagnosticNdcgAt10": 0.8333333333333334,
+    "warmDbP95Ms": 282.1082999999999,
+    "blockingGatePassed": true
+  },
+  "answers": {
+    "sampleCount": 8,
+    "expectedAnswered": 4,
+    "answered": 4,
+    "expectedAbstentions": 4,
+    "correctAbstentions": 4,
+    "structuredOutputRate": 1,
+    "allAnsweredRowsHaveRelevantCitation": true,
+    "p95LatencyMs": 4921.526100000003,
+    "blockingAutomatedGatePassed": true,
+    "semanticReview": "pending"
+  },
+  "hardInvariants": {
+    "timeViolations": 0,
+    "rightsViolations": 0,
+    "profileViolations": 0,
+    "provenanceViolations": 0,
+    "securityEvidence": "deterministic SEC-003/RAG tests; not re-billed in the MVP live subset"
+  },
+  "budgetAfterRun": {
+    "microUsd": 7044,
+    "embeddingCalls": 48,
+    "embeddingInputTokens": 904,
+    "chatCalls": 16,
+    "chatInputTokens": 43372,
+    "chatOutputTokens": 3215,
+    "unknownReservations": 0,
+    "capsExceeded": false
+  },
+  "remainingBlockers": [
+    "live_label_human_review",
+    "answer_evidence_semantic_review"
+  ],
+  "notes": [
+    "Earlier live runs are preserved as failed evidence and were not overwritten.",
+    "The final successful run used the same eight ADR-0019 item IDs; questions were not swapped post-hoc.",
+    "Nemotron citation failures were fixed by making allowed citation IDs explicit and increasing the internal per-call output safety cap from 350 to 700 while keeping the DEC-014 total output cap at 30000 tokens."
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "task": "EVAL-002",
+  "runId": "eval002-2026-09-11T03-25-45-334Z-live",
+  "report": "docs/experiments/eval-002/eval002-2026-09-11T03-25-45-334Z-live/report.json",
+  "reportSha256": "a43d00c59efe35dc065d1c5cdba3c9989928986af185116d96ac0c5ebe79565d",
+  "sourceReport": "docs/experiments/eval-002/eval002-2026-09-11T02-31-29-990Z-live/report.json",
+  "sourceReportSha256": "483afb5563e5b6cfd8ad6c3811c5f49912e5cedc7dd9594cbe2a47cbdb6e29a3",
+  "labelsSha256": "415db8671b8ba77e4c5349f3df62b2d388c425e7952b162c68c63308171215a6",
+  "sourceManifestSha256": "1ebe385a2435a3f94090357bc50dace36956c8d4afe4808eab5b1c2dbdf3c0e6",
+  "originalLedgerPrefixSha256": "3d24c2cd344f06c423703b24bb1500efc22ee32c83b4683841f9d8334ed3e52f",
+  "ledgerSha256": "274ab203e364e3b3bef3e241ee66ff03759ebf3d1c8ccdf65890bfdb158a488e",
+  "addedLedgerEvents": 4,
+  "reusedRetrievalSha256": "d182b617765e519ff0f2076d66282bcfcaf55849718dab0d8b469cb347ba3225",
+  "reusedAnswerRowsSha256": "50c29427da5f02f013ec6dc488b004e35c35ab16dbfa71164f9837aa88827d8e",
+  "reusedAnswerCount": 7,
+  "retriedAnswerIds": [
+    "L-001"
+  ],
+  "automatedMvpGatePassed": true,
+  "releaseGatePassed": false,
+  "blockers": [
+    "live_label_review_pending",
+    "semantic_answer_review_pending"
+  ],
+  "budget": {
+    "usage": {
+      "microUsd": 10999,
+      "embeddingCalls": 97,
+      "embeddingInputTokens": 1826,
+      "chatCalls": 32,
+      "chatInputTokens": 67430,
+      "chatOutputTokens": 5141
+    },
+    "outstanding": {
+      "microUsd": 0,
+      "embeddingCalls": 0,
+      "embeddingInputTokens": 0,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "unknownReservations": 0,
+    "historyReconciled": false,
+    "historicalUsage": {
+      "microUsd": 6,
+      "embeddingCalls": 195,
+      "embeddingInputTokens": 6290,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "budgetScope": "additional_allowance",
+    "allowanceDecision": "DEC-014",
+    "caps": {
+      "microUsd": 250000,
+      "embeddingCalls": 100,
+      "embeddingInputTokens": 100000,
+      "chatCalls": 60,
+      "chatInputTokens": 300000,
+      "chatOutputTokens": 30000
+    },
+    "exceededCaps": []
+  },
+  "additionalUsage": {
+    "microUsd": 243,
+    "embeddingCalls": 1,
+    "embeddingInputTokens": 18,
+    "chatCalls": 1,
+    "chatInputTokens": 1518,
+    "chatOutputTokens": 93
+  },
+  "validation": {
+    "rag": {
+      "filesPassed": 14,
+      "testsPassed": 103,
+      "testsFailed": 0
+    },
+    "api": {
+      "filesPassed": 14,
+      "testsPassed": 177,
+      "testsFailed": 0
+    },
+    "resumeAndScorecardTestsPassed": 56,
+    "releaseReviewTestsPassed": 29,
+    "ragTypecheckPassed": true,
+    "apiTypecheckPassed": true,
+    "ragApiEslintPassed": true,
+    "ragApiPrettierPassed": true,
+    "gitDiffCheckPassed": true
+  },
+  "terminalReview": {
+    "labelRowsDisplayed": 8,
+    "answerOriginalsDisplayed": 1,
+    "citationExcerptHashesMatched": 6,
+    "answerOriginalsUnavailableIds": [
+      "L-007",
+      "L-014",
+      "L-017"
+    ],
+    "reviewer": null,
+    "semanticMetrics": null
+  }
+}

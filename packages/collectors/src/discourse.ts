@@ -2,8 +2,18 @@ import type {
   CollectionContext,
   CollectionResult,
   CollectedRawItem,
+  CollectorPort,
+  CollectorPagePort,
+  CollectionPageRequest,
+  CollectionPageResult,
   PolicyGuardPort,
   SourcePolicy,
+} from '@techpulse/domain';
+import {
+  assertCollectableTarget,
+  decodePageCursor,
+  encodePageCursor,
+  validatePageResult,
 } from '@techpulse/domain';
 import { BaseCollector } from './base.js';
 import { SOURCE_POLICIES } from './policies.js';
@@ -593,7 +603,7 @@ export function stripDiscoursePii<T extends Record<string, unknown>>(data: T): T
  * - HTML sanitized and converted to clean text (removing hidden/script prompt injection instructions)
  * - Username, real name, user_id, avatar_template PII stripped before raw item creation
  */
-export class DiscourseCollector extends BaseCollector {
+export class DiscourseCollector extends BaseCollector implements CollectorPort, CollectorPagePort {
   readonly sourceKey = 'users_rust_lang' as const;
   readonly policy: SourcePolicy = SOURCE_POLICIES['users_rust_lang'];
 
@@ -935,5 +945,71 @@ export class DiscourseCollector extends BaseCollector {
     }
 
     return { data, bytes, headers: response.headers };
+  }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+
+    let page = 0;
+    if (request.partition.cursor) {
+      const decoded = decodePageCursor(request.partition, request.target.capability.cursorVersion);
+      if (decoded) {
+        try {
+          const parsed = JSON.parse(decoded) as { page?: number };
+          if (typeof parsed.page === 'number' && parsed.page >= 0) {
+            page = parsed.page;
+          }
+        } catch {
+          // Fallback
+        }
+      }
+    }
+
+    const res = await this.collect({
+      sourceKey: 'users_rust_lang',
+      cursor: encodeOpaqueCursor({ page }),
+      timeWindow: request.partition.window,
+      limit: request.limit,
+      ...(request.signal !== undefined ? { signal: request.signal } : {}),
+    });
+
+    let disposition: CollectionPageResult['disposition'] = 'complete';
+    let nextCursor: string | null = null;
+    let reason: string | null = null;
+
+    if (res.hasMore) {
+      disposition = 'continue';
+      nextCursor = encodePageCursor(
+        request.partition,
+        request.target.capability.cursorVersion,
+        JSON.stringify({ page: page + 1 }),
+      );
+    } else {
+      if (
+        request.target.capability.historyMode === 'feed_only' &&
+        request.partition.mode === 'backfill'
+      ) {
+        disposition = 'partial';
+        reason = 'history_unsupported';
+      } else {
+        disposition = 'complete';
+      }
+      nextCursor = null;
+    }
+
+    const result: CollectionPageResult = {
+      items: res.items,
+      nextCursor,
+      disposition,
+      reason,
+      retryAt: null,
+      requests: 1,
+      bytes: res.metrics?.bytesFetched ?? 0,
+    };
+    validatePageResult(request.partition, result);
+    return result;
   }
 }

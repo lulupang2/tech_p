@@ -11,5 +11,16 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src test",
     "format": "pnpm --dir ../.. exec prettier --check tooling/test-harness"
+  },
+  "dependencies": {
+    "@techpulse/collectors": "workspace:*",
+    "@techpulse/contracts": "workspace:*",
+    "@techpulse/database": "workspace:*",
+    "@techpulse/domain": "workspace:*",
+    "@techpulse/observability": "workspace:*",
+    "@techpulse/rag": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
   }
 }

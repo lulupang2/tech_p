@@ -3,12 +3,22 @@ import type {
   CollectionResult,
   CollectedRawItem,
   CollectorPort,
+  CollectorPagePort,
+  CollectionPageRequest,
+  CollectionPageResult,
   PolicyGuardPort,
   SourcePolicy,
+} from '@techpulse/domain';
+import {
+  assertCollectableTarget,
+  decodePageCursor,
+  encodePageCursor,
+  validatePageResult,
 } from '@techpulse/domain';
 import { BaseCollector } from './base.js';
 import { SOURCE_POLICIES } from './policies.js';
 import { decodeOpaqueCursor, encodeOpaqueCursor } from './cursor.js';
+import { createHardenedFetch } from './guard.js';
 
 /**
  * Supported GitHub search endpoint types.
@@ -151,7 +161,10 @@ export const GITHUB_SEARCH_DEFAULT_RATE_INTERVAL_MS = 2000; // 30 requests/minut
  * - Strips PII (owner, user, milestone.creator, assignee, assignees, author, assets.uploader)
  * - Prohibits historical star derivation / backfilling
  */
-export class GitHubSearchCollector extends BaseCollector implements CollectorPort {
+export class GitHubSearchCollector
+  extends BaseCollector
+  implements CollectorPort, CollectorPagePort
+{
   readonly sourceKey = 'github_search' as const;
   readonly policy: SourcePolicy = SOURCE_POLICIES['github_search'];
 
@@ -446,6 +459,184 @@ export class GitHubSearchCollector extends BaseCollector implements CollectorPor
         durationMs: this.clock.now() - startedAt,
       },
     };
+  }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+
+    const query =
+      request.target.selector.kind === 'query'
+        ? request.target.selector.query
+        : (this.config.query ?? 'topic:ai');
+    const endpoint: GitHubSearchEndpoint = this.config.endpoint ?? 'repositories';
+
+    let page = 1;
+    if (request.partition.cursor) {
+      const decoded = decodePageCursor(request.partition, request.target.capability.cursorVersion);
+      if (decoded) {
+        try {
+          const parsed = JSON.parse(decoded) as { page?: number };
+          if (typeof parsed.page === 'number' && parsed.page >= 1) {
+            page = parsed.page;
+          }
+        } catch {
+          // Fallback
+        }
+      }
+    }
+
+    const perPage = request.limit > 0 ? Math.min(request.limit, 100) : (this.config.perPage ?? 30);
+    const pat = this.config.pat ?? process.env['GITHUB_PAT'];
+
+    const url = new URL(`https://api.github.com/search/${endpoint}`);
+    url.searchParams.set('q', query);
+    url.searchParams.set('page', String(page));
+    url.searchParams.set('per_page', String(perPage));
+    if (this.config.sort) url.searchParams.set('sort', this.config.sort);
+    if (this.config.order) url.searchParams.set('order', this.config.order);
+
+    const urlValidation = this.guard.validateUrl(url.toString(), this.policy);
+    if (!urlValidation.valid) {
+      throw new Error(`SSRF guard rejected URL: ${urlValidation.reason}`);
+    }
+
+    const baseFetch = this.customFetch ?? globalThis.fetch;
+    const fetchFn = createHardenedFetch({ guard: this.guard, policy: this.policy, baseFetch });
+
+    const headers: Record<string, string> = {
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'Signal Archive-Collector/1.0',
+    };
+    if (pat) {
+      headers['Authorization'] = `Bearer ${pat}`;
+    }
+
+    const response = await fetchFn(url.toString(), {
+      headers,
+      ...(request.signal !== undefined ? { signal: request.signal } : {}),
+    });
+
+    if (response.status === 403 || response.status === 429) {
+      const resetHeader = response.headers.get('x-ratelimit-reset');
+      const retryAfterHeader = response.headers.get('retry-after');
+      let retryAt: Date;
+      if (resetHeader) {
+        const resetSeconds = Number.parseInt(resetHeader, 10);
+        retryAt = Number.isFinite(resetSeconds)
+          ? new Date(resetSeconds * 1000)
+          : new Date(request.now().getTime() + 60000);
+      } else if (retryAfterHeader) {
+        const afterSeconds = Number.parseInt(retryAfterHeader, 10);
+        retryAt = Number.isFinite(afterSeconds)
+          ? new Date(request.now().getTime() + afterSeconds * 1000)
+          : new Date(request.now().getTime() + 60000);
+      } else {
+        retryAt = new Date(request.now().getTime() + 60000);
+      }
+      const result: CollectionPageResult = {
+        items: [],
+        nextCursor: null,
+        disposition: 'deferred',
+        reason: null,
+        retryAt,
+        requests: 1,
+        bytes: 0,
+      };
+      validatePageResult(request.partition, result);
+      return result;
+    }
+
+    if (!response.ok) {
+      throw new Error(`GitHub Search API error ${response.status}: ${response.statusText}`);
+    }
+
+    const responseText = await response.text();
+    const bytesFetched = Buffer.byteLength(responseText, 'utf8');
+    const body = JSON.parse(responseText) as GitHubSearchApiResponse;
+
+    const items: CollectedRawItem[] = [];
+    const searchItems = body.items ?? [];
+    const window = request.partition.window;
+
+    for (const item of searchItems) {
+      const publishedAtStr =
+        (item['created_at'] as string | undefined) ?? (item['updated_at'] as string | undefined);
+      const publishedAt = publishedAtStr ? new Date(publishedAtStr) : null;
+      if (publishedAt) {
+        if (
+          publishedAt.getTime() < window.from.getTime() ||
+          publishedAt.getTime() >= window.to.getTime()
+        ) {
+          continue;
+        }
+      }
+
+      const externalId = `github_search:${endpoint}:${String(item['id'])}`;
+      const payload: Record<string, unknown> = { ...item };
+      const rawItem = this.createRawItem({
+        externalId,
+        payload,
+        publishedAt,
+        cursor: String(item['id']),
+        metadata: {
+          canonicalUrl:
+            (item['html_url'] as string | undefined) ??
+            `https://github.com/${item['full_name'] as string | undefined}`,
+          endpoint,
+          query,
+        },
+      });
+      items.push(rawItem);
+    }
+
+    const totalCount = body.total_count ?? 0;
+    const reachedPageCap = page >= 10;
+    const reachedTotalCap = page * perPage >= 1000;
+    const hasMore =
+      !reachedPageCap &&
+      !reachedTotalCap &&
+      searchItems.length === perPage &&
+      page * perPage < totalCount;
+
+    let disposition: CollectionPageResult['disposition'];
+    let nextCursor: string | null = null;
+    let reason: string | null = null;
+
+    if (hasMore) {
+      disposition = 'continue';
+      nextCursor = encodePageCursor(
+        request.partition,
+        request.target.capability.cursorVersion,
+        JSON.stringify({ page: page + 1 }),
+      );
+    } else if (reachedPageCap || reachedTotalCap) {
+      if (totalCount > page * perPage) {
+        disposition = 'partial';
+        reason = 'result_cap';
+      } else {
+        disposition = 'complete';
+      }
+      nextCursor = null;
+    } else {
+      disposition = 'complete';
+      nextCursor = null;
+    }
+
+    const result: CollectionPageResult = {
+      items,
+      nextCursor,
+      disposition,
+      reason,
+      retryAt: null,
+      requests: 1,
+      bytes: bytesFetched,
+    };
+    validatePageResult(request.partition, result);
+    return result;
   }
 }
 

@@ -10,23 +10,16 @@ export interface ReplayRequest {
   readonly requestedAt: Date;
 }
 
-export interface ReplayJob {
-  readonly schemaVersion: 1;
-  readonly replayId: string;
-  readonly naturalKey: string;
-  readonly scope: ReplayScope;
-  readonly targetId: string;
-  readonly stage: ReplayStage;
-  readonly requestedAt: string;
-}
-
 export interface ReplayResult {
   readonly status: ReplayStatus;
-  readonly jobs: readonly ReplayJob[];
+  readonly jobs: readonly { readonly schemaVersion: 2; readonly deliveryId: string }[];
 }
 
 export interface ReplayPublisherPort {
-  readonly publish: (job: ReplayJob) => Promise<{ readonly duplicate: boolean }>;
+  readonly replan: (request: ReplayRequest & { readonly stage: ReplayStage }) => Promise<{
+    readonly duplicate: boolean;
+    readonly deliveryIds: readonly string[];
+  }>;
 }
 
 export interface ReplayAuditEvent {
@@ -109,18 +102,7 @@ export function createReplayService(options: {
         });
         return result;
       }
-      const requestedAt = request.requestedAt.toISOString();
-      const naturalKey = `replay:v1:${request.scope}:${request.targetId}:${stage}`;
-      const job: ReplayJob = {
-        schemaVersion: 1,
-        replayId: naturalKey,
-        naturalKey,
-        scope: request.scope,
-        targetId: request.targetId,
-        stage,
-        requestedAt,
-      };
-      const published = await options.publisher.publish(job);
+      const published = await options.publisher.replan({ ...request, stage });
       const status = published.duplicate ? 'duplicate' : 'queued';
       await options.audit?.record({
         action: 'replay',
@@ -129,7 +111,13 @@ export function createReplayService(options: {
         status,
         occurredAt: new Date(request.requestedAt),
       });
-      return { status, jobs: [job] };
+      return {
+        status,
+        jobs: published.deliveryIds.map((deliveryId) => ({
+          schemaVersion: 2 as const,
+          deliveryId,
+        })),
+      };
     },
   };
 }

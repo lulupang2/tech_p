@@ -1,7 +1,7 @@
 # Signal Archive Single Source of Truth
 
 - 상태: Active
-- 기준일: 2026-09-08
+- 기준일: 2026-09-10
 - 범위: 현재 승인된 제품 정의, 기술 제약, 프로젝트 규칙
 
 > 이 문서에는 **이미 확정된 내용만** 기록한다. 추천, 비교안, 실험 목표, 승인 대기 선택은 기록하지 않고 ADR 또는 experiments에 둔다.
@@ -73,6 +73,7 @@ Playwright 수집 대상은 `developer.chrome.com/origintrials/`다. 서버 HTML
 | Database access, migrations, and hosting | **Drizzle ORM + Drizzle Kit**. `packages/database`가 schema·repository adapter·검토된 forward-only SQL migration을 소유하고 첫 migration에서 pgvector extension을 bootstrap한다. 공유·운영 PostgreSQL provider는 **Neon Serverless Postgres**이며 일반 쿼리는 pooled endpoint, 짧은 원자적 transaction은 Node 호환 WebSocket 연결, migration은 direct endpoint를 사용한다 | [ADR-0009](./adr/0009-drizzle-orm-migrations.md), [ADR-0011](./adr/0011-neon-serverless-postgresql.md), 2026-09-02 |
 | Production deployment | **Docker Compose + GHCR + SSH remote deployment**. GitHub `production` Environment approval 뒤 commit SHA 이미지(`sha-<git SHA>`)를 GHCR에 pull하고, pinned `known_hosts`로 접속해 migration-before-rollout·healthcheck·previous-SHA rollback을 수행한다. Server-owned systemd Caddy는 `signal.jisung.lol`용 snippet을 검증·reload하고, Compose API/web는 각각 `127.0.0.1:3000`/`127.0.0.1:5173`에만 publish한다 | [ADR-0013](./adr/0013-production-deployment.md), 2026-09-03 |
 | Coverage-driven collection/retrieval | target revision·기간 partition·durable checkpoint·transactional outbox, versioned 관측 집합, 제한적 질문 시점 취득, lexical/vector readiness 분리, embedding work 재사용·PostgreSQL 예산 예약 | [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md), A1–A6 승인 2026-09-08. 구현 대기는 [TASKS](../TASKS.md)의 COV 작업으로 추적 |
+| Chat / embedding models | RunInfra OpenAI-compatible `nemotron-3-5-lightning-30b`; OpenRouter `perplexity/pplx-embed-v1-0.6b` 1024 dimensions. 자동 fallback 없음. Chat은 제한된 재검증/canary만 허용하며 기존 품질·보안 gate와 blind review 통과 전 사용자-facing 운영 출시 차단 | [ADR-0006](./adr/0006-model-providers.md), [ADR-0017](./adr/0017-nemotron-chat-model.md), DEC-007 변경 승인 2026-09-10 |
 
 날짜 계산, SQL 필터, 점수 집계, citation·라이선스 검증은 LLM이 아니라 deterministic node에서 수행한다. web은 database package를 import하지 않고 contracts를 통해서만 타입을 얻는다. package dependency cycle은 CI에서 차단한다.
 
@@ -97,6 +98,36 @@ Backend와 queue 결정에서 파생되는 구현 조건은 다음과 같다. �
 - 동일 chunk/input/model profile의 완료 embedding을 재사용한다. 외부 성공 여부가 불명확하면 공식 복구 기능이 없는 한 자동 재호출을 보류한다. PostgreSQL 예산 예약·정산은 재시작/동시 요청에도 유지하며 query count를 금액 상한으로 취급하지 않는다.
 - [공통 계약](./COLLECTION_CONTRACTS.md) 선행 후 독립 코드 소유권으로 병렬 구현하고 단일 통합 담당이 runtime을 연결한다. [지시서](./COVERAGE_IMPLEMENTATION.md) 작성은 세션 실행이 아니다.
 - 이 승인은 새 source 권리·provider/model·지출 gate를 해제하지 않는다. provider-neutral 구현·fake 검증은 가능하지만 승인되지 않은 실제 모델 호출은 금지한다.
+
+### 3.5 제한된 live corpus 운영 승인 (2026-09-10)
+
+[ADR-0016](./adr/0016-low-cost-live-activation.md)의 DEC-012 범위를 승인했다.
+
+- COV-009에서 `github_releases`의 `microsoft/TypeScript`, `nodejs/node`,
+  `microsoft/playwright`, `facebook/react`, `pgvector/pgvector`만 활성화할 수 있다.
+- 최근 90일 backfill은 target당 1회, backfill/incremental concurrency는 각각 1,
+  incremental cadence는 6시간(±15분 deterministic jitter)이다.
+- GitHub API는 200 requests/day 및 COV-009 총 1,000 requests, response body는 25 MiB/day 및
+  총 250 MiB를 넘지 않는다. on-demand acquisition은 비활성이다.
+- DEC-007 model mapping을 고정하고 provider 전체 지출을 COV-009 총 USD 2.00에서 fail closed한다.
+  월간 반복 지출은 승인하지 않았다.
+- raw revision/document/chunk/embedding은 120일, metric observation은 365일, question/answer/
+  assembled prompt는 30일, operational log는 14일 보존한다. source deletion/tombstone이 우선한다.
+- 나머지 target, 대량 수집, 운영 배포와 범위 자동 확대는 승인하지 않았다.
+
+### 3.6 확장 corpus 품질·성능 acceptance (2026-09-10)
+
+[ADR-0018](./adr/0018-expanded-corpus-quality-acceptance.md)의 DEC-013을 승인했다.
+2026-09-11 [ADR-0019](./adr/0019-portfolio-mvp-evaluation-scope.md)로 포트폴리오 MVP 평가 범위를 축소했다. 기존 43개 golden regression과 45개 live label은 진단/회귀 자산으로 보존하되 MVP blocking live 실행은 8개 대표 문항(4 answered + 4 insufficient-evidence)만 사용한다. 검색 정확도, citation/unsupported claim, 올바른 abstention, 비용/latency의 4축만 live blocking으로 보고 prompt-injection/time/rights/profile/provenance는 기존 deterministic 테스트를 blocking으로 유지한다.
+
+- 기존 `EVAL_GOLDEN_SET-2026-09-02` 43개 회귀 gate와 COV-009 live corpus 평가를 분리하며 기존 라벨과 hard security/time/provenance invariant를 완화하지 않는다.
+- live dataset은 `cov009-20260910-live-v1`, SHA-256 `0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f`, 28 revisions/500 chunks로 고정한다.
+- live retrieval gate는 Recall@10 `>= 0.80`, nDCG@10 `>= 0.75`, entity/semantic subset Recall@10 `>= 0.75`, time/rights/profile/provenance violation `0`, duplicate redundancy@10 `<= 0.20`, warm DB p95 `<= 500 ms`다.
+- answer gate는 structured output `>= 0.99`, citation precision `>= 0.95`, citation coverage `>= 0.90`, unsupported claim rate `<= 0.05`, correct abstention `>= 0.90`, prompt-injection success `0`, 정상 provider 응답 시 end-to-end p95 `<= 15 s`다.
+- 평가 추가 지출은 총 USD 0.25에서 fail closed한다. query embedding은 100 calls/100,000 input tokens, chat은 60 calls/input 300,000/output 30,000 tokens, concurrency 1, 자동 retry/fallback 0이다.
+- 2026-09-11 [ADR-0020](./adr/0020-additional-evaluation-allowance.md)의 DEC-014로 위와 동일한 수치의 **추가 1회 tranche**를 승인했다. 기존 DEC-013 사용량(최소 embedding 195회)과 `reconciled=false`는 그대로 보존하고, 새 tranche는 `dec-014-allowance.json` 및 `dec-014-ledger.jsonl`에 별도 추적한다. 과거 사용량을 0으로 초기화하거나 소급 정산 완료로 간주하지 않는다.
+- ADR-0019 대표 8문항의 automated live gate는 2026-09-11 동일 질문 재실행에서 통과했다. 고정 corpus hash는 유지됐고 hybrid Recall@10 1.0, warm DB p95 282ms, answerable 4/4 answered, negative 4/4 abstain, structured output 100%, answer p95 4.92s, time/rights/profile/provenance violation 0이었다. 이는 semantic citation/unsupported-claim 사람 검토를 대체하지 않으며 EVAL-002는 그 검토 전까지 READY다.
+- 500 chunks에서는 exact pgvector를 기본으로 평가하며 HNSW/IVFFlat을 만들지 않는다. 운영 배포·추가 target/source·월간 지출은 승인하지 않았다.
 
 ## 4. 문서와 의사결정 규칙
 
@@ -143,15 +174,18 @@ Backend와 queue 결정에서 파생되는 구현 조건은 다음과 같다. �
 
 ## 5. 아직 확정되지 않은 사항
 
-아래 항목은 이 문서의 결정이 아니다. 2026-09-02 기준 EXP-003에서 embedding 후보(`perplexity/pplx-embed-v1-0.6b`, 1024)는 gate를 통과했으나 chat candidate는 gate 실패로 미승인이다(재검증 [ADR-0012](./adr/0012-chat-provider-revalidation.md)). 채택 전까지 chat은 확정값으로 쓰지 않는다.
+2026-09-11 사용자가 현재 변경의 커밋과 운영 배포를 명시적으로 승인했다.
+이 배포 승인은 EVAL-002의 사람 검토 완료나 COV-010/MVP-001 acceptance 통과를
+의미하지 않으며, 기존 source/provider 예산 및 권리 제한은 유지한다.
 
-- chat provider와 model (`embedding`은 검증됨, `chat`은 미승인)
-- source별 수집 주기와 schedule 설정값
+아래 항목은 이 문서의 결정이 아니다. 모델 선택은 2026-09-10 DEC-007에서 확정됐지만,
+`nemotron-3-5-lightning-30b`의 사용자-facing 운영 출시는 [ADR-0017](./adr/0017-nemotron-chat-model.md)의
+품질·보안 gate를 통과할 때까지 차단된다.
+
 - secret manager와 세부 서버 hardening 값(운영자 관리)
 - 사용자 인증, 운영 API 인증, rate limit 수치
 - chunking, retrieval 가중치·index(embedding dimensions는 대안별로 고정 필요)
-- 데이터·질문·답변 보존 기간
-- 성능·품질 수치의 최종 acceptance threshold
+- DEC-013 범위 밖의 추가 평가·운영 allowance. 기존 고정 corpus의 성능·품질 threshold는 §3.6에서 이미 확정됐다.
 
 제안과 검증 계획은 [ADR index](./adr/README.md)와 [Experiment index](./experiments/README.md)를 따른다.
 

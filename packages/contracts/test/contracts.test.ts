@@ -5,7 +5,7 @@ import {
   mapValidationFailureTo400,
   parseAnswerRequest,
   parseAnswerResponse,
-  parseCollectionJobPayload,
+  parseCollectionDelivery,
   parseHealthLiveResponse,
   parseHealthReadyResponse,
   parseSourceDetailResponse,
@@ -15,7 +15,6 @@ import {
   parseTopicSearchQuery,
   parseTopicSummary,
   safeParseAnswerRequest,
-  safeParseCollectionJobPayload,
   safeParseErrorEnvelope,
   safeParseHealthLiveResponse,
   safeParseHealthReadyResponse,
@@ -100,13 +99,11 @@ describe('answer response contract', () => {
 
 describe('collection job contract', () => {
   test('accepts a versioned identifier-only job payload', () => {
-    expect(parseCollectionJobPayload(validCollectionJobPayload)).toEqual(validCollectionJobPayload);
+    expect(parseCollectionDelivery(validCollectionJobPayload)).toEqual(validCollectionJobPayload);
   });
 
   test('rejects large/raw undeclared payload fields', () => {
-    const result = safeParseCollectionJobPayload(jobWithUnknownField);
-
-    expect(result.success).toBe(false);
+    expect(() => parseCollectionDelivery(jobWithUnknownField)).toThrow(ContractValidationError);
   });
 });
 

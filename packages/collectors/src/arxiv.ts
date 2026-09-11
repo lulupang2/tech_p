@@ -4,8 +4,19 @@ import { encodeOpaqueCursor, decodeOpaqueCursor } from './cursor.js';
 import type {
   CollectionContext,
   CollectionResult,
+  CollectedRawItem,
+  CollectorPort,
+  CollectorPagePort,
+  CollectionPageRequest,
+  CollectionPageResult,
   PolicyGuardPort,
   SourcePolicy,
+} from '@techpulse/domain';
+import {
+  assertCollectableTarget,
+  decodePageCursor,
+  encodePageCursor,
+  validatePageResult,
 } from '@techpulse/domain';
 
 /**
@@ -227,7 +238,7 @@ export function parseArxivFeed(xml: string): ParsedArxivFeed {
  * - v1/v2 external ID preservation
  * - published -> publishedAt, updated -> metadata separation
  */
-export class ArxivCollector extends BaseCollector {
+export class ArxivCollector extends BaseCollector implements CollectorPort, CollectorPagePort {
   readonly sourceKey = 'arxiv' as const;
   readonly policy: SourcePolicy = SOURCE_POLICIES['arxiv'];
 
@@ -503,5 +514,138 @@ export class ArxivCollector extends BaseCollector {
     } finally {
       release();
     }
+  }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+
+    const category =
+      request.target.selector.kind === 'category'
+        ? request.target.selector.category
+        : request.target.selector.kind === 'tag'
+          ? request.target.selector.tag
+          : (this.defaultCategories[0] ?? 'cs.AI');
+    const query =
+      request.target.selector.kind === 'query' ? request.target.selector.query : `cat:${category}`;
+
+    let start = 0;
+    if (request.partition.cursor) {
+      const decoded = decodePageCursor(request.partition, request.target.capability.cursorVersion);
+      if (decoded) {
+        try {
+          const parsed = JSON.parse(decoded) as { start?: number };
+          if (typeof parsed.start === 'number' && parsed.start >= 0) {
+            start = parsed.start;
+          }
+        } catch {
+          // Fallback
+        }
+      }
+    }
+
+    const limit = request.limit > 0 ? Math.min(request.limit, 100) : this.defaultMaxResults;
+    const fromStr = formatArxivDate(request.partition.window.from);
+    const toStr = formatArxivDate(request.partition.window.to);
+
+    const searchQuery = `(${query}) AND submittedDate:[${fromStr} TO ${toStr}]`;
+    const url = new URL(this.baseUrl);
+    url.searchParams.set('search_query', searchQuery);
+    url.searchParams.set('start', String(start));
+    url.searchParams.set('max_results', String(limit));
+    url.searchParams.set('sortBy', 'submittedDate');
+    url.searchParams.set('sortOrder', 'descending');
+
+    const urlValidation = this.guard.validateUrl(url.toString(), this.policy);
+    if (!urlValidation.valid) {
+      throw new Error(`SSRF guard rejected URL: ${urlValidation.reason}`);
+    }
+
+    const response = await this.executeRequest(url.toString(), request.signal);
+    const bytesFetched = Buffer.byteLength(response.text, 'utf8');
+
+    const feed = parseArxivFeed(response.text);
+    const items: CollectedRawItem[] = [];
+
+    const window = request.partition.window;
+    for (const entry of feed.entries) {
+      const publishedAt = new Date(entry.published);
+      if (Number.isNaN(publishedAt.getTime())) {
+        continue;
+      }
+      if (
+        publishedAt.getTime() < window.from.getTime() ||
+        publishedAt.getTime() >= window.to.getTime()
+      ) {
+        continue;
+      }
+
+      const payload: Record<string, unknown> = {
+        id: entry.id,
+        arxivId: entry.arxivId,
+        title: entry.title,
+        summary: entry.summary,
+        published: entry.published,
+        updated: entry.updated,
+        authors: entry.authors,
+        categories: entry.categories,
+        canonicalUrl: entry.canonicalUrl,
+        ...(entry.primaryCategory ? { primaryCategory: entry.primaryCategory } : {}),
+        ...(entry.doi ? { doi: entry.doi } : {}),
+        ...(entry.comment ? { comment: entry.comment } : {}),
+        ...(entry.journalRef ? { journalRef: entry.journalRef } : {}),
+      };
+
+      const rawItem = this.createRawItem({
+        externalId: `arxiv:${entry.arxivId}`,
+        payload,
+        publishedAt,
+        cursor: entry.published,
+        metadata: {
+          canonicalUrl: entry.canonicalUrl,
+          primaryCategory: entry.primaryCategory ?? entry.categories[0] ?? 'cs.AI',
+          categories: entry.categories,
+          updatedAt: entry.updated,
+        },
+      });
+      items.push(rawItem);
+    }
+
+    const nextStartIndex = start + feed.entries.length;
+    let disposition: CollectionPageResult['disposition'];
+    let nextCursor: string | null = null;
+    let reason: string | null = null;
+
+    if (nextStartIndex < feed.totalResults && feed.entries.length > 0) {
+      if (nextStartIndex >= 10000) {
+        disposition = 'partial';
+        reason = 'result_cap';
+        nextCursor = null;
+      } else {
+        disposition = 'continue';
+        nextCursor = encodePageCursor(
+          request.partition,
+          request.target.capability.cursorVersion,
+          JSON.stringify({ start: nextStartIndex }),
+        );
+      }
+    } else {
+      disposition = 'complete';
+      nextCursor = null;
+    }
+
+    const result: CollectionPageResult = {
+      items,
+      nextCursor,
+      disposition,
+      reason,
+      retryAt: null,
+      requests: 1,
+      bytes: bytesFetched,
+    };
+    validatePageResult(request.partition, result);
+    return result;
   }
 }

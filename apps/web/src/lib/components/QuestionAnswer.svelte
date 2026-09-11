@@ -73,7 +73,11 @@
   import { locale, type Locale } from '$lib/i18n.js';
   import { ApiClient, ApiClientError } from '../api-client.js';
   import { renderMarkdown } from '../markdown.js';
-  import type { AnswerResponse, ValidationIssue } from '@techpulse/contracts';
+  import type {
+    AnswerResponse,
+    CoverageReportResponse,
+    ValidationIssue,
+  } from '@techpulse/contracts';
   interface Props {
     client: ApiClient;
     initialResponse?: AnswerResponse | null;
@@ -109,6 +113,7 @@
   let errorDetails = $state<readonly ValidationIssue[]>([]);
   let requestId = $state<string | null>(null);
   let highlightedCitationId = $state<string | null>(null);
+  let coverageReport = $state<CoverageReportResponse | null>(null);
 
   // Character limit validation
   const MAX_QUESTION_LENGTH = 2000;
@@ -303,6 +308,14 @@
       const res = await client.createAnswer(payload);
       response = res;
       requestId = res.requestId;
+      if (!isUnboundedStart(res.resolvedTimeRange.from)) {
+        coverageReport = await client
+          .getCoverage({
+            from: res.resolvedTimeRange.from,
+            to: res.resolvedTimeRange.to,
+          })
+          .catch(() => null);
+      }
     } catch (err) {
       if (err instanceof ApiClientError) {
         errorCode = err.code;
@@ -327,6 +340,7 @@
     selectedTimezone = 'Asia/Seoul';
     selectedLanguage = 'auto';
     response = null;
+    coverageReport = null;
     errorMessage = null;
     errorCode = null;
     errorDetails = [];
@@ -1103,7 +1117,58 @@
           </div>
         </div>
 
-        {#if response.coverage.limitations.length > 0}
+        {#if coverageReport}
+          <div
+            class="corpus-readiness-box"
+            role="region"
+            aria-label="Corpus Document & Partition Readiness"
+          >
+            <div class="corpus-readiness-header">
+              <span class="corpus-readiness-label">Corpus Index &amp; Partition Readiness:</span>
+              <span
+                class="corpus-status-tag"
+                class:tag-ready={coverageReport.partitionsChecked > 0 &&
+                  coverageReport.partitionsCompleted === coverageReport.partitionsChecked &&
+                  coverageReport.partitionsPartial === 0 &&
+                  coverageReport.vectorDocuments > 0}
+                class:tag-partial={coverageReport.partitionsPartial > 0 ||
+                  coverageReport.reasons.length > 0}
+              >
+                {#if coverageReport.partitionsChecked > 0 && coverageReport.partitionsCompleted === coverageReport.partitionsChecked && coverageReport.partitionsPartial === 0 && coverageReport.vectorDocuments > 0 && coverageReport.reasons.length === 0}
+                  ✓ Corpus Ready
+                {:else if coverageReport.reasons.includes('processing_pending')}
+                  ⚠ Processing Pending
+                {:else if coverageReport.partitionsPartial > 0}
+                  ⚠ Partial Readiness ({coverageReport.partitionsPartial} partial partitions)
+                {:else}
+                  ⚠ Limited Coverage
+                {/if}
+              </span>
+            </div>
+            <div class="corpus-readiness-grid">
+              <div class="c-stat">
+                <span class="c-label">Raw Documents:</span>
+                <span class="c-val">{coverageReport.rawDocuments.toLocaleString()}</span>
+              </div>
+              <div class="c-stat">
+                <span class="c-label">Lexical Documents:</span>
+                <span class="c-val">{coverageReport.lexicalDocuments.toLocaleString()}</span>
+              </div>
+              <div class="c-stat">
+                <span class="c-label">Vector Documents:</span>
+                <span class="c-val">{coverageReport.vectorDocuments.toLocaleString()}</span>
+              </div>
+              <div class="c-stat">
+                <span class="c-label">Partitions (Checked / Completed / Partial):</span>
+                <span class="c-val"
+                  >{coverageReport.partitionsChecked} / {coverageReport.partitionsCompleted} / {coverageReport.partitionsPartial}</span
+                >
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        {#if response.coverage.limitations.length > 0 || (coverageReport && coverageReport.reasons.length > 0)}
           <div
             class="coverage-limitations"
             role="region"
@@ -1130,8 +1195,8 @@
                 Coverage Limitations &amp; Freshness Warnings:
               </span>
               <span class="lim-badge">
-                {response.coverage.limitations.length}
-                {response.coverage.limitations.length === 1 ? 'Advisory' : 'Advisories'}
+                {response.coverage.limitations.length +
+                  (coverageReport ? coverageReport.reasons.length : 0)} Advisories
               </span>
             </div>
             <ul class="lim-list">
@@ -1140,6 +1205,25 @@
                   <span class="lim-text">{limitation}</span>
                 </li>
               {/each}
+              {#if coverageReport}
+                {#each coverageReport.reasons as reason (reason)}
+                  <li class="lim-item">
+                    <span class="lim-tag-reason">
+                      {#if reason === 'processing_pending'}
+                        [Processing Pending] 수집된 데이터가 아직 색인·정규화 처리 중입니다.
+                      {:else if reason === 'raw_shortage'}
+                        [Raw Shortage] 지정된 기간 내 수집된 원본 데이터가 부족합니다.
+                      {:else if reason === 'period_gap'}
+                        [Period Gap] 요청된 기간 내 데이터 수집 공백이 존재합니다.
+                      {:else if reason === 'retrieval_miss'}
+                        [Retrieval Miss] 관련 문서를 색인에서 찾지 못했습니다.
+                      {:else}
+                        [Unknown Limitation] 알 수 없는 데이터 한계가 보고되었습니다.
+                      {/if}
+                    </span>
+                  </li>
+                {/each}
+              {/if}
             </ul>
           </div>
         {/if}

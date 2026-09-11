@@ -53,5 +53,5 @@ ENV NODE_ENV=production
 STOPSIGNAL SIGTERM
 
 HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=5 \
-  CMD node -e "process.exit(0)"
+  CMD node -e "fetch('http://127.0.0.1:3001/health/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
 CMD ["node", "--import=./node_modules/.pnpm/tsx@4.23.13/node_modules/tsx/dist/loader.mjs", "apps/worker/src/index.ts"]

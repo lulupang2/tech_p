@@ -48,10 +48,8 @@ export const validAnswerResponse = {
 };
 
 export const validCollectionJobPayload = {
-  schemaVersion: 1,
-  collectionRunId: 'run_fixture',
-  sourceKey: 'github_releases',
-  cursor: null,
+  schemaVersion: 2,
+  deliveryId: '123e4567-e89b-42d3-a456-426614174000',
 };
 
 export const validErrorEnvelope = {

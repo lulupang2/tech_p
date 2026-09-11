@@ -2,7 +2,8 @@
 
 This runbook defines the operational procedures, deployment topologies, container configurations, and troubleshooting workflows for the Signal Archive platform.
 
-2026-09-08: ADR-0015 확장 설계가 승인됐고 현재 세션 구현·검증이 허용됐다. 아래 기존 명령은 baseline이며 target별 backfill/scheduler/coverage/budget 자동 운영 완료를 뜻하지 않는다. 새 실행·검증 상태는 TASKS COV 작업과 §12를 따른다. source/provider/지출 gate는 유지한다.
+2026-09-10: ADR-0015 구현과 COV-008 검증 뒤 DEC-007 model 및 ADR-0016의 제한된 DEC-012
+source/지출 범위가 승인됐고 COV-009 bounded live run을 완료했다. 새 실행·검증 상태는 TASKS COV 작업과 §12를 따른다.
 
 ---
 
@@ -165,6 +166,11 @@ Per **ADR-0001**, **ADR-0004**, and **SSOT §3**:
 ## 6. Operational Procedures
 
 ### 6.0 Production deployment (`signal.jisung.lol`)
+
+2026-09-11 deployment preparation: production Compose enables the worker health listener
+on port 3001 and the API checks it over the internal Compose network. Optional CI database
+integration is enabled by `TECHPULSE_CI_ENABLE_INTEGRATION=true` after configuring an isolated
+`DATABASE_URL`; secrets cannot be used directly in a GitHub job-level condition.
 
 Production uses [ADR-0013](./adr/0013-production-deployment.md): GHCR images, Docker Compose, SSH, and the host-owned systemd Caddy snippet. A push to `main` starts the workflow, but the GitHub `production` Environment approval is required before the deploy job can run.
 
@@ -396,4 +402,33 @@ pg_restore \
 7. 로컬 정상 동작 증거는 실제 PG+Redis와 실제 app 프로세스, fixture HTTP source·fake model을 사용한다. 이것은 유료 provider·실제 corpus 품질 증빙과 별개다.
 8. 실제 모델/source 실행은 DEC-007/DEC-012 승인 뒤 COV-009에서 수행한다. COV-010과 EVAL-002 기준 미달이면 MVP 출시 완료로 표시하지 않는다.
 
+### 12.1 DEC-012 승인값 (2026-09-10)
+
+- allowlist: `microsoft/TypeScript`, `nodejs/node`, `microsoft/playwright`, `facebook/react`,
+  `pgvector/pgvector`의 GitHub Releases만 허용한다.
+- target당 1 page canary를 먼저 확인한 뒤 최근 90일 backfill을 concurrency 1로 실행한다.
+- incremental은 6시간 ±15분 jitter, concurrency 1이다.
+- API 200/day·1,000 total, bytes 25 MiB/day·250 MiB total, provider spend USD 2 total을 넘으면
+  중지한다. On-demand acquisition은 끈다.
+- retention purge는 120/365/30/14일 분류를 dry-run하고 citation dependency와 backup을 확인한
+  뒤에만 별도 irreversible 단계로 수행한다.
+- AI-002 contract와 COV-009 live model lane 검증은 완료됐다. 실제 credential은 로컬 env로만 주입했고
+  sanitized measurement는 `docs/experiments/cov-009/live-measurement.json`에 고정했다.
+
+### 12.2 COV-009 실측 결과 (2026-09-10)
+
+- 연결된 PostgreSQL+pgvector와 Redis를 사용했으며 Docker 서비스나 기존 volume/data 변경은 없었다.
+- 5개 target의 backfill/incremental 10개 partition이 모두 완료됐다. on-demand, partial, failed, cancelled는 0이다. `pgvector/pgvector`는 90일 retained release 0건으로 coverage gap이다.
+- worker 재시작 뒤 pending outbox를 복구해 500 chunks/500 embeddings와 pending delivery 0을 확인했다.
+- GitHub usage는 11 requests/1,274,586 bytes, embedding usage는 188,073 tokens/USD 0.000912다.
+- DEC-013은 승인됐으며 고정 corpus의 품질/성능 threshold는 ADR-0018을 따른다. 실험 완료와 gate 통과를 구분한다.
+
 새 ops 명령은 COV-001 manifest→COV-008 구현·smoke 이후 이 절에 실행 가능한 명령으로 등록한다. 현재 문서의 절차를 아직 존재하지 않는 CLI가 구현됐다는 주장으로 읽지 않는다.
+
+### 12.3 EVAL-002 실행과 누적 예산 차단
+
+실제 구현된 평가 CLI와 모드는 [EVAL-002 README](./experiments/eval-002/README.md)를 따른다. credential-free 계획은 `pnpm --filter @techpulse/api exec node --import=tsx/esm src/release-evaluation-cli.ts --mode=plan`으로 생성한다. 실제 DB preflight/FTS 진단과 유료 live 평가를 혼동하지 않는다.
+
+2026-09-10 과거 recording 감사에서 query embedding 최소 195회/6,290 tokens를 확인했다. 승인 call cap 100회를 넘었으므로 live 실행은 `release_budget_exhausted`로 차단된다. chat/총비용과 정확한 전체 usage는 여전히 unknown이다. `prior-usage.json`을 0으로 바꾸거나 journal을 새로 만들어 allowance를 복구하지 않는다. 추가 호출은 명시적 신규/변경 승인과 역사 사용량 보존을 요구한다. lock·미완료 reservation·잘린 journal은 자동 복구/환불하지 않는다.
+
+43개 회귀, 필수 예시 4개, live 라벨 및 의미적 인용 검토와 COV-010 acceptance가 없으면 EVAL-002/COV-010/MVP를 완료로 표시하지 않는다.

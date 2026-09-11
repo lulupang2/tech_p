@@ -1,4 +1,5 @@
 import type {
+  CollectionStatePort,
   DocumentRepositoryPort,
   EnrichmentServicePort,
   MetricObservationRepositoryPort,
@@ -6,10 +7,13 @@ import type {
   NormalizationServicePort,
   PipelineEventRepositoryPort,
   RawItemRepositoryPort,
+  SourceKey,
+  SourceRecord,
   SourceRepositoryPort,
+  SearchReadinessPort,
 } from '@techpulse/domain';
 import { validateMetricObservation } from '@techpulse/domain';
-import type { NormalizationJobData } from './jobs.js';
+import type { DeduplicationOperation } from './deduplication.js';
 
 export interface NormalizationJobHandlerOptions {
   readonly normalizationService: NormalizationServicePort;
@@ -17,11 +21,14 @@ export interface NormalizationJobHandlerOptions {
   readonly documentRepository: DocumentRepositoryPort;
   readonly metricObservationRepository: MetricObservationRepositoryPort;
   readonly pipelineEventRepository: PipelineEventRepositoryPort;
-  readonly sourceRepository?: SourceRepositoryPort;
+  readonly sourceRepository?: SourceRepositoryPort | undefined;
+  readonly collectionStateRepository?: CollectionStatePort | undefined;
+  readonly readinessRepository?: SearchReadinessPort | undefined;
+  readonly deduplicate?: DeduplicationOperation | undefined;
   /** Optional PIPE-005 stage; absent keeps normalization fakes/backward compatibility intact. */
-  readonly enrichmentService?: EnrichmentServicePort;
+  readonly enrichmentService?: EnrichmentServicePort | undefined;
   /** Optional embedding hook executed after chunks are persisted. */
-  readonly embedRevision?: (revisionId: string) => Promise<void>;
+  readonly embedRevision?: ((revisionId: string) => Promise<void>) | undefined;
 }
 export interface NormalizationExecutionResult {
   readonly rawItemId: string;
@@ -32,8 +39,14 @@ export interface NormalizationExecutionResult {
   readonly errorSummary?: string | null;
 }
 
-export type NormalizationOperation = (
-  jobData: NormalizationJobData,
+export interface NormalizationDeliveryRequest {
+  readonly deliveryId?: string | undefined;
+  readonly rawItemId: string;
+  readonly sourceKey?: SourceKey | undefined;
+}
+
+export type NormalizationDeliveryOperation = (
+  request: NormalizationDeliveryRequest,
 ) => Promise<NormalizationExecutionResult>;
 
 /**
@@ -41,9 +54,9 @@ export type NormalizationOperation = (
  * Integrates NormalizationService with RawItemRepository, DocumentRepository,
  * MetricObservationRepository, and PipelineEventRepository.
  */
-export function createNormalizationJobHandler(
+export function createNormalizationDeliveryHandler(
   options: NormalizationJobHandlerOptions,
-): NormalizationOperation {
+): NormalizationDeliveryOperation {
   const {
     normalizationService,
     rawItemRepository,
@@ -51,13 +64,18 @@ export function createNormalizationJobHandler(
     metricObservationRepository,
     pipelineEventRepository,
     sourceRepository,
+    collectionStateRepository,
+    readinessRepository,
+    deduplicate,
     enrichmentService,
     embedRevision,
   } = options;
 
-  return async (jobData: NormalizationJobData): Promise<NormalizationExecutionResult> => {
-    const { rawItemId, sourceKey } = jobData;
+  return async (request: NormalizationDeliveryRequest): Promise<NormalizationExecutionResult> => {
+    const { rawItemId, deliveryId } = request;
+    let sourceKey: SourceKey = request.sourceKey ?? ('github_releases' as SourceKey);
     const processorVersion = normalizationService.normalizerVersion;
+    const now = new Date();
 
     // 1. Record started pipeline event
     await pipelineEventRepository.create({
@@ -90,15 +108,18 @@ export function createNormalizationJobHandler(
         };
       }
 
-      // 3. Optional source resolution for sourceId
+      // 3. Source resolution for sourceId / sourceKey
       let sourceId = rawItem.sourceId;
-      if (!sourceId && sourceRepository) {
-        const source = await sourceRepository.findByKey(sourceKey);
-        if (source) {
-          sourceId = source.id;
+      if (sourceRepository) {
+        if (request.sourceKey) {
+          const source = await sourceRepository.findByKey(request.sourceKey);
+          if (source) sourceId = source.id;
+        } else if (sourceId) {
+          const allSources = await sourceRepository.listEnabled();
+          const matched = allSources.find((s: SourceRecord) => s.id === sourceId);
+          if (matched) sourceKey = matched.key as SourceKey;
         }
       }
-
       // 4. Run deterministic normalization
       const normResult: NormalizationResult = normalizationService.normalize(rawItem, sourceKey);
 
@@ -119,6 +140,17 @@ export function createNormalizationJobHandler(
           rawItemId: doc.rawItemId ?? rawItemId,
           status: doc.status,
         });
+        if (deduplicate) {
+          const result = await deduplicate({
+            documentId: savedDocument.document.id,
+            revisionId: savedDocument.revision.id,
+            rawItemId,
+            sourceKey,
+            externalId: rawItem.externalId,
+          });
+          if (result.status !== 'succeeded') throw new Error('Deduplication failed');
+        }
+
         if (enrichmentService) {
           await enrichmentService.enrich({
             documentId: savedDocument.document.id,
@@ -127,6 +159,12 @@ export function createNormalizationJobHandler(
             bodyText: doc.bodyText,
             sourceKey,
           });
+        }
+        if (readinessRepository) {
+          await readinessRepository.markLexicalReady(savedDocument.revision.id, now);
+        }
+        if (collectionStateRepository) {
+          await collectionStateRepository.attachRevision(rawItemId, savedDocument.revision.id, now);
         }
         if (embedRevision) {
           await embedRevision(savedDocument.revision.id);
@@ -155,7 +193,12 @@ export function createNormalizationJobHandler(
         }
       }
 
-      // 7. Record succeeded pipeline event
+      // 7. Complete delivery outbox if deliveryId is provided
+      if (deliveryId && collectionStateRepository) {
+        await collectionStateRepository.completeDelivery(deliveryId, now);
+      }
+
+      // 8. Record succeeded pipeline event
       await pipelineEventRepository.create({
         rawItemId,
         stage: 'normalization',

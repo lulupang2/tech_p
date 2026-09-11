@@ -1,4 +1,15 @@
-import type { SearchHit } from '@techpulse/domain';
+import type {
+  AcquisitionLimits,
+  AcquisitionRequest,
+  BoundedAcquisitionPort,
+  CollectionWindow,
+  CoveragePort,
+  CoverageReport,
+  SearchHit,
+  SearchServicePort,
+} from '@techpulse/domain';
+import { classifyTopics } from '@techpulse/domain';
+import { randomUUID } from 'node:crypto';
 
 export interface LiveSearchResultItem {
   readonly title: string;
@@ -10,242 +21,127 @@ export interface LiveSearchResultItem {
 
 export interface LiveSearchOptions {
   readonly timeoutMs?: number | undefined;
-  readonly githubPat?: string | undefined;
-  readonly fetchFn?: typeof fetch | undefined;
+  readonly acquisitionPort?: BoundedAcquisitionPort | undefined;
+  readonly searchService?: SearchServicePort | undefined;
+  readonly coveragePort?: CoveragePort | undefined;
+  readonly signal?: AbortSignal | undefined;
+  readonly now?: () => Date;
+  readonly window?: CollectionWindow | undefined;
+  readonly topicIds?: readonly string[] | undefined;
 }
 
-/**
- * Searches npm registry for package metadata and recent release updates.
- */
-async function searchNpmRegistry(
-  query: string,
-  fetchFn: typeof fetch,
-  timeoutMs: number,
-): Promise<readonly LiveSearchResultItem[]> {
-  const cleanQuery = query.replace(/[^\w\s@/.-]/gu, ' ').trim();
-  if (!cleanQuery) return [];
-
-  const url = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(cleanQuery)}&size=5`;
+function combineSignals(a?: AbortSignal, b?: AbortSignal): AbortSignal | undefined {
+  if (!a) return b;
+  if (!b) return a;
+  if (typeof AbortSignal.any === 'function') {
+    return AbortSignal.any([a, b]);
+  }
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const res = await fetchFn(url, {
-      signal: controller.signal,
-      headers: { Accept: 'application/json', 'User-Agent': 'TechPulse-SignalArchive' },
-    });
-    if (!res.ok) return [];
-    const data = (await res.json()) as {
-      objects?: Array<{
-        package?: {
-          name?: string;
-          version?: string;
-          description?: string;
-          links?: { npm?: string; homepage?: string; repository?: string };
-          date?: string;
-          keywords?: string[];
-        };
-      }>;
-    };
-
-    const results: LiveSearchResultItem[] = [];
-    for (const item of data.objects ?? []) {
-      const pkg = item.package;
-      if (!pkg?.name) continue;
-      const title = `${pkg.name} v${pkg.version ?? 'latest'} (npm)`;
-      const url = pkg.links?.npm ?? `https://www.npmjs.com/package/${pkg.name}`;
-      const desc = pkg.description ?? 'Package on npm registry';
-      const keywords = Array.isArray(pkg.keywords)
-        ? ` Keywords: ${pkg.keywords.slice(0, 5).join(', ')}.`
-        : '';
-      const snippet = `${desc}. Latest version: ${pkg.version ?? 'unknown'}.${keywords}`;
-      const publishedAt = pkg.date ? new Date(pkg.date) : null;
-      results.push({
-        title,
-        url,
-        snippet,
-        sourceKey: 'npm_registry',
-        publishedAt: isNaN(publishedAt?.getTime() ?? NaN) ? null : publishedAt,
-      });
-    }
-    return results;
-  } catch {
-    return [];
-  } finally {
-    clearTimeout(timer);
+  const onAbort = () => controller.abort();
+  if (a.aborted || b.aborted) {
+    controller.abort();
+    return controller.signal;
   }
+  a.addEventListener('abort', onAbort, { once: true });
+  b.addEventListener('abort', onAbort, { once: true });
+  return controller.signal;
 }
 
 /**
- * Searches GitHub repositories for matching open-source projects and stars/descriptions.
- */
-async function searchGitHub(
-  query: string,
-  githubPat: string | undefined,
-  fetchFn: typeof fetch,
-  timeoutMs: number,
-): Promise<readonly LiveSearchResultItem[]> {
-  const cleanQuery = query.replace(/[^\w\s@/.-]/gu, ' ').trim();
-  if (!cleanQuery) return [];
-
-  const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(cleanQuery)}+stars:>50&sort=stars&order=desc&per_page=5`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  const headers: Record<string, string> = {
-    Accept: 'application/vnd.github.v3+json',
-    'User-Agent': 'TechPulse-SignalArchive',
-  };
-  if (githubPat) {
-    headers['Authorization'] = `Bearer ${githubPat}`;
-  }
-
-  try {
-    const res = await fetchFn(url, { signal: controller.signal, headers });
-    if (!res.ok) return [];
-    const data = (await res.json()) as {
-      items?: Array<{
-        full_name?: string;
-        html_url?: string;
-        description?: string;
-        stargazers_count?: number;
-        pushed_at?: string;
-        language?: string;
-      }>;
-    };
-
-    const results: LiveSearchResultItem[] = [];
-    for (const item of data.items ?? []) {
-      if (!item.full_name) continue;
-      const title = `${item.full_name} (${item.stargazers_count?.toLocaleString() ?? 0} stars)`;
-      const url = item.html_url ?? `https://github.com/${item.full_name}`;
-      const desc = item.description ?? 'GitHub repository';
-      const lang = item.language ? ` Primary language: ${item.language}.` : '';
-      const snippet = `${desc}.${lang} Stars: ${item.stargazers_count ?? 0}.`;
-      const publishedAt = item.pushed_at ? new Date(item.pushed_at) : null;
-      results.push({
-        title,
-        url,
-        snippet,
-        sourceKey: 'github_search',
-        publishedAt: isNaN(publishedAt?.getTime() ?? NaN) ? null : publishedAt,
-      });
-    }
-    return results;
-  } catch {
-    return [];
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-/**
- * Searches Wikipedia for technical definitions and historical overview.
- */
-async function searchWikipedia(
-  query: string,
-  fetchFn: typeof fetch,
-  timeoutMs: number,
-): Promise<readonly LiveSearchResultItem[]> {
-  const cleanQuery = query.replace(/[^\w\s가-힣]/gu, ' ').trim();
-  if (!cleanQuery) return [];
-
-  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQuery)}&format=json&utf8=`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const res = await fetchFn(url, {
-      signal: controller.signal,
-      headers: { 'User-Agent': 'TechPulse-SignalArchive' },
-    });
-    if (!res.ok) return [];
-    const data = (await res.json()) as {
-      query?: {
-        search?: Array<{
-          title?: string;
-          snippet?: string;
-          pageid?: number;
-          timestamp?: string;
-        }>;
-      };
-    };
-
-    const results: LiveSearchResultItem[] = [];
-    for (const item of data.query?.search ?? []) {
-      if (!item.title) continue;
-      const cleanSnippet = (item.snippet ?? '').replace(/<[^>]+>/gu, '').trim();
-      const title = `${item.title} (Wikipedia)`;
-      const url = `https://en.wikipedia.org/?curid=${item.pageid}`;
-      const publishedAt = item.timestamp ? new Date(item.timestamp) : null;
-      results.push({
-        title,
-        url,
-        snippet: cleanSnippet,
-        sourceKey: 'article',
-        publishedAt: isNaN(publishedAt?.getTime() ?? NaN) ? null : publishedAt,
-      });
-    }
-    return results;
-  } catch {
-    return [];
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-/**
- * Queries real-time technical sources (npm registry, GitHub, Wikipedia) in parallel
- * and converts them into SearchHit items for the RAG prompt context.
+ * Bounded on-demand technical evidence acquisition using injected BoundedAcquisitionPort
+ * and SearchServicePort. Enforces provider/source limits, deadline/timeout, and returns
+ * SearchHits produced from immutable persisted documents via one lexical re-search.
  */
 export async function fetchLiveTechEvidence(
   question: string,
   options: LiveSearchOptions = {},
 ): Promise<readonly SearchHit[]> {
-  const fetchFn = options.fetchFn ?? globalThis.fetch.bind(globalThis);
-  const timeoutMs = options.timeoutMs ?? 3500;
-  const githubPat = options.githubPat ?? process.env['GITHUB_PAT'];
+  if (!options.acquisitionPort) {
+    return [];
+  }
 
-  const genericTerms: Record<string, true> = {
-    and: true,
-    are: true,
-    latest: true,
-    release: true,
-    releases: true,
-    recent: true,
-    trend: true,
-    trends: true,
-    what: true,
+  const nowFn = options.now ?? (() => new Date());
+  const now = nowFn();
+  const timeoutMs = Math.min(10000, Math.max(100, options.timeoutMs ?? 3500));
+  const deadline = new Date(now.getTime() + timeoutMs);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  const window: CollectionWindow = options.window ?? {
+    from: new Date('1970-01-01T00:00:00.000Z'),
+    to: now,
   };
-  const keywords = [...new Set(question.match(/[A-Za-z][A-Za-z0-9@._/-]*/gu) ?? [])].filter(
-    (term) => !genericTerms[term.toLowerCase()],
-  );
-  const searchQuery =
-    keywords.length > 0
-      ? keywords.slice(0, 3).join(' ')
-      : question.replace(/[?.,!~^]/gu, ' ').trim();
 
-  const [npmHits, ghHits, wikiHits] = await Promise.all([
-    searchNpmRegistry(searchQuery, fetchFn, timeoutMs),
-    searchGitHub(searchQuery, githubPat, fetchFn, timeoutMs),
-    searchWikipedia(searchQuery, fetchFn, timeoutMs),
-  ]);
+  const topicIds = options.topicIds ?? classifyTopics({ text: question }).map((t) => t.slug);
 
-  const relevantTerms = keywords.map((term) => term.toLowerCase());
-  const allItems = [...npmHits.slice(0, 3), ...ghHits.slice(0, 3), ...wikiHits.slice(0, 2)].filter(
-    (item) =>
-      relevantTerms.length === 0 ||
-      relevantTerms.some((term) => `${item.title} ${item.snippet}`.toLowerCase().includes(term)),
-  );
+  let coverageReport: CoverageReport;
+  if (options.coveragePort) {
+    try {
+      coverageReport = await options.coveragePort.getCoverage(window, topicIds, now);
+    } catch {
+      coverageReport = {
+        generatedAt: now.toISOString(),
+        from: window.from.toISOString(),
+        to: window.to.toISOString(),
+        rawDocuments: 0,
+        lexicalDocuments: 0,
+        vectorDocuments: 0,
+        partitionsChecked: 0,
+        partitionsCompleted: 0,
+        partitionsPartial: 0,
+        reasons: ['raw_shortage'],
+      };
+    }
+  } else {
+    coverageReport = {
+      generatedAt: now.toISOString(),
+      from: window.from.toISOString(),
+      to: window.to.toISOString(),
+      rawDocuments: 0,
+      lexicalDocuments: 0,
+      vectorDocuments: 0,
+      partitionsChecked: 0,
+      partitionsCompleted: 0,
+      partitionsPartial: 0,
+      reasons: ['raw_shortage'],
+    };
+  }
 
-  return allItems.map((item, index) => ({
-    chunkId: `live_chunk_${index + 1}_${Date.now()}`,
-    documentId: item.url,
-    documentRevisionId: `live_rev_${index + 1}`,
-    title: item.title,
-    content: item.snippet,
-    headingPath: [item.sourceKey],
-    score: 0.95 - index * 0.05,
-    publishedAt: item.publishedAt,
-  }));
+  const limits: AcquisitionLimits = {
+    maxSearches: 2,
+    maxFetches: 3,
+    maxHttpAttempts: 8,
+    maxTotalBytes: 1024 * 1024,
+    deadline,
+    maxContextTokens: 4000,
+    maxOutputTokens: 1000,
+  };
+
+  const combinedSignal = combineSignals(options.signal, controller.signal) ?? controller.signal;
+
+  const request: AcquisitionRequest = {
+    queryRunId: `run_${randomUUID().replaceAll('-', '')}`,
+    query: question,
+    topicIds,
+    window,
+    coverage: coverageReport,
+    limits,
+    signal: combinedSignal,
+  };
+
+  try {
+    const acqResult = await options.acquisitionPort.acquire(request);
+    if (acqResult.acquired > 0 && options.searchService) {
+      const hits = await options.searchService.searchFts({
+        query: question,
+        limit: 10,
+      });
+      return hits;
+    }
+    return [];
+  } catch {
+    return [];
+  } finally {
+    clearTimeout(timer);
+  }
 }

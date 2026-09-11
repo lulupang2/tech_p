@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "task": "COV-009",
+  "runKey": "cov009-20260910-live-v1",
+  "startedAt": "2026-09-10T10:11:43.467Z",
+  "completedAt": "2026-09-10T10:14:59.051Z",
+  "window": {
+    "from": "2026-06-12T03:50:22.000Z",
+    "to": "2026-09-10T03:50:22.000Z"
+  },
+  "targets": [
+    {
+      "canonicalIdentity": "github_releases:microsoft/typescript",
+      "licenseId": "apache-2.0",
+      "targetRevisionId": "b31d23b9-f6a0-48ee-b220-82338c7d3bd9"
+    },
+    {
+      "canonicalIdentity": "github_releases:nodejs/node",
+      "licenseId": "mit",
+      "targetRevisionId": "98d97a7f-d3f9-4610-b5bb-d8b3d8447edf"
+    },
+    {
+      "canonicalIdentity": "github_releases:microsoft/playwright",
+      "licenseId": "apache-2.0",
+      "targetRevisionId": "47744735-56c3-4b22-b1f4-b41ea8e1bb7d"
+    },
+    {
+      "canonicalIdentity": "github_releases:facebook/react",
+      "licenseId": "mit",
+      "targetRevisionId": "de89d25a-9e5f-4d4c-8f66-e5d042e21737"
+    },
+    {
+      "canonicalIdentity": "github_releases:pgvector/pgvector",
+      "licenseId": "postgresql",
+      "targetRevisionId": "989e7010-5407-4049-b63b-8e72fe3353ca"
+    }
+  ],
+  "configuration": {
+    "source": "github_releases",
+    "pageSize": 10,
+    "backfillConcurrency": 1,
+    "incrementalConcurrency": 1,
+    "cadenceMs": 21600000,
+    "jitterMs": 900000,
+    "onDemandEnabled": false,
+    "sourceRequestDailyCap": 200,
+    "sourceRequestTotalCap": 1000,
+    "sourceByteDailyCap": 26214400,
+    "sourceByteTotalCap": 262144000,
+    "providerSpendCapUsd": 2,
+    "usdKrwConversion": null
+  },
+  "models": {
+    "chat": {
+      "provider": "runinfra",
+      "model": "nemotron-3-5-lightning-30b",
+      "version": "NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+      "dimensions": 1,
+      "priceVersion": "runinfra-nemotron-3-5-lightning-2026-09-10",
+      "tokenizerVersion": "provider-reported-v1",
+      "approvalReference": "DEC-007-2026-09-10"
+    },
+    "embedding": {
+      "provider": "openrouter-perplexity",
+      "model": "perplexity/pplx-embed-v1-0.6b",
+      "version": "2026-03-16",
+      "dimensions": 1024,
+      "priceVersion": "openrouter-pplx-embed-2026-09-10",
+      "tokenizerVersion": "provider-reported-v1",
+      "approvalReference": "DEC-007-2026-09-10"
+    }
+  },
+  "sourceUsage": {
+    "requests": 11,
+    "bytes": "1274590",
+    "requestsDuringThisProcess": 11,
+    "bytesDuringThisProcess": 1274590
+  },
+  "providerUsage": {
+    "actualMicroUsd": 912,
+    "actualUsd": 0.000912,
+    "actualTokens": 188073,
+    "unknownReservations": 0
+  },
+  "restart": {
+    "performed": true,
+    "snapshotBeforeRestart": {
+      "partitions": 5,
+      "completed_partitions": 4,
+      "checkpoints": 5,
+      "requests": 5,
+      "bytes": "530265",
+      "raw_items": 20,
+      "revisions": 4,
+      "chunks": 30,
+      "embeddings": 0,
+      "pending_deliveries": 21
+    }
+  },
+  "final": {
+    "partitions": 10,
+    "completed_partitions": 10,
+    "checkpoints": 11,
+    "requests": 11,
+    "bytes": "1274590",
+    "raw_items": 28,
+    "revisions": 28,
+    "chunks": 500,
+    "embeddings": 500,
+    "pending_deliveries": 0
+  },
+  "targetCoverage": [
+    {
+      "canonical_identity": "github_releases:facebook/react",
+      "raw_items": 4,
+      "revisions": 4,
+      "chunks": 30,
+      "embeddings": 30
+    },
+    {
+      "canonical_identity": "github_releases:microsoft/playwright",
+      "raw_items": 5,
+      "revisions": 5,
+      "chunks": 59,
+      "embeddings": 59
+    },
+    {
+      "canonical_identity": "github_releases:microsoft/typescript",
+      "raw_items": 1,
+      "revisions": 1,
+      "chunks": 2,
+      "embeddings": 2
+    },
+    {
+      "canonical_identity": "github_releases:nodejs/node",
+      "raw_items": 18,
+      "revisions": 18,
+      "chunks": 409,
+      "embeddings": 409
+    },
+    {
+      "canonical_identity": "github_releases:pgvector/pgvector",
+      "raw_items": 0,
+      "revisions": 0,
+      "chunks": 0,
+      "embeddings": 0
+    }
+  ],
+  "dataset": {
+    "distinctRawItems": 28,
+    "sha256": "94b6799780ceef0c2c4bfa4c9be00f9859164ae10c16ec37309d6f0e508ad4f5"
+  },
+  "notes": [
+    "Existing PostgreSQL and Redis data were preserved.",
+    "No Docker service, on-demand acquisition, bulk target expansion, or deployment was used.",
+    "USD is authoritative; no KRW conversion was displayed."
+  ]
+}

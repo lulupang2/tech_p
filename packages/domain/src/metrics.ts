@@ -91,6 +91,15 @@ export function validateMetricObservation(observation: {
   }
 }
 
+export function validateCohortMetricType(metricType: string, unit: string): void {
+  if (!METRIC_TYPES.includes(metricType as NormalizedMetricType)) {
+    throw new MetricAggregationError(`Unsupported metric type: ${metricType}`);
+  }
+  if (!METRIC_UNITS[metricType as NormalizedMetricType].includes(unit)) {
+    throw new MetricAggregationError(`Invalid unit '${unit}' for metric '${metricType}'`);
+  }
+}
+
 function observationKey(observation: MetricAggregationObservation): string {
   const sourceScope =
     observation.metricType === 'community_mentions' ? '' : `|${observation.sourceKey}`;

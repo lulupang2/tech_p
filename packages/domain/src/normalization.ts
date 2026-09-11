@@ -300,7 +300,8 @@ export function createNormalizationService(
             : rawItem.canonicalUrl;
 
         const licenseId = normalizeLicenseSlug(
-          (rawItem.rightsMetadata?.['license_id'] as string | undefined) ??
+          (rawItem.rightsMetadata?.['licenseId'] as string | undefined) ??
+            (rawItem.rightsMetadata?.['license_id'] as string | undefined) ??
             (payload['license'] as string | undefined) ??
             null,
         );

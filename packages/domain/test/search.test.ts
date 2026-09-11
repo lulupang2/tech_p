@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { extractSearchKeywords } from '../src/index.js';
+import { extractSearchKeywords, prioritizeSearchKeywords } from '../src/index.js';
 
 describe('extractSearchKeywords (Query Normalization)', () => {
   test("extracts meaningful keywords from '최근 Playwright 릴리스의 주요 변경점을 알려줘.'", () => {
@@ -35,5 +35,18 @@ describe('extractSearchKeywords (Query Normalization)', () => {
     expect(extractSearchKeywords('어떤가요?')).toEqual([]);
     expect(extractSearchKeywords('   ')).toEqual([]);
     expect(extractSearchKeywords('')).toEqual([]);
+  });
+});
+
+describe('prioritizeSearchKeywords', () => {
+  test('puts exact release identifiers ahead of generic natural-language terms', () => {
+    const keywords = extractSearchKeywords(
+      'Summarize nodejs/node release "2026-09-08, Version 24.21.0 Krypton (LTS)".',
+    );
+    const prioritized = prioritizeSearchKeywords(keywords);
+    expect(prioritized.slice(0, 2)).toEqual(['24.21.0', '2026-09-08']);
+    expect(prioritized).not.toContain('Summarize');
+    expect(prioritized).not.toContain('release');
+    expect(prioritized).not.toContain('Version');
   });
 });

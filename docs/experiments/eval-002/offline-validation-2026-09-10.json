@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "recordKind": "agent-recorded summary of completed local tool executions, not a live quality measurement",
+  "verifiedOnUtc": "2026-09-10",
+  "repository": {
+    "path": "/portfolio/TechBlog",
+    "branch": "main",
+    "baseCommit": "c1b197d3c15821ed928b87abd26855d56d0abbbd",
+    "dirtyWorkingTree": true,
+    "existingChangesPreserved": true,
+    "committedOrPushed": false
+  },
+  "environment": {
+    "platform": "Windows",
+    "node": "v26.5.0",
+    "pnpm": "10.32.1",
+    "vitest": "3.2.7",
+    "commandPrefix": "fnm exec --using=26.5.0 --",
+    "runtimeInstalled": false,
+    "productionRuntimePinChanged": false,
+    "fixtureDatabase": "loopback PostgreSQL with pgvector; each integration suite creates and drops its own uniquely named database",
+    "remoteIntegrationOptIn": false,
+    "nonIntegrationDatabaseAndRedisEnvironmentCleared": true
+  },
+  "checks": [
+    {
+      "name": "workspace-static",
+      "command": "fnm exec --using=26.5.0 -- pnpm run static",
+      "status": "passed",
+      "typecheckWorkspaces": 10,
+      "lint": "passed",
+      "format": "passed",
+      "exitCode": 0,
+      "toolExecSessionId": 19241,
+      "terminalChunk": "5b416d"
+    },
+    {
+      "name": "release-and-runtime-budget",
+      "command": "fnm exec --using=26.5.0 -- pnpm --filter @techpulse/api exec vitest run test/release-budget.test.ts test/release-evaluation.test.ts test/runtime-models.test.ts test/approved-models.test.ts",
+      "status": "passed",
+      "files": 4,
+      "tests": 41,
+      "exitCode": 0,
+      "toolExecSessionId": 19241,
+      "resultChunk": "4cd770"
+    },
+    {
+      "name": "domain-budget-and-coverage",
+      "command": "fnm exec --using=26.5.0 -- pnpm --filter @techpulse/domain exec vitest run test/provider-budget.test.ts test/coverage-service.test.ts",
+      "status": "passed",
+      "files": 2,
+      "tests": 28,
+      "exitCode": 0,
+      "toolExecSessionId": 19241,
+      "resultChunk": "4cd770"
+    },
+    {
+      "name": "rag-unit-and-regression-contracts",
+      "command": "fnm exec --using=26.5.0 -- pnpm --filter @techpulse/rag exec vitest run --silent",
+      "status": "passed",
+      "files": 14,
+      "tests": 89,
+      "exitCode": 0,
+      "toolExecSessionId": 19241,
+      "resultChunk": "426ad3",
+      "scope": "Fixture/fake-provider tests, not execution of the 43-item live-model release regression"
+    },
+    {
+      "name": "isolated-postgresql-search-and-coverage",
+      "command": "fnm exec --using=26.5.0 -- pnpm --filter @techpulse/database exec vitest run test/search.integration.test.ts test/coverage-readiness.integration.test.ts --fileParallelism=false",
+      "status": "passed",
+      "files": 2,
+      "tests": 9,
+      "exitCode": 0,
+      "toolExecSessionId": 53000,
+      "terminalChunk": "38dad2",
+      "scope": "After final COV-011 source/fixture and formatting changes; before the subsequent unrelated inner chat-output-cap fix"
+    }
+  ],
+  "distinctTestsInListedSuites": 167,
+  "reproducedThenFixed": {
+    "case": "nested runtime budget widened a stricter release output cap",
+    "preFixResult": "2000 !== 12",
+    "preFixCommand": "fnm exec --using=26.5.0 -- pnpm --filter @techpulse/api exec vitest run test/runtime-models.test.ts -t 'smaller output'",
+    "preFixChunk": "5d549c",
+    "preFixExitCode": 1,
+    "fix": "Provider budget reserves and forwards the minimum of requested and approved output caps; invalid requested caps fail before reservation",
+    "postFixResult": "composed API regression passed in the final 41-test run",
+    "realProviderCalls": 0
+  },
+  "cliAdmissionProof": {
+    "planReport": "docs/experiments/eval-002/eval002-2026-09-10T14-46-18-300Z-plan/report.json",
+    "blockedLiveReport": "docs/experiments/eval-002/eval002-2026-09-10T14-46-21-980Z-live/report.json",
+    "resultChunk": "2390d5",
+    "verifiedArtifactAssertionsChunk": "33c018",
+    "planExitCode": 0,
+    "liveNodeExitCode": 2,
+    "livePnpmWrapperExitCode": 1,
+    "liveFailure": "release_budget_exhausted",
+    "modelsOrPreflightReached": false,
+    "providerCallsThisRun": 0,
+    "answerSubsetCompleteWithoutDbVerification": null,
+    "baselineDenominator": 43,
+    "baselineItemsExecuted": 0,
+    "scope": "These preserved reports precede final formatting and the inner output-cap correction; their source manifests are historical, not the final working tree",
+    "subsequentRerunAttempt": "Bridge security determination rejected the tool request; no successful rerun result is claimed"
+  },
+  "preservation": {
+    "fixedCorpusSha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+    "baselineLabelsSha256": "3878260c83617fb74fba7f98df2af15bf7ee0c980f89b69fd08ce8771fe2289c",
+    "liveLabelFileSha256": "415db8671b8ba77e4c5349f3df62b2d388c425e7952b162c68c63308171215a6",
+    "labelsUnchangedFromPreviousPreflight": true,
+    "labelsValidationChunk": "06220b",
+    "paidProviderCallsInContinuation": 0,
+    "sourceApiCallsInContinuation": 0,
+    "fixedCorpusDbWritesInContinuation": 0,
+    "fixedNeonDbRecheckedInContinuation": false,
+    "corpusReembedding": false,
+    "canonicalBudgetLedgerCreated": false,
+    "unknownReservationsRefunded": false,
+    "originalMeasurementArtifactsOverwritten": false,
+    "formattingOnlyCleanupFileCount": 28,
+    "migrationJsonSemanticValuesPreserved": true,
+    "sqlMigrationFilesEditedInContinuation": false,
+    "formattingValidationChunk": "9d8e81"
+  },
+  "status": {
+    "COV-011": "DONE",
+    "EVAL-002": "READY for offline implementation only; paid evaluation blocked",
+    "COV-010": "BLOCKED",
+    "MVP-001": "BLOCKED",
+    "releaseGatePassed": false
+  },
+  "unverifiedOrBlocked": [
+    "Full workspace unit test and browser/deployment suites were not rerun in this continuation",
+    "Exact historical provider usage and total cost remain unreconciled; verified embedding lower bound 195 exceeds the approved total 100",
+    "Additional paid evaluation requires explicit new or amended approval preserving historical accounting",
+    "Unchanged 43-item behavioral/security release execution remains incomplete",
+    "Actual fixed-corpus hybrid and answer-quality release measurements remain incomplete",
+    "Reviewed live-label digest and genuine semantic citation/claim review remain pending",
+    "Final four-example, expanded coverage/cost/freshness and multi-source MVP acceptance remain incomplete"
+  ]
+}

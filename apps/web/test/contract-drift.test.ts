@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import assert from 'node:assert/strict';
 import { describe, it } from 'vitest';
 import {
+  CoverageReportSchema,
   parseAnswerResponse,
   parseHealthLiveResponse,
   parseHealthReadyResponse,
@@ -8,6 +10,7 @@ import {
   parseSourceListResponse,
   parseTopicListResponse,
   type AnswerResponse,
+  type CoverageReportResponse,
   type HealthLiveResponse,
   type HealthReadyResponse,
   type SourceDetailResponse,
@@ -314,6 +317,73 @@ describe('API Contract Drift Validation', () => {
 
     await assert.rejects(
       () => client.createAnswer({ question: 'test' }),
+      (err: unknown) => {
+        assert.ok(err instanceof ApiClientError);
+        assert.equal(err.code, 'INVALID_RESPONSE');
+        return true;
+      },
+    );
+  });
+
+  it('validates CoverageReportResponse contract alignment', async () => {
+    const validReport: CoverageReportResponse = {
+      generatedAt: '2026-09-09T00:00:00.000Z',
+      from: '2026-08-10T00:00:00.000Z',
+      to: '2026-09-09T00:00:00.000Z',
+      rawDocuments: 100,
+      lexicalDocuments: 95,
+      vectorDocuments: 90,
+      partitionsChecked: 5,
+      partitionsCompleted: 5,
+      partitionsPartial: 0,
+      reasons: [],
+    };
+
+    const client = new ApiClient({
+      baseUrl: 'http://localhost:3000',
+      fetch: async () =>
+        new Response(JSON.stringify(validReport), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    });
+
+    const result = await client.getCoverage({
+      from: '2026-08-10T00:00:00.000Z',
+      to: '2026-09-09T00:00:00.000Z',
+    });
+    assert.deepEqual(result, validReport);
+  });
+
+  it('rejects CoverageReportResponse with extra or invalid fields', async () => {
+    const invalidReport = {
+      generatedAt: '2026-09-09T00:00:00.000Z',
+      from: '2026-08-10T00:00:00.000Z',
+      to: '2026-09-09T00:00:00.000Z',
+      rawDocuments: 100,
+      lexicalDocuments: 95,
+      vectorDocuments: 90,
+      partitionsChecked: 5,
+      partitionsCompleted: 5,
+      partitionsPartial: 0,
+      reasons: ['processing_pending'],
+      unexpectedExtraField: 'invalid',
+    };
+
+    const client = new ApiClient({
+      fetch: async () =>
+        new Response(JSON.stringify(invalidReport), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    });
+
+    await assert.rejects(
+      () =>
+        client.getCoverage({
+          from: '2026-08-10T00:00:00.000Z',
+          to: '2026-09-09T00:00:00.000Z',
+        }),
       (err: unknown) => {
         assert.ok(err instanceof ApiClientError);
         assert.equal(err.code, 'INVALID_RESPONSE');

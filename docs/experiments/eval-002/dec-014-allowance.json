@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "decision": "DEC-014",
+  "datasetSha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+  "approvedAt": "2026-09-11T00:49:46+09:00",
+  "historySha256": "98940c9e9be93410b420b977c9527c6b3308f93f7cc55210e331e3ce5fc52d56",
+  "caps": {
+    "microUsd": 250000,
+    "embeddingCalls": 100,
+    "embeddingInputTokens": 100000,
+    "chatCalls": 60,
+    "chatInputTokens": 300000,
+    "chatOutputTokens": 30000
+  },
+  "liveExecutionAllowed": true,
+  "meaning": "One additional evaluation tranche approved by the user. Historical usage remains unchanged and unreconciled; only events in dec-014-ledger.jsonl consume these caps."
+}

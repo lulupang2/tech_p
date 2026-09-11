@@ -4,8 +4,17 @@ import type {
   CollectionResult,
   CollectedRawItem,
   CollectorPort,
+  CollectorPagePort,
+  CollectionPageRequest,
+  CollectionPageResult,
   PolicyGuardPort,
   SourcePolicy,
+} from '@techpulse/domain';
+import {
+  assertCollectableTarget,
+  decodePageCursor,
+  encodePageCursor,
+  validatePageResult,
 } from '@techpulse/domain';
 import { BaseCollector } from './base.js';
 import { SOURCE_POLICIES } from './policies.js';
@@ -276,7 +285,10 @@ export function extractHuggingFaceMetricPayload(
  * - Correct mapping of createdAt (publishedAt) and lastModified timestamps
  * - External ID structured as {namespace}/{repo} + commit SHA
  */
-export class HuggingFaceCollector extends BaseCollector implements CollectorPort {
+export class HuggingFaceCollector
+  extends BaseCollector
+  implements CollectorPort, CollectorPagePort
+{
   readonly sourceKey = 'huggingface_hub' as const;
   readonly policy: SourcePolicy = SOURCE_POLICIES['huggingface_hub'];
 
@@ -705,5 +717,62 @@ export class HuggingFaceCollector extends BaseCollector implements CollectorPort
         durationMs: Date.now() - startTime,
       },
     };
+  }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+
+    let page = 1;
+    if (request.partition.cursor) {
+      const decoded = decodePageCursor(request.partition, request.target.capability.cursorVersion);
+      if (decoded) {
+        try {
+          const parsed = JSON.parse(decoded) as { page?: number };
+          if (typeof parsed.page === 'number' && parsed.page >= 1) {
+            page = parsed.page;
+          }
+        } catch {
+          // Fallback
+        }
+      }
+    }
+
+    const res = await this.collect({
+      sourceKey: 'huggingface_hub',
+      cursor: encodeOpaqueCursor({ page }),
+      timeWindow: request.partition.window,
+      limit: request.limit,
+      ...(request.signal !== undefined ? { signal: request.signal } : {}),
+    });
+
+    let disposition: CollectionPageResult['disposition'] = 'complete';
+    let nextCursor: string | null = null;
+
+    if (res.hasMore) {
+      disposition = 'continue';
+      nextCursor = encodePageCursor(
+        request.partition,
+        request.target.capability.cursorVersion,
+        JSON.stringify({ page: page + 1 }),
+      );
+    } else {
+      disposition = 'complete';
+      nextCursor = null;
+    }
+
+    const result: CollectionPageResult = {
+      items: res.items,
+      nextCursor,
+      disposition,
+      reason: null,
+      retryAt: null,
+      requests: 1,
+      bytes: res.metrics?.bytesFetched ?? 0,
+    };
+    validatePageResult(request.partition, result);
+    return result;
   }
 }

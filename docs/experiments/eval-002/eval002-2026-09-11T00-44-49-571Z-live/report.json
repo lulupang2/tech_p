@@ -1,0 +1,1675 @@
+{
+  "schemaVersion": 1,
+  "task": "EVAL-002",
+  "runId": "eval002-2026-09-11T00-44-49-571Z-live",
+  "mode": "live",
+  "executedAt": "2026-09-11T00:44:49.707Z",
+  "dataset": {
+    "runKey": "cov009-20260910-live-v1",
+    "sha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+    "revisions": 28,
+    "chunks": 500,
+    "embeddings": 500,
+    "from": "2026-06-12T03:50:22.000Z",
+    "to": "2026-09-10T03:50:22.000Z"
+  },
+  "labels": {
+    "sha256": "415db8671b8ba77e4c5349f3df62b2d388c425e7952b162c68c63308171215a6",
+    "status": "proposed-human-review-required",
+    "reviewedSha256": null
+  },
+  "code": {
+    "commit": "c1b197d3c15821ed928b87abd26855d56d0abbbd",
+    "dirty": true,
+    "sourceManifestSha256": "32da1557c387726083f6fd473a541b38bb98f79d4da5397ed32ec397304e5e57"
+  },
+  "configuration": {
+    "candidatesPerRetriever": 20,
+    "fusionLimit": 10,
+    "rrfK": 60,
+    "concurrency": 1,
+    "retries": 0,
+    "fallback": 0,
+    "acquisition": false,
+    "liveSearch": false,
+    "corpusReembedding": false,
+    "frozenNow": "2026-09-10T03:50:22.000Z",
+    "percentileMethod": "nearest-rank",
+    "warmMethod": "one untimed FTS/vector pass per question, then sequential timed DB passes; embedding excluded",
+    "rankingUnit": "actual first ten chunks; a revision gains relevance only once",
+    "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+    "historicalComparison": "EXP-002 deduplicated revision ranks before cutoff; scores are not directly comparable",
+    "redundancyUnit": "repeated document/duplicate-cluster among actual first ten chunks",
+    "priceBasis": "token-derived conservative micro-USD ceiling, not a provider invoice"
+  },
+  "answerSubset": {
+    "ids": [
+      "L-013",
+      "L-036",
+      "L-037",
+      "L-038",
+      "L-006",
+      "L-039",
+      "L-014",
+      "L-001",
+      "L-002",
+      "L-003",
+      "L-004",
+      "L-005"
+    ],
+    "questions": 12,
+    "relevantRevisions": 28,
+    "relevantChunks": 500,
+    "countsMatchExpected": true,
+    "membershipVerification": "verified",
+    "complete": true
+  },
+  "baseline": {
+    "status": "draft-applicability-human-review-required",
+    "baselineLabelsSha256": "3878260c83617fb74fba7f98df2af15bf7ee0c980f89b69fd08ce8771fe2289c",
+    "denominator": {
+      "allItems": 43,
+      "liveApplicable": 5,
+      "coverageNotApplicable": 21,
+      "controlledFixtureRequired": 17,
+      "hardInvariantItems": 43,
+      "securityInjectionItems": 5,
+      "executed": 0
+    },
+    "rows": [
+      {
+        "id": "G-001",
+        "questionSha256": "5c3f5637c0a92429eb1e3f68b8e9671c46668d2de1d7f016d25a915de5ff695a",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Multi-source backend/community trends are not covered by releases alone.",
+        "neededSourceKeys": [
+          "users_rust_lang",
+          "stack_exchange",
+          "github_search"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-002",
+        "questionSha256": "727627277e6724a4e7b6e3edfd279b28b861a6ca4a5eb6f169c191167f794a0c",
+        "originalExpectedStatus": "answered",
+        "applicability": "live_applicable",
+        "reason": "Question can be checked against the fixed approved releases or their absence.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-003",
+        "questionSha256": "39c0333efedbc5e0d7c86c8fe7deb91d62b0031ab933ca51b4a4b3b06e9bc1a5",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Bun/Node downloads and attention time series are absent.",
+        "neededSourceKeys": [
+          "npm_downloads",
+          "github_search"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-004",
+        "questionSha256": "360555b23dda2c1fc5f9e1a56f9e802ffc13b2cbd13d86c39a1709292e0e2966",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "RAG papers and community mention changes are absent.",
+        "neededSourceKeys": [
+          "arxiv",
+          "github_search",
+          "users_rust_lang"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-005",
+        "questionSha256": "e2291c5e5113d4dcf0e67c2a7b6c336720412cff28c13df1831d9c819480bd17",
+        "originalExpectedStatus": "answered",
+        "applicability": "live_applicable",
+        "reason": "Question can be checked against the fixed approved releases or their absence.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-006",
+        "questionSha256": "00b1042cbd752c02a3c98d4040b9e90a51eb2f22c089aa9a07d4db00e37d90c9",
+        "originalExpectedStatus": "answered",
+        "applicability": "live_applicable",
+        "reason": "Question can be checked against the fixed approved releases or their absence.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-007",
+        "questionSha256": "91bb20f98341c19d80b11976c2e5b1e4a86801fdab10edff1e9e3577e4307a25",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Rust forum discussion corpus is not activated.",
+        "neededSourceKeys": [
+          "users_rust_lang"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-008",
+        "questionSha256": "6f0d53d1c82d5b09d261366d610e03d5072f97d81e95d421ec78925ce5a1340e",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Papers cannot be inferred from release notes.",
+        "neededSourceKeys": [
+          "arxiv"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-009",
+        "questionSha256": "e934163e3b5d2ec6c84b984e85a8f9a090f364df659a3a0760f8549fdcef162d",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Elysia release target is not activated.",
+        "neededSourceKeys": [
+          "github_releases"
+        ],
+        "neededTargets": [
+          "elysiajs/elysia"
+        ],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-010",
+        "questionSha256": "b8bd6205a9232868e058d767b8385a9be45231d075a7edc3c4643b5dc0063933",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Next.js candidates are outside the approved target set; ambiguity still requires a fixture.",
+        "neededSourceKeys": [
+          "github_releases",
+          "npm_registry"
+        ],
+        "neededTargets": [
+          "vercel/next.js"
+        ],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-011",
+        "questionSha256": "aa8618bc9e4a1341ec8a998716a8bea1da2d54e9d2316d0fb3f13a679ac1c616",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Chrome release/trial sources are not activated.",
+        "neededSourceKeys": [
+          "chrome_release_notes",
+          "chrome_origin_trials"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-012",
+        "questionSha256": "0f906785ed3a6f39bd065a3b8e479aa0f3c3d1f7b7a64df2b3610725b92f14f2",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "React blog announcements are a different evidence type from releases.",
+        "neededSourceKeys": [
+          "react_blog"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-013",
+        "questionSha256": "e3bc48c3e7c54b00c10d57f316c9d8c098ea7c228c65fb9ff557464ec9017192",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "Future-window parsing and abstention must be exercised without fabricating future data.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-014",
+        "questionSha256": "66cc7e274f9f91043048f69e310d3bf9f678d9efe1a0beb39c79c5b083909ae4",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "Exact source-history limitation requires the existing controlled policy fixture.",
+        "neededSourceKeys": [
+          "npm_downloads"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-015",
+        "questionSha256": "c5825253d1bb8e7d62455617e4d5f14993062ca1bed0123b82affeda91d93222",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "Non-backfillable historical attention requires the controlled collection-history fixture.",
+        "neededSourceKeys": [
+          "github_search"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-016",
+        "questionSha256": "d84cd074982b5ae0cfc9e19e7fbdb82f1bc3cda8f303d20d74958b3b1dccf710",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Download time series and 18-month clamping are not measurable on releases.",
+        "neededSourceKeys": [
+          "npm_downloads"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-017",
+        "questionSha256": "f7d0a90ead1f7aa7090e2624e59f265d6fbb0209975842920729818259f0bb93",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "An inactive Deno target cannot establish the original 24-hour coverage claim.",
+        "neededSourceKeys": [
+          "github_releases"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-018",
+        "questionSha256": "e445e0aeaa7ec4a84e4e50bd4ba8ad6d581bf19c61b21397083f78d331db2ead",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "Unknown-entity abstention must be exercised with the original negative fixture.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-019",
+        "questionSha256": "8f3821dc8ea9db3ed056f21da31ccb5c4ed1df39ea119068e88bcc14913c188b",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Bun stable release target is not activated.",
+        "neededSourceKeys": [
+          "github_releases",
+          "npm_registry"
+        ],
+        "neededTargets": [
+          "oven-sh/bun"
+        ],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-020",
+        "questionSha256": "c84897da01c6f5ab81bfa8123e669d7fde21c2a573ea11945b021d3eab5b6fc1",
+        "originalExpectedStatus": "answered",
+        "applicability": "live_applicable",
+        "reason": "Question can be checked against the fixed approved releases or their absence.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-021",
+        "questionSha256": "0481ab18cd4a28a3254509e72e3daf613bda3ec8e524b985a18a0f452a2826ef",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "The original React 19 release is outside the fixed 90-day snapshot; later patches do not establish its release date.",
+        "neededSourceKeys": [
+          "react_blog",
+          "github_releases"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-022",
+        "questionSha256": "1de4459804810fd8dea4b692950eae9f799198fd37f3cfec540e5e693416a08a",
+        "originalExpectedStatus": "unsupported_intent",
+        "applicability": "controlled_fixture_required",
+        "reason": "Unsupported forecasting intent remains an independent behavioral regression.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-023",
+        "questionSha256": "4e7fab36bd343dfdadd4f1d5870a643986e60ac79e973bbd84c6ac1849a944a3",
+        "originalExpectedStatus": "unsupported_intent",
+        "applicability": "controlled_fixture_required",
+        "reason": "Unsupported subjective recommendation remains an independent behavioral regression.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-024",
+        "questionSha256": "8b6df42f4c7b6484d770afdb58a828b01a38a144c1f4b7faee9a41b85aaed6f4",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "The low-volume noise threshold needs a controlled metric series.",
+        "neededSourceKeys": [
+          "npm_downloads"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-025",
+        "questionSha256": "a894221f089124d77208dfcbe4d82aa96dbfb439f29e65fce64241e7e6bbb403",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "New-package publication and download-spike observations are absent.",
+        "neededSourceKeys": [
+          "npm_registry",
+          "npm_downloads"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-026",
+        "questionSha256": "aa0eb61db560b084caa7e72ed64b499033048a8ac1b838de17a1821b3cd900d1",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Separate Vite/Vue metric series are absent; prohibited aggregate score is never an acceptable substitute.",
+        "neededSourceKeys": [
+          "npm_downloads",
+          "github_search",
+          "users_rust_lang"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-027",
+        "questionSha256": "2680c9bbc5569e9de547f997a65d3f2fe497ad8505f96fc6477373bc695fd862",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Separate mention and download observations are absent.",
+        "neededSourceKeys": [
+          "npm_downloads",
+          "users_rust_lang"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-028",
+        "questionSha256": "7f3f88f2488690f8dab50a85089dca7b9eaa6b9e2f500e31dc87d1415526e4f9",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Zero-baseline arithmetic needs controlled observations, not release text.",
+        "neededSourceKeys": [
+          "users_rust_lang"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-029",
+        "questionSha256": "3d7b901992dbd3083235967b364b56200fbf7e9262c0243de5e3f1dc7665467c",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Model-activity observations are absent.",
+        "neededSourceKeys": [
+          "huggingface_hub"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-030",
+        "questionSha256": "9e211b3f8532acdb452806a7cf2fe2fd18ae7d88742791b6a3a11d9066c4d8d1",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Verbatim Stack Exchange evidence is not in this corpus.",
+        "neededSourceKeys": [
+          "stack_exchange"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-031",
+        "questionSha256": "ca0fceaf28df6828f9eeb93a4d31af563d2ea70df713325d59cc79e1e5970efe",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Null-publication-date origin-trial evidence is absent.",
+        "neededSourceKeys": [
+          "chrome_origin_trials"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-032",
+        "questionSha256": "631f83cc477021d2e1eb79eb9ed05639dbd6e7490f5a64064b4997673e145ed4",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Chrome release-note attribution cannot be tested using GitHub release rights.",
+        "neededSourceKeys": [
+          "chrome_release_notes"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-033",
+        "questionSha256": "ce75ab2b6e070c128f1734fc763fd7240d4cb8651d405a43ba37136f0747e279",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Full-text redistribution request refers to a prior answer and needs a controlled conversation.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-034",
+        "questionSha256": "a0cce5abefa726db756915d14b987944064d3e8e0ab868ddde3884dc0a80b25f",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Mandatory injected system-prompt-exfiltration regression; NEVER waived by coverage.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": true,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-035",
+        "questionSha256": "c150a4fffe28648b5a738a94a74c52223b33d145561f0b6ede1ccba0eaca95d9",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Mandatory fake-citation/phishing regression; NEVER waived by coverage.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": true,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-036",
+        "questionSha256": "38591c5c4860c34fa53a96f0abf592c78f99ae4067524c2bb9bd3c4509f46745",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Mandatory SSRF/egress injection regression; NEVER waived by coverage.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": true,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-037",
+        "questionSha256": "8038bd16bb37f6daa8fe2a14f9b5f6128e207473b5a53ad467a13fbec3fa7f68",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Mandatory hidden-HTML sanitization regression; NEVER waived by coverage.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": true,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-038",
+        "questionSha256": "f9785b21733ffb2b5b5bd01c41a2f293d70a906e05b26cf428d9d28f4afb07a4",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Mandatory token-flooding regression; NEVER waived by coverage.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": true,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-039",
+        "questionSha256": "4bf41ef76b40d6f101fe3ad2f6017145e58cc5a5c83d1a2fe01fd31491843d66",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Single-source corpus cannot establish cross-source duplicate independence.",
+        "neededSourceKeys": [
+          "users_rust_lang",
+          "react_blog"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-040",
+        "questionSha256": "b4b2975438eb36e281c575dd9f28434092651499c26d633385b0a5433bf49eac",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Cross-source cluster provenance requires multiple-source members.",
+        "neededSourceKeys": [
+          "users_rust_lang",
+          "react_blog"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-041",
+        "questionSha256": "65eaf282fa23530910543b6bd56c4c32e608d0f8d6c191d44a991121b303e682",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Bun/Deno matched metric time series are absent.",
+        "neededSourceKeys": [
+          "npm_downloads",
+          "github_search"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-042",
+        "questionSha256": "06b949d4fb1a3e337928375f9672fb83d79ad9fc571fc31fc20b4cac789498fa",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Agent-tooling papers, forums and targets are not activated.",
+        "neededSourceKeys": [
+          "arxiv",
+          "users_rust_lang",
+          "github_search"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-043",
+        "questionSha256": "039076f332f016ceaaf370959d89a71e78ce8c2a25775bb8740ac428dc7c74b0",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "live_applicable",
+        "reason": "Question can be checked against the fixed approved releases or their absence.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      }
+    ],
+    "gatePassed": false,
+    "blockingForMvp": false,
+    "purpose": "historical-regression-diagnostic"
+  },
+  "budgetCaps": {
+    "microUsd": 250000,
+    "embeddingCalls": 100,
+    "embeddingInputTokens": 100000,
+    "chatCalls": 60,
+    "chatInputTokens": 300000,
+    "chatOutputTokens": 30000
+  },
+  "additionalAllowance": {
+    "schemaVersion": 1,
+    "decision": "DEC-014",
+    "datasetSha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+    "approvedAt": "2026-09-11T00:49:46+09:00",
+    "historySha256": "98940c9e9be93410b420b977c9527c6b3308f93f7cc55210e331e3ce5fc52d56",
+    "caps": {
+      "microUsd": 250000,
+      "embeddingCalls": 100,
+      "embeddingInputTokens": 100000,
+      "chatCalls": 60,
+      "chatInputTokens": 300000,
+      "chatOutputTokens": 30000
+    },
+    "liveExecutionAllowed": true,
+    "meaning": "One additional evaluation tranche approved by the user. Historical usage remains unchanged and unreconciled; only events in dec-014-ledger.jsonl consume these caps."
+  },
+  "historicalUsage": {
+    "schemaVersion": 1,
+    "decision": "DEC-013",
+    "datasetSha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+    "reconciled": false,
+    "reconciliationReference": null,
+    "usage": {
+      "microUsd": 6,
+      "embeddingCalls": 195,
+      "embeddingInputTokens": 6290,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "usageMeaning": "VERIFIED LOWER BOUND ONLY. Embedding counters include five independent executions. microUsd retains only the original EXP-002 monetary record. Zero chat counters mean unaccounted here, not no historical chat calls.",
+    "verifiedEvidence": [
+      "docs/experiments/exp-002/live-measurement.json:queryEmbeddingUsage",
+      "docs/experiments/eval-002/historical-usage-audit.json",
+      "2026-09-10-da56e01a/TC1+TC4",
+      "2026-09-10-da56e01a/TCD+TCE",
+      "2026-09-10-da56e01a/TCL",
+      "2026-09-10-da56e01a/TCN"
+    ],
+    "unreconciledEvidence": [
+      "Four additional 39-query runs are independently verified; exact totals beyond these five executions remain unknown.",
+      "Negative smoke TD2 and historical minimum-answer calls lack complete call/token/cost receipts.",
+      "Some ad-hoc calls may bypass the normal DB budget ledger. DB totals alone cannot establish complete evaluation usage."
+    ],
+    "liveExecutionAllowed": false,
+    "note": "At least 195 successful embedding calls exceed the approved TOTAL 100 by at least 95. Keep reconciled=false: exact totals and chat/cost usage remain unknown. Further paid evaluation requires explicit new or amended approval; reconciliation alone cannot restore headroom. Do not reset counters, initialize a zero ledger, refund unknown reservations or infer approval from continuation."
+  },
+  "retrieval": {
+    "variants": {
+      "fts": [
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-001",
+          "chunkIds": [
+            "0e1e45d0-e4f8-4224-9a7b-76638cabf2f3",
+            "c4c4dabf-2fb6-4222-9a2c-d20eb6f8d9a9",
+            "c4c4b1e1-0cff-4609-916d-8557c8439b6e",
+            "3e1dde5c-4b21-4d4e-8754-952cb120bb69",
+            "420ec242-fa73-4fb5-afca-27e0f91800d0",
+            "e1abec72-ec0a-43f5-9e8e-ce0d9552561f"
+          ],
+          "revisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "duplicateRedundancyAt10": 0.8333333333333334,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 100.59149999999954
+        },
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-007",
+          "chunkIds": [
+            "3f11b0f6-504f-45fc-9d7a-ef5c0f78e2d2",
+            "0795921c-4fbe-4a1e-a23f-933a53a3cf1f",
+            "ec658e83-1f70-4be2-8be0-1f28e2227438",
+            "d441c99e-c338-4bb1-a96d-10ff12bf0350",
+            "403a4a06-784f-4722-a0e1-19e585e984d0",
+            "c14b4325-3533-4556-9644-edb5dbad847d",
+            "8808fad3-642c-4972-a697-fa2ccfd635d2",
+            "83e9bfb2-d676-4f20-b5ff-bdf020286164",
+            "71425afe-fc8a-4012-a4dc-7bd650500733",
+            "4ef5fe88-bd16-4482-8d6c-29fe3e912d2a"
+          ],
+          "revisionIds": [
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.6309297535714575,
+          "duplicateRedundancyAt10": 0.6,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 88.32179999999971
+        },
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-014",
+          "chunkIds": [
+            "78ae8596-72e8-4334-9ed2-ad3758fda3d2",
+            "cdc68661-b5ba-44e7-95a9-bc4ae608276a",
+            "c14b4325-3533-4556-9644-edb5dbad847d",
+            "83e9bfb2-d676-4f20-b5ff-bdf020286164"
+          ],
+          "revisionIds": [
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "duplicateRedundancyAt10": 0.25,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 130.42579999999907
+        },
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-017",
+          "chunkIds": [
+            "6409cd83-122f-4a9e-b926-6229fcd53c96",
+            "4c3af56f-cd2b-4098-8657-cb41fe1023d2",
+            "ab347fbe-204e-48b8-93d2-c0428149b07d",
+            "78c6e650-a1fd-4a68-ad91-0d0eff3c16ff",
+            "cbd80061-0a76-46d5-85fd-631570281079",
+            "7666481e-f3bc-48d0-a851-28ec56496b25",
+            "9ac0fefe-b8cf-42c0-83fe-73a1450b091c",
+            "7e763f22-40e3-44d8-a9bb-994e5468c074",
+            "6df21852-232f-4a68-be23-74ddf9cd750f",
+            "ef0fd3fe-d7dc-42d0-b149-e2bd0afa3b07"
+          ],
+          "revisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "435fe69c-aaea-483c-8465-7cd70923b539"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "duplicateRedundancyAt10": 0.5,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 143.2489000000005
+        }
+      ],
+      "vector": [
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-001",
+          "chunkIds": [
+            "70e7f933-2c87-4fc4-b475-b320afeda01b",
+            "b707788e-1f5a-41b3-9b6e-07bbac3ef5ff",
+            "cb2744ed-7207-4ccb-8bfc-e7b36b41b80e",
+            "bff01767-b56b-4766-be8d-c3cf0003371d",
+            "4a2121c5-33c5-45f1-9a92-7aa0b57f8192",
+            "caa91fe5-40fa-48bf-ba5b-9c4e4448336d",
+            "ff7f9714-29c4-42a3-adbe-8dd1849e5412",
+            "ad60a717-a579-4203-988a-7adec680c420",
+            "81df1d21-8afb-4d5f-82b8-76df6fa1ee3d",
+            "9dc7a971-da81-4d2b-bda2-2307d19dc4de"
+          ],
+          "revisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "duplicateRedundancyAt10": 0.8,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 130.02340000000004
+        },
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-007",
+          "chunkIds": [
+            "81df1d21-8afb-4d5f-82b8-76df6fa1ee3d",
+            "917dfc4c-d79e-4881-97fc-fba4b8506845",
+            "403a4a06-784f-4722-a0e1-19e585e984d0",
+            "6a4a1cbc-86a0-4151-8ebc-6e70d311f020",
+            "4ef5fe88-bd16-4482-8d6c-29fe3e912d2a",
+            "f796cb62-d729-4d39-9814-eddec915ab7a",
+            "3f11b0f6-504f-45fc-9d7a-ef5c0f78e2d2",
+            "2ee3c9d5-45b1-40c5-84cb-d453a0934dac",
+            "86278bd1-e087-4cee-9fa5-d0a211188c76",
+            "b60fdecc-f9e4-4656-887d-8f5511b427ff"
+          ],
+          "revisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "duplicateRedundancyAt10": 0.7,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 192.16809999999987
+        },
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-014",
+          "chunkIds": [
+            "78ae8596-72e8-4334-9ed2-ad3758fda3d2",
+            "cdc68661-b5ba-44e7-95a9-bc4ae608276a",
+            "81df1d21-8afb-4d5f-82b8-76df6fa1ee3d",
+            "0a5e4368-fdec-4456-82e2-fe5253305192",
+            "86278bd1-e087-4cee-9fa5-d0a211188c76",
+            "403a4a06-784f-4722-a0e1-19e585e984d0",
+            "f47af7a8-56f9-47bf-ada3-10b299add9f5",
+            "5c59a4cc-60c2-4c26-9b9e-77a1bd78dcdf",
+            "23664c48-bf1d-49ac-a961-117ec225a9d1",
+            "762eb32e-698e-4338-97de-123f8beda975"
+          ],
+          "revisionIds": [
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "duplicateRedundancyAt10": 0.6,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 253.03870000000097
+        },
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-017",
+          "chunkIds": [
+            "f9f5da5e-7c91-426a-b7a3-6fcf1359accf",
+            "ae7a323d-daa9-4b11-bbf9-55912f6d2457",
+            "bb5fa7d9-9e70-4a50-9962-6b1cf27aee56",
+            "867251f5-2a3a-4b06-9e0e-ce40d958b75b",
+            "9dce29e1-7dc3-43bb-9156-362695c2aca8",
+            "beca8531-4e39-49b3-868d-a761d0652949",
+            "0219629a-0d62-4bc2-9aa1-13674c4dd582",
+            "0a5e4368-fdec-4456-82e2-fe5253305192",
+            "6df21852-232f-4a68-be23-74ddf9cd750f",
+            "9ac0fefe-b8cf-42c0-83fe-73a1450b091c"
+          ],
+          "revisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.6309297535714575,
+          "duplicateRedundancyAt10": 0,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 136.01400000000103
+        }
+      ],
+      "hybrid": [
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-001",
+          "chunkIds": [
+            "0e1e45d0-e4f8-4224-9a7b-76638cabf2f3",
+            "3e1dde5c-4b21-4d4e-8754-952cb120bb69",
+            "81df1d21-8afb-4d5f-82b8-76df6fa1ee3d",
+            "403a4a06-784f-4722-a0e1-19e585e984d0"
+          ],
+          "revisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "60c4d663-42f6-4795-ac40-17cef4e48446"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "duplicateRedundancyAt10": 0.5,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 230.61489999999958
+        },
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-007",
+          "chunkIds": [
+            "403a4a06-784f-4722-a0e1-19e585e984d0",
+            "3f11b0f6-504f-45fc-9d7a-ef5c0f78e2d2",
+            "ec658e83-1f70-4be2-8be0-1f28e2227438",
+            "4ef5fe88-bd16-4482-8d6c-29fe3e912d2a",
+            "8808fad3-642c-4972-a697-fa2ccfd635d2",
+            "917dfc4c-d79e-4881-97fc-fba4b8506845",
+            "71425afe-fc8a-4012-a4dc-7bd650500733"
+          ],
+          "revisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "duplicateRedundancyAt10": 0.4285714285714286,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 280.4898999999996
+        },
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-014",
+          "chunkIds": [
+            "78ae8596-72e8-4334-9ed2-ad3758fda3d2",
+            "cdc68661-b5ba-44e7-95a9-bc4ae608276a",
+            "81df1d21-8afb-4d5f-82b8-76df6fa1ee3d",
+            "c14b4325-3533-4556-9644-edb5dbad847d",
+            "0a5e4368-fdec-4456-82e2-fe5253305192",
+            "83e9bfb2-d676-4f20-b5ff-bdf020286164",
+            "86278bd1-e087-4cee-9fa5-d0a211188c76",
+            "f47af7a8-56f9-47bf-ada3-10b299add9f5"
+          ],
+          "revisionIds": [
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "duplicateRedundancyAt10": 0.5,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 383.46450000000004
+        },
+        {
+          "scoreVersion": "chunk-cutoff10-unique-revision-v2",
+          "id": "L-017",
+          "chunkIds": [
+            "6df21852-232f-4a68-be23-74ddf9cd750f",
+            "6409cd83-122f-4a9e-b926-6229fcd53c96",
+            "9ac0fefe-b8cf-42c0-83fe-73a1450b091c",
+            "b5465ccc-f1b9-4e3c-8c35-8a7db3766d97",
+            "0219629a-0d62-4bc2-9aa1-13674c4dd582",
+            "ef0fd3fe-d7dc-42d0-b149-e2bd0afa3b07",
+            "ae7a323d-daa9-4b11-bbf9-55912f6d2457",
+            "bb5fa7d9-9e70-4a50-9962-6b1cf27aee56",
+            "f9f5da5e-7c91-426a-b7a3-6fcf1359accf",
+            "4c3af56f-cd2b-4098-8657-cb41fe1023d2"
+          ],
+          "revisionIds": [
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.3333333333333333,
+          "duplicateRedundancyAt10": 0.19999999999999996,
+          "repeatedChunkRatio": 0,
+          "latencyMs": 279.26290000000154
+        }
+      ]
+    },
+    "summaries": {
+      "fts": {
+        "sampleCount": 4,
+        "recallAt10": 0.75,
+        "ndcgAt10": 0.6577324383928644,
+        "entityRecallAt10": 0.75,
+        "semanticRecallAt10": null,
+        "duplicateRedundancyAt10": 0.5458333333333334,
+        "warmDbP95Ms": 143.2489000000005
+      },
+      "vector": {
+        "sampleCount": 4,
+        "recallAt10": 1,
+        "ndcgAt10": 0.9077324383928644,
+        "entityRecallAt10": 1,
+        "semanticRecallAt10": null,
+        "duplicateRedundancyAt10": 0.525,
+        "warmDbP95Ms": 253.03870000000097
+      },
+      "hybrid": {
+        "sampleCount": 4,
+        "recallAt10": 1,
+        "ndcgAt10": 0.8333333333333334,
+        "entityRecallAt10": 1,
+        "semanticRecallAt10": null,
+        "duplicateRedundancyAt10": 0.40714285714285714,
+        "warmDbP95Ms": 383.46450000000004
+      }
+    },
+    "automatedGatesPassed": true
+  },
+  "answers": {
+    "rows": [
+      {
+        "id": "L-001",
+        "expectedStatus": "answered",
+        "status": "answered",
+        "questionSha256": "54e4efcb4000a6a06b143284346d6b6df42b73258a4ea676ffe4778cc52aed58",
+        "responseSha256": "b4a05a8047a350397660ea7193f55a0202c50108128d3f45536001d289ad56db",
+        "answerSha256": "1e4b4ab7e0702f2d9a468ee92ff45e473c5ad5d6311c93f0cb0fa3643197be57",
+        "chatCalls": 1,
+        "structured": true,
+        "citations": [
+          {
+            "id": "C2",
+            "documentRevisionId": "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "excerptSha256": "e1aa3d8f8ed96147cc01eced12d8f6a0bbf321bebe2699d7bf15a073a212ea93"
+          },
+          {
+            "id": "C1",
+            "documentRevisionId": "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "excerptSha256": "a2ea5f3301039785301986937dc691936efacdb8a314d0702290580315a5215a"
+          }
+        ],
+        "relevantCitationCount": 2,
+        "latencyMs": 4572.442300000001,
+        "limitationSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "semanticReview": {
+          "reviewer": null,
+          "claimCount": null,
+          "unsupportedClaims": null,
+          "supportedCitations": null,
+          "coveredClaims": null
+        }
+      },
+      {
+        "id": "L-007",
+        "expectedStatus": "answered",
+        "status": "answered",
+        "questionSha256": "e8fb3d5d9a9e1f34372c7770e1a9f6c03a8e984dcabfdfbbbd4ee9fcfbb71e9a",
+        "responseSha256": "67e2e8c4e8336022554ee62e6fafb54e6edadc1c62b1d89e19bfe646e783cc71",
+        "answerSha256": "67e2e8c4e8336022554ee62e6fafb54e6edadc1c62b1d89e19bfe646e783cc71",
+        "chatCalls": 1,
+        "structured": false,
+        "citations": [
+          {
+            "id": "C1",
+            "documentRevisionId": "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "excerptSha256": "e1493fce2c7d32e8e62d93dd3b43c8d401db33af116c3603069bc5845675d778"
+          },
+          {
+            "id": "C3",
+            "documentRevisionId": "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "excerptSha256": "6fd675e8ca103d671f5d43711773724b40ce612647f393d393d4bf6b9295827e"
+          }
+        ],
+        "relevantCitationCount": 2,
+        "latencyMs": 4418.352399999998,
+        "limitationSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "semanticReview": {
+          "reviewer": null,
+          "claimCount": null,
+          "unsupportedClaims": null,
+          "supportedCitations": null,
+          "coveredClaims": null
+        }
+      },
+      {
+        "id": "L-014",
+        "expectedStatus": "answered",
+        "status": "insufficient_evidence",
+        "questionSha256": "d5927e64d51bd633d83e7e4c6faed83eba67d8c6be26f58df28c63620a50b066",
+        "responseSha256": "9739c1570a8164963c50103a4689173328fff49a7bae30cb9f4a81c0f97dbd79",
+        "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chatCalls": 1,
+        "structured": true,
+        "citations": [],
+        "relevantCitationCount": 0,
+        "latencyMs": 3969.3842000000004,
+        "limitationSha256": "4b9dc1e66aaa3091961c50a6de9ea39447d1b42bf13fade579637f1ed7bfa556",
+        "semanticReview": {
+          "reviewer": null,
+          "claimCount": null,
+          "unsupportedClaims": null,
+          "supportedCitations": null,
+          "coveredClaims": null
+        }
+      },
+      {
+        "id": "L-017",
+        "expectedStatus": "answered",
+        "status": "insufficient_evidence",
+        "questionSha256": "c86b51dc6c40fb1672f3f2e9a6e530c3d45f36c46052cd3ef946b8ac10b541d8",
+        "responseSha256": "f264a40433a2bf3185291507327596d50205bca6dbfd138012e05eb26c0e8789",
+        "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chatCalls": 1,
+        "structured": false,
+        "citations": [],
+        "relevantCitationCount": 0,
+        "latencyMs": 4685.2579000000005,
+        "limitationSha256": "4b9dc1e66aaa3091961c50a6de9ea39447d1b42bf13fade579637f1ed7bfa556",
+        "semanticReview": {
+          "reviewer": null,
+          "claimCount": null,
+          "unsupportedClaims": null,
+          "supportedCitations": null,
+          "coveredClaims": null
+        }
+      },
+      {
+        "id": "L-040",
+        "expectedStatus": "insufficient_evidence",
+        "status": "insufficient_evidence",
+        "questionSha256": "d4d1a628aec28c84a7aa19c2af2cafd4103f713625a608d464942d809445b5fb",
+        "responseSha256": null,
+        "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chatCalls": 0,
+        "structured": null,
+        "citations": [],
+        "relevantCitationCount": 0,
+        "latencyMs": 1775.3755999999994,
+        "limitationSha256": "2e835b0d1a32aba1d78b9305364e4317790fb6ec99ce03015988e862cef9dcf3",
+        "semanticReview": {
+          "reviewer": null,
+          "claimCount": null,
+          "unsupportedClaims": null,
+          "supportedCitations": null,
+          "coveredClaims": null
+        }
+      },
+      {
+        "id": "L-041",
+        "expectedStatus": "insufficient_evidence",
+        "status": "insufficient_evidence",
+        "questionSha256": "68f118c2bb8d1ee10e256eef9c1247c56e9d944a4c52abc2ade6379367ad3a40",
+        "responseSha256": null,
+        "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chatCalls": 0,
+        "structured": null,
+        "citations": [],
+        "relevantCitationCount": 0,
+        "latencyMs": 1904.0630999999994,
+        "limitationSha256": "ca2822d50e8bd40a752482fecadb49574d94170ac3b81e501555b62d6431c116",
+        "semanticReview": {
+          "reviewer": null,
+          "claimCount": null,
+          "unsupportedClaims": null,
+          "supportedCitations": null,
+          "coveredClaims": null
+        }
+      },
+      {
+        "id": "L-044",
+        "expectedStatus": "insufficient_evidence",
+        "status": "insufficient_evidence",
+        "questionSha256": "8982bc5cd7b0636e6262c4a48e2bd6cc1e590af7b042b92b7a645230e7a6f559",
+        "responseSha256": null,
+        "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chatCalls": 0,
+        "structured": null,
+        "citations": [],
+        "relevantCitationCount": 0,
+        "latencyMs": 1778.1039000000019,
+        "limitationSha256": "bbd3b72a128ab73cd01b051dcb809caf78170a73012f734f183061bdecfb0fd9",
+        "semanticReview": {
+          "reviewer": null,
+          "claimCount": null,
+          "unsupportedClaims": null,
+          "supportedCitations": null,
+          "coveredClaims": null
+        }
+      },
+      {
+        "id": "L-045",
+        "expectedStatus": "insufficient_evidence",
+        "status": "insufficient_evidence",
+        "questionSha256": "398d784a5b2128820b1c0a0e935e079ba5479e8c8c715c4c07b7f8c096746d73",
+        "responseSha256": null,
+        "answerSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "chatCalls": 0,
+        "structured": null,
+        "citations": [],
+        "relevantCitationCount": 0,
+        "latencyMs": 1751.7048000000068,
+        "limitationSha256": "eacc02cdcc9d74baa346289909de4e8c480472613b2d1c8fce02c91db04eed8d",
+        "semanticReview": {
+          "reviewer": null,
+          "claimCount": null,
+          "unsupportedClaims": null,
+          "supportedCitations": null,
+          "coveredClaims": null
+        }
+      }
+    ],
+    "sampleCount": 8,
+    "structuredOutputRate": 0.5,
+    "abstentionRate": 1,
+    "p95LatencyMs": 4685.2579000000005,
+    "semanticMetrics": null,
+    "semanticGatePassed": false
+  },
+  "providerCallsThisRun": 16,
+  "humanReview": {
+    "liveLabels": "pending",
+    "semanticCitationPrecision": null,
+    "semanticCitationCoverage": null,
+    "unsupportedClaimRate": null,
+    "reviewer": null,
+    "instruction": "No semantic judgment can be inferred from citation identity. Review must be tied to answer/evidence hashes."
+  },
+  "hardInvariants": {
+    "security": null,
+    "time": 0,
+    "rights": 0,
+    "profile": 0,
+    "provenance": 0,
+    "scope": "fixed MVP live subset; security remains covered by deterministic SEC-003/RAG tests"
+  },
+  "releaseGatePassed": false,
+  "blockers": [
+    "live_label_review_pending",
+    "semantic_answer_review_pending",
+    "mvp_live_evaluation_pending"
+  ],
+  "historicalBudget": {
+    "usage": {
+      "microUsd": 6,
+      "embeddingCalls": 195,
+      "embeddingInputTokens": 6290,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "outstanding": {
+      "microUsd": 0,
+      "embeddingCalls": 0,
+      "embeddingInputTokens": 0,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "unknownReservations": 0,
+    "historyReconciled": false,
+    "historicalUsage": {
+      "microUsd": 6,
+      "embeddingCalls": 195,
+      "embeddingInputTokens": 6290,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "budgetScope": "legacy_total",
+    "allowanceDecision": null,
+    "caps": {
+      "microUsd": 250000,
+      "embeddingCalls": 100,
+      "embeddingInputTokens": 100000,
+      "chatCalls": 60,
+      "chatInputTokens": 300000,
+      "chatOutputTokens": 30000
+    },
+    "exceededCaps": [
+      "embeddingCalls"
+    ]
+  },
+  "allowanceBudget": {
+    "usage": {
+      "microUsd": 0,
+      "embeddingCalls": 0,
+      "embeddingInputTokens": 0,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "outstanding": {
+      "microUsd": 0,
+      "embeddingCalls": 0,
+      "embeddingInputTokens": 0,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "unknownReservations": 0,
+    "historyReconciled": false,
+    "historicalUsage": {
+      "microUsd": 6,
+      "embeddingCalls": 195,
+      "embeddingInputTokens": 6290,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "budgetScope": "additional_allowance",
+    "allowanceDecision": "DEC-014",
+    "caps": {
+      "microUsd": 250000,
+      "embeddingCalls": 100,
+      "embeddingInputTokens": 100000,
+      "chatCalls": 60,
+      "chatInputTokens": 300000,
+      "chatOutputTokens": 30000
+    },
+    "exceededCaps": []
+  },
+  "models": {
+    "chat": {
+      "profile": {
+        "provider": "runinfra",
+        "model": "nemotron-3-5-lightning-30b",
+        "version": "NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+        "dimensions": 1,
+        "priceVersion": "runinfra-nemotron-3-5-lightning-2026-09-10",
+        "tokenizerVersion": "provider-reported-v1",
+        "approvalReference": "DEC-007-2026-09-10"
+      },
+      "caps": {
+        "maxInputTokens": 32768,
+        "maxOutputTokens": 350,
+        "timeoutMs": 15000
+      }
+    },
+    "embedding": {
+      "profile": {
+        "provider": "openrouter-perplexity",
+        "model": "perplexity/pplx-embed-v1-0.6b",
+        "version": "2026-03-16",
+        "dimensions": 1024,
+        "priceVersion": "openrouter-pplx-embed-2026-09-10",
+        "tokenizerVersion": "provider-reported-v1",
+        "approvalReference": "DEC-007-2026-09-10"
+      },
+      "caps": {
+        "maxInputTokens": 8192,
+        "timeoutMs": 10000
+      }
+    }
+  },
+  "preflight": {
+    "sha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+    "rawItems": 28,
+    "revisions": 28,
+    "chunks": 500,
+    "embeddings": 500,
+    "partitions": 10,
+    "completed": 10,
+    "targets": [
+      "facebook/react",
+      "microsoft/playwright",
+      "microsoft/typescript",
+      "nodejs/node",
+      "pgvector/pgvector"
+    ],
+    "profileHash": "9a3deda8d217f6c3599cc164e422193fd4bf7117f2459003924c07f90d420ab1",
+    "fingerprint": "dfb6c6585ac5c9e515c01ecce3ff044325646798618fae62eef3e4a245fa7170",
+    "providerCalls": 0,
+    "databaseWrites": 0
+  },
+  "coverageScope": "canonical target identity; persisted topic assignments may be empty and are not fabricated",
+  "scopedCoverage": [
+    {
+      "target": "github_releases:facebook/react",
+      "topicIds": [],
+      "report": {
+        "generatedAt": "2026-09-11T00:44:50.864Z",
+        "from": "2026-06-12T03:50:22.000Z",
+        "to": "2026-09-10T03:50:22.000Z",
+        "rawDocuments": 4,
+        "lexicalDocuments": 4,
+        "vectorDocuments": 4,
+        "partitionsChecked": 2,
+        "partitionsCompleted": 2,
+        "partitionsPartial": 0,
+        "reasons": []
+      }
+    },
+    {
+      "target": "github_releases:microsoft/playwright",
+      "topicIds": [],
+      "report": {
+        "generatedAt": "2026-09-11T00:44:50.960Z",
+        "from": "2026-06-12T03:50:22.000Z",
+        "to": "2026-09-10T03:50:22.000Z",
+        "rawDocuments": 5,
+        "lexicalDocuments": 5,
+        "vectorDocuments": 5,
+        "partitionsChecked": 2,
+        "partitionsCompleted": 2,
+        "partitionsPartial": 0,
+        "reasons": []
+      }
+    },
+    {
+      "target": "github_releases:microsoft/typescript",
+      "topicIds": [],
+      "report": {
+        "generatedAt": "2026-09-11T00:44:51.052Z",
+        "from": "2026-06-12T03:50:22.000Z",
+        "to": "2026-09-10T03:50:22.000Z",
+        "rawDocuments": 1,
+        "lexicalDocuments": 1,
+        "vectorDocuments": 1,
+        "partitionsChecked": 2,
+        "partitionsCompleted": 2,
+        "partitionsPartial": 0,
+        "reasons": []
+      }
+    },
+    {
+      "target": "github_releases:nodejs/node",
+      "topicIds": [],
+      "report": {
+        "generatedAt": "2026-09-11T00:44:51.147Z",
+        "from": "2026-06-12T03:50:22.000Z",
+        "to": "2026-09-10T03:50:22.000Z",
+        "rawDocuments": 18,
+        "lexicalDocuments": 18,
+        "vectorDocuments": 18,
+        "partitionsChecked": 2,
+        "partitionsCompleted": 2,
+        "partitionsPartial": 0,
+        "reasons": []
+      }
+    },
+    {
+      "target": "github_releases:pgvector/pgvector",
+      "topicIds": [],
+      "report": {
+        "generatedAt": "2026-09-11T00:44:51.243Z",
+        "from": "2026-06-12T03:50:22.000Z",
+        "to": "2026-09-10T03:50:22.000Z",
+        "rawDocuments": 0,
+        "lexicalDocuments": 0,
+        "vectorDocuments": 0,
+        "partitionsChecked": 2,
+        "partitionsCompleted": 2,
+        "partitionsPartial": 0,
+        "reasons": [
+          "raw_shortage"
+        ]
+      }
+    }
+  ],
+  "postflight": {
+    "sha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+    "rawItems": 28,
+    "revisions": 28,
+    "chunks": 500,
+    "embeddings": 500,
+    "partitions": 10,
+    "completed": 10,
+    "targets": [
+      "facebook/react",
+      "microsoft/playwright",
+      "microsoft/typescript",
+      "nodejs/node",
+      "pgvector/pgvector"
+    ],
+    "profileHash": "9a3deda8d217f6c3599cc164e422193fd4bf7117f2459003924c07f90d420ab1",
+    "fingerprint": "dfb6c6585ac5c9e515c01ecce3ff044325646798618fae62eef3e4a245fa7170",
+    "providerCalls": 0,
+    "databaseWrites": 0
+  },
+  "budget": {
+    "usage": {
+      "microUsd": 1739,
+      "embeddingCalls": 12,
+      "embeddingInputTokens": 226,
+      "chatCalls": 4,
+      "chatInputTokens": 10470,
+      "chatOutputTokens": 1023
+    },
+    "outstanding": {
+      "microUsd": 0,
+      "embeddingCalls": 0,
+      "embeddingInputTokens": 0,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "unknownReservations": 0,
+    "historyReconciled": false,
+    "historicalUsage": {
+      "microUsd": 6,
+      "embeddingCalls": 195,
+      "embeddingInputTokens": 6290,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "budgetScope": "additional_allowance",
+    "allowanceDecision": "DEC-014",
+    "caps": {
+      "microUsd": 250000,
+      "embeddingCalls": 100,
+      "embeddingInputTokens": 100000,
+      "chatCalls": 60,
+      "chatInputTokens": 300000,
+      "chatOutputTokens": 30000
+    },
+    "exceededCaps": []
+  },
+  "callCountBasis": "successfully settled calls this run; unknown calls remain separately reserved in budget.outstanding"
+}

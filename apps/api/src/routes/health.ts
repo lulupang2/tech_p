@@ -2,9 +2,12 @@ import { type HealthLiveResponse, type HealthReadyResponse } from '@techpulse/co
 import { Elysia } from 'elysia';
 
 export type DatabaseHealthCheck = () => Promise<boolean>;
+export type DependencyHealthCheck = () => Promise<boolean>;
 
 export interface HealthRouteOptions {
-  readonly checkDatabaseHealth?: DatabaseHealthCheck | undefined;
+  readonly checkDatabaseHealth?: DependencyHealthCheck | undefined;
+  readonly checkRedisHealth?: DependencyHealthCheck | undefined;
+  readonly checkWorkerHealth?: DependencyHealthCheck | undefined;
 }
 
 export function createHealthRoutes(options: HealthRouteOptions = {}) {
@@ -16,20 +19,39 @@ export function createHealthRoutes(options: HealthRouteOptions = {}) {
       };
     })
     .get('/health/ready', async ({ set }): Promise<HealthReadyResponse> => {
-      const check = options.checkDatabaseHealth;
-      let isHealthy = false;
+      const checkDb = options.checkDatabaseHealth;
+      let isDbHealthy = false;
 
-      if (check !== undefined) {
+      if (checkDb !== undefined) {
         try {
-          isHealthy = await check();
+          isDbHealthy = await checkDb();
         } catch {
-          isHealthy = false;
+          isDbHealthy = false;
         }
       }
 
+      let isRedisHealthy = true;
+      if (options.checkRedisHealth !== undefined) {
+        try {
+          isRedisHealthy = await options.checkRedisHealth();
+        } catch {
+          isRedisHealthy = false;
+        }
+      }
+
+      let isWorkerHealthy = true;
+      if (options.checkWorkerHealth !== undefined) {
+        try {
+          isWorkerHealthy = await options.checkWorkerHealth();
+        } catch {
+          isWorkerHealthy = false;
+        }
+      }
+
+      const isReady = isDbHealthy && isRedisHealthy && isWorkerHealthy;
       const timestamp = new Date().toISOString();
 
-      if (isHealthy) {
+      if (isReady) {
         set.status = 200;
         return {
           status: 'ok',
@@ -45,7 +67,7 @@ export function createHealthRoutes(options: HealthRouteOptions = {}) {
         status: 'unavailable',
         timestamp,
         dependencies: {
-          database: 'unavailable',
+          database: isDbHealthy ? 'ok' : 'unavailable',
         },
       };
     });

@@ -1,6 +1,6 @@
 # EXP-002: Time-aware hybrid retrieval
 
-- 상태: Planned
+- 상태: Completed — DEC-013 gate 미달, RAG-003 개선 필요 (2026-09-10)
 - 연결 문서: [RAG.md](../RAG.md), [DATABASE.md](../DATABASE.md)
 
 ## 질문
@@ -66,3 +66,28 @@ PostgreSQL full-text search와 pgvector를 결합한 retrieval이 기간 위반 
 - 품질·latency·index 비용 표
 - 선택할 retrieval config recommendation
 - HNSW/IVFFlat/외부 검색 엔진 ADR 필요 여부
+
+## 2026-09-10 live corpus 실행 결과
+
+- 실행기: `experiments/exp-002-runner.ts`
+- raw measurement: [`exp-002/live-measurement.json`](./exp-002/live-measurement.json)
+- dataset: `cov009-20260910-live-v1`, 28 revisions/500 chunks, SHA-256
+  `0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f`
+- 질문: [`cov-009/live-eval-set.proposed.json`](./cov-009/live-eval-set.proposed.json)의 answerable 39개
+- query embedding: 39 calls, 1,258 tokens, USD 0.000006, p95 430ms. Chat 호출은 없었다.
+
+| Variant | Recall@10 | nDCG@10 | MRR | DB p95 |
+|---|---:|---:|---:|---:|
+| FTS only | 0.4051 | 0.3287 | 0.3406 | 886ms |
+| exact vector only | 0.6628 | 0.4823 | 0.4544 | 181ms |
+| FTS + exact vector chunk-level RRF | 0.6936 | 0.4823 | 0.4330 | 1,086ms |
+
+Hybrid는 Recall@10 0.80, nDCG@10 0.75, entity subset Recall@10 0.75, DB p95 500ms gate를
+통과하지 못했다. time-filter/provenance violation과 revision 중복 redundancy는 0이었다. 긴 release
+revision의 여러 chunk가 각 검색 목록 상위를 점유하고, 자연어 FTS fallback이 원격 DB에 여러 순차 query를
+발행한 것이 주요 원인이다.
+
+추천은 exact pgvector를 유지하면서 RAG-003에서 RRF를 실제 runtime에 구현하고, revision/duplicate
+cluster/source cap을 fusion 전에 적용하며, deterministic entity/time filter를 검색 SQL에 내리는 것이다.
+FTS fallback은 한 번의 bounded query로 줄인다. 500 chunks에서는 HNSW/IVFFlat이나 외부 검색 엔진을
+도입하지 않는다. 기준을 낮추지 않으며 개선 뒤 동일 dataset/labels로 재측정한다.

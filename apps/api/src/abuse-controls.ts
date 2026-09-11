@@ -134,6 +134,11 @@ export class DailyBudgetTracker {
   }
 
   getRemaining(): number {
+    const now = this.clock();
+    const day = this.resolveDay(now);
+    if (day !== this.currentDay) {
+      return this.maxDailyQueries;
+    }
     return Math.max(0, this.maxDailyQueries - this.consumed);
   }
 

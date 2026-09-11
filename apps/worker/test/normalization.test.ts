@@ -1,11 +1,9 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'vitest';
 import {
-  createNormalizationJobData,
-  parseNormalizationJobData,
-  createNormalizationJobHandler,
-  WorkerJobValidationError,
-} from '../src/index.js';
+  createNormalizationDeliveryHandler,
+  type NormalizationDeliveryRequest,
+} from '../src/normalization.js';
 import {
   createNormalizationService,
   type DocumentRecord,
@@ -74,6 +72,7 @@ function createFakeRepositories() {
       input: SaveNormalizedDocumentInput,
     ): Promise<SaveNormalizedDocumentResult> {
       let docId = `doc-${documents.size + 1}`;
+      const revId = `rev-${revisions.size + 1}`;
       for (const doc of documents.values()) {
         if (input.canonicalUrl && doc.canonicalUrl === input.canonicalUrl) {
           docId = doc.id;
@@ -92,17 +91,16 @@ function createFakeRepositories() {
         });
       }
 
-      const revId = `rev-${revisions.size + 1}`;
       const revRecord: DocumentRevisionRecord = {
         id: revId,
         documentId: docId,
-        rawItemId: input.rawItemId,
+        rawItemId: input.rawItemId ?? null,
         title: input.title,
         bodyText: input.bodyText,
-        author: input.author,
+        author: input.author ?? null,
         language: input.language ?? 'en',
-        publishedAt: input.publishedAt,
-        licenseId: input.licenseId,
+        publishedAt: input.publishedAt ?? null,
+        licenseId: input.licenseId ?? null,
         normalizedHash: input.normalizedHash,
         normalizerVersion: input.normalizerVersion,
         status: input.status ?? 'pending',
@@ -207,42 +205,11 @@ function createFakeRepositories() {
 }
 
 describe('PIPE-002 Worker Normalization Job Handler', () => {
-  test('creates and parses valid NormalizationJobData', () => {
-    const validData = createNormalizationJobData({
-      rawItemId: 'raw-123',
-      sourceKey: 'github_releases',
-      runId: 'run-456',
-      externalId: 'ext-789',
-      payloadHash: 'a'.repeat(64),
-    });
-
-    const parsed = parseNormalizationJobData(validData);
-    assert.equal(parsed.stage, 'normalization');
-    assert.equal(parsed.rawItemId, 'raw-123');
-    assert.equal(parsed.sourceKey, 'github_releases');
-  });
-
-  test('parseNormalizationJobData rejects invalid schema or invalid payloadHash', () => {
-    assert.throws(
-      () =>
-        parseNormalizationJobData({
-          schemaVersion: 1,
-          stage: 'collection',
-          rawItemId: 'raw-1',
-          sourceKey: 'github_releases',
-          runId: 'run-1',
-          externalId: 'ext-1',
-          payloadHash: 'short-hash',
-        }),
-      WorkerJobValidationError,
-    );
-  });
-
   test('executes normalization job successfully: updates pipeline events, saves documents and metrics', async () => {
     const fakes = createFakeRepositories();
     const normalizationService = createNormalizationService();
 
-    const handler = createNormalizationJobHandler({
+    const handler = createNormalizationDeliveryHandler({
       normalizationService,
       rawItemRepository: fakes.rawItemRepo,
       documentRepository: fakes.docRepo,
@@ -274,17 +241,14 @@ describe('PIPE-002 Worker Normalization Job Handler', () => {
     };
     fakes.rawItems.set(rawItem.id, rawItem);
 
-    const jobData = createNormalizationJobData({
+    const jobData: NormalizationDeliveryRequest = {
       rawItemId: rawItem.id,
       sourceKey: 'github_releases',
-      runId: 'run-1',
-      externalId: rawItem.externalId,
-      payloadHash: rawItem.payloadHash,
-    });
+    };
 
     const result = await handler(jobData);
 
-    assert.equal(result.status, 'succeeded');
+    assert.equal(result.status, 'succeeded', result.errorSummary);
     assert.equal(result.documentsSaved, 1);
     assert.equal(result.metricsSaved, 1);
 
@@ -312,7 +276,7 @@ describe('PIPE-002 Worker Normalization Job Handler', () => {
     const fakes = createFakeRepositories();
     const normalizationService = createNormalizationService();
 
-    const handler = createNormalizationJobHandler({
+    const handler = createNormalizationDeliveryHandler({
       normalizationService,
       rawItemRepository: fakes.rawItemRepo,
       documentRepository: fakes.docRepo,
@@ -320,13 +284,10 @@ describe('PIPE-002 Worker Normalization Job Handler', () => {
       pipelineEventRepository: fakes.pipelineEventRepo,
     });
 
-    const jobData = createNormalizationJobData({
+    const jobData: NormalizationDeliveryRequest = {
       rawItemId: 'non-existent-raw-id',
       sourceKey: 'github_releases',
-      runId: 'run-1',
-      externalId: 'ext-1',
-      payloadHash: 'c'.repeat(64),
-    });
+    };
 
     const result = await handler(jobData);
     assert.equal(result.status, 'quarantined');

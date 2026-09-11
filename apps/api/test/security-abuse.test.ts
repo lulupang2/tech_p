@@ -12,7 +12,7 @@ import {
   type SearchServicePort,
 } from '@techpulse/domain';
 import { createAnswerService } from '@techpulse/rag';
-import { parseErrorEnvelope } from '@techpulse/contracts';
+import { parseAnswerResponse, parseErrorEnvelope } from '@techpulse/contracts';
 
 function createFakeSearchService(hits: readonly SearchHit[]): SearchServicePort {
   return {
@@ -29,6 +29,7 @@ describe('SEC-001 Public API Abuse Controls & Threat Mitigations', () => {
       documentRevisionId: 'rev-sec-1',
       title: 'Security Architecture',
       content: 'Signal Archive implements robust API abuse controls and security headers.',
+      headingPath: ['Security', 'Architecture'],
       score: 1.0,
       publishedAt: new Date('2026-08-20T00:00:00.000Z'),
     },
@@ -196,13 +197,22 @@ describe('SEC-001 Public API Abuse Controls & Threat Mitigations', () => {
         }),
       );
 
-    // Query 1 and 2 succeed
+    // Query 1 and 2 succeed with 200 and answered payload
     const res1 = await postAnswer();
     assert.equal(res1.status, 200);
+    const body1 = (await res1.json()) as Record<string, unknown>;
+    const parsed1 = parseAnswerResponse(body1);
+    assert.equal(parsed1.status, 'answered');
+    assert.ok(typeof parsed1.answer === 'string' && parsed1.answer.includes('[C1]'));
+
     const res2 = await postAnswer();
     assert.equal(res2.status, 200);
+    const body2 = (await res2.json()) as Record<string, unknown>;
+    const parsed2 = parseAnswerResponse(body2);
+    assert.equal(parsed2.status, 'answered');
+    assert.ok(typeof parsed2.answer === 'string' && parsed2.answer.includes('[C1]'));
 
-    // Query 3 fails with daily budget exceeded
+    // Query 3 fails with daily budget exceeded (429 RATE_LIMITED)
     const res3 = await postAnswer();
     assert.equal(res3.status, 429);
     const body3 = (await res3.json()) as Record<string, unknown>;
@@ -210,7 +220,6 @@ describe('SEC-001 Public API Abuse Controls & Threat Mitigations', () => {
     assert.equal(env3.error.code, 'RATE_LIMITED');
     assert(env3.error.message.includes('budget'));
   });
-
   test('separates ops routes and requires authorization token (THR-008 & SECURITY.md §6)', async () => {
     const app = createApp({ answerService, opsApiKey: 'super-secret-ops-key-42' });
 

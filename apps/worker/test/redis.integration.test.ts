@@ -4,120 +4,147 @@ import { spawn } from 'node:child_process';
 import { Queue } from 'bullmq';
 import { Redis } from 'ioredis';
 import { describe, test } from 'vitest';
-import type { CollectionJobPayload } from '@techpulse/contracts';
 import {
-  COLLECTION_JOB_NAME,
-  InMemoryIdempotentDeliveryBoundary,
-  RedisJobClaimStore,
-  RedisSourceConcurrencyLimiter,
-  createCollectionWorker,
-  enqueueCollectionJob,
-} from '../src/index.js';
-import type { CollectionJobData } from '../src/index.js';
+  DELIVERY_JOB_NAME,
+  createCollectionDeliveryJobData,
+  type CollectionDeliveryJobData,
+} from '../src/jobs.js';
+import { createDeliveryWorker } from '../src/scheduler.js';
+import { RedisSourceConcurrencyLimiter } from '../src/concurrency.js';
 
 const redisUrl = process.env['REDIS_URL'];
-const payload: CollectionJobPayload = {
-  schemaVersion: 1,
-  collectionRunId: 'redis-integration-run',
-  sourceKey: 'github_releases',
-  cursor: null,
-};
-const scheduleWindow = { from: '2026-09-01T00:00:00Z', to: '2026-09-02T00:00:00Z' };
+const validDeliveryId = '11111111-1111-4111-8111-111111111111';
 
 describe.skipIf(!redisUrl)('real Redis BullMQ integration', () => {
-  test('delivers a queued job once and suppresses its duplicate', async () => {
-    const queueName = `techpulse-integration-${process.pid}-${Date.now()}`;
+  test('delivers a queued UUID delivery job once and deduplicates by jobId in BullMQ', async () => {
+    const queueName = `techpulse-integration-delivery-${process.pid}-${Date.now()}`;
     const queueRedis = new Redis(redisUrl as string, { maxRetriesPerRequest: null });
     const workerRedis = new Redis(redisUrl as string, { maxRetriesPerRequest: null });
-    const claimRedis = new Redis(redisUrl as string, { maxRetriesPerRequest: null });
-    const queue = new Queue<CollectionJobData>(queueName, { connection: queueRedis });
-    const claimStore = new RedisJobClaimStore(
-      claimRedis,
-      `techpulse:worker:integration:${queueName}`,
-    );
-    const boundary = new InMemoryIdempotentDeliveryBoundary();
-    let handled = 0;
-    const worker = createCollectionWorker({
+    const queue = new Queue<CollectionDeliveryJobData>(queueName, { connection: queueRedis });
+    const handled: string[] = [];
+    const worker = createDeliveryWorker({
       connection: workerRedis,
       queueName,
       concurrency: 1,
-      handle: async () => {
-        handled += 1;
+      handle: async (deliveryId: string) => {
+        handled.push(deliveryId);
       },
-      deliveryBoundary: boundary.deliver.bind(boundary),
     });
+
     try {
       await worker.waitUntilReady();
       await queue.waitUntilReady();
-      const first = await enqueueCollectionJob(queue, payload, scheduleWindow, {
-        claimStore,
-        delayMs: 0,
+
+      const jobData = createCollectionDeliveryJobData(validDeliveryId);
+
+      const { promise: completed, resolve, reject } = Promise.withResolvers<void>();
+      const timer = setTimeout(() => {
+        worker.off('completed', onCompleted);
+        worker.off('failed', onFailed);
+        reject(new Error('timeout waiting for delivery job completion'));
+      }, 10_000);
+
+      const onCompleted = (job: { id?: string }) => {
+        if (job.id === validDeliveryId) {
+          clearTimeout(timer);
+          worker.off('completed', onCompleted);
+          worker.off('failed', onFailed);
+          resolve();
+        }
+      };
+      const onFailed = (job: { id?: string } | undefined, error: Error) => {
+        if (job?.id === validDeliveryId) {
+          clearTimeout(timer);
+          worker.off('completed', onCompleted);
+          worker.off('failed', onFailed);
+          reject(error);
+        }
+      };
+      worker.on('completed', onCompleted);
+      worker.on('failed', onFailed);
+
+      // Enqueue job with deliveryId as jobId
+      const first = await queue.add(DELIVERY_JOB_NAME, jobData, {
+        jobId: validDeliveryId,
+        removeOnComplete: true,
       });
-      const completed = new Promise<void>((resolve, reject) => {
-        const onCompleted = (job: { id?: string }) => {
-          if (job.id === first.job.id) {
-            worker.off('failed', onFailed);
-            resolve();
-          }
-        };
-        const onFailed = (job: { id?: string } | undefined, error: Error) => {
-          if (job?.id === first.job.id) {
-            worker.off('completed', onCompleted);
-            reject(error);
-          }
-        };
-        worker.on('completed', onCompleted);
-        worker.on('failed', onFailed);
+
+      // Enqueue duplicate job with identical jobId (BullMQ deduplicates and returns existing job)
+      const second = await queue.add(DELIVERY_JOB_NAME, jobData, {
+        jobId: validDeliveryId,
+        removeOnComplete: true,
       });
-      const second = await enqueueCollectionJob(queue, payload, scheduleWindow, {
-        claimStore,
-        delayMs: 0,
-      });
+
       await completed;
-      assert.equal(first.duplicate, false);
-      assert.equal(second.duplicate, true);
-      assert.equal(handled, 1);
-      assert.equal((await queue.getJob(first.job.id as string))?.name, COLLECTION_JOB_NAME);
+      assert.equal(first.id, validDeliveryId);
+      assert.equal(second.id, validDeliveryId);
+      // Queue deduplication ensures single delivery execution; DB outbox/fencing ensures database exactly-once
+      assert.equal(handled.length, 1);
+      assert.equal(handled[0], validDeliveryId);
     } finally {
       await worker.close();
       await queue.obliterate({ force: true });
-      await claimRedis.quit();
       await queue.close();
       await workerRedis.quit();
       await queueRedis.quit();
     }
-  });
-  test('reports the Redis claim winner and loser under concurrent enqueue', async () => {
-    const queueName = `techpulse-integration-concurrent-${process.pid}-${Date.now()}`;
+  }, 30_000);
+
+  test('rejects malformed and stale v1 payloads before invoking handle', async () => {
+    const queueName = `techpulse-integration-rejection-${process.pid}-${Date.now()}`;
     const queueRedis = new Redis(redisUrl as string, { maxRetriesPerRequest: null });
-    const claimRedis = new Redis(redisUrl as string, { maxRetriesPerRequest: null });
-    const queue = new Queue<CollectionJobData>(queueName, { connection: queueRedis });
-    const claimStore = new RedisJobClaimStore(
-      claimRedis,
-      `techpulse:worker:integration:${queueName}`,
-    );
+    const workerRedis = new Redis(redisUrl as string, { maxRetriesPerRequest: null });
+    const queue = new Queue<CollectionDeliveryJobData>(queueName, { connection: queueRedis });
+    let handledCalls = 0;
+    const worker = createDeliveryWorker({
+      connection: workerRedis,
+      queueName,
+      concurrency: 1,
+      handle: async () => {
+        handledCalls += 1;
+      },
+    });
+
     try {
+      await worker.waitUntilReady();
       await queue.waitUntilReady();
-      const results = await Promise.all([
-        enqueueCollectionJob(queue, payload, scheduleWindow, {
-          claimStore,
-          delayMs: 10_000,
-        }),
-        enqueueCollectionJob(queue, payload, scheduleWindow, {
-          claimStore,
-          delayMs: 10_000,
-        }),
-      ]);
-      assert.equal(results.filter((result) => !result.duplicate).length, 1);
-      assert.equal(results.filter((result) => result.duplicate).length, 1);
-      assert.equal((await queue.getJob(results[0].job.id as string)) !== undefined, true);
+
+      const {
+        promise: failed,
+        resolve: resolveFailed,
+        reject: rejectFailed,
+      } = Promise.withResolvers<{ id?: string; error: Error }>();
+      const timer = setTimeout(() => {
+        rejectFailed(new Error('timeout waiting for job rejection'));
+      }, 10_000);
+
+      worker.once('failed', (job, error) => {
+        clearTimeout(timer);
+        resolveFailed({ id: job?.id, error });
+      });
+      // Add malformed v1 payload to queue
+      await queue.add(
+        DELIVERY_JOB_NAME,
+        {
+          schemaVersion: 1,
+          collectionRunId: 'run-v1',
+          sourceKey: 'github_releases',
+        } as unknown as CollectionDeliveryJobData,
+        { attempts: 1 },
+      );
+
+      const failure = await failed;
+      assert.ok(failure.error);
+      assert.equal(handledCalls, 0); // Handler must never be invoked for invalid payload
     } finally {
+      await worker.close();
       await queue.obliterate({ force: true });
-      await claimRedis.quit();
       await queue.close();
+      await workerRedis.quit();
       await queueRedis.quit();
     }
-  });
+  }, 30_000);
+
   test('acquires on an empty hash, blocks duplicate leases, and releases capacity', async () => {
     const keyPrefix = `techpulse-integration-cap-${process.pid}-${Date.now()}`;
     const firstRedis = new Redis(redisUrl as string, { maxRetriesPerRequest: null });
@@ -130,10 +157,7 @@ describe.skipIf(!redisUrl)('real Redis BullMQ integration', () => {
     };
     const firstLimiter = new RedisSourceConcurrencyLimiter(firstRedis, 1, 1, limiterOptions);
     const secondLimiter = new RedisSourceConcurrencyLimiter(secondRedis, 1, 1, limiterOptions);
-    let releaseFirst!: () => void;
-    const firstHeld = new Promise<void>((resolve) => {
-      releaseFirst = resolve;
-    });
+    const { promise: firstHeld, resolve: releaseFirst } = Promise.withResolvers<void>();
     let secondStarted = false;
     try {
       const first = firstLimiter.run('github_releases', async () => firstHeld);
@@ -152,7 +176,8 @@ describe.skipIf(!redisUrl)('real Redis BullMQ integration', () => {
       await firstLimiter.close();
       await secondLimiter.close();
     }
-  });
+  }, 30_000);
+
   test('recovers a bounded lease after a SIGKILL child crash', async () => {
     const keyPrefix = `techpulse-integration-crash-${process.pid}-${Date.now()}`;
     const redis = new Redis(redisUrl as string, { maxRetriesPerRequest: null });
@@ -184,15 +209,18 @@ describe.skipIf(!redisUrl)('real Redis BullMQ integration', () => {
     const output: string[] = [];
     child.stdout.setEncoding('utf8');
     child.stdout.on('data', (chunk: string) => output.push(chunk));
-    const acquired = new Promise<void>((resolve, reject) => {
-      child.stdout.on('data', (chunk: string) => {
-        if (chunk.includes('acquired')) resolve();
-      });
-      child.stderr.on('data', (chunk: string) => {
-        if (chunk.includes('Error')) reject(new Error('crash child failed before acquire'));
-      });
-      child.once('error', reject);
+    const {
+      promise: acquired,
+      resolve: resolveAcquired,
+      reject: rejectAcquired,
+    } = Promise.withResolvers<void>();
+    child.stdout.on('data', (chunk: string) => {
+      if (chunk.includes('acquired')) resolveAcquired();
     });
+    child.stderr.on('data', (chunk: string) => {
+      if (chunk.includes('Error')) rejectAcquired(new Error('crash child failed before acquire'));
+    });
+    child.once('error', rejectAcquired);
     try {
       await acquired;
       const leases = await observer.hgetall(`${keyPrefix}:github_releases`);
@@ -214,5 +242,5 @@ describe.skipIf(!redisUrl)('real Redis BullMQ integration', () => {
       await observer.quit();
     }
     assert.equal(output.join(''), 'acquired\\n');
-  });
+  }, 30_000);
 });

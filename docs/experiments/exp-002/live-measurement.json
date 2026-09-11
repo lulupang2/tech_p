@@ -1,0 +1,2395 @@
+{
+  "schemaVersion": 1,
+  "task": "EXP-002",
+  "executedAt": "2026-09-10T04:14:52.841Z",
+  "dataset": {
+    "runKey": "cov009-20260910-live-v1",
+    "sha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+    "revisions": 28,
+    "chunks": 500
+  },
+  "configuration": {
+    "rrfK": 60,
+    "resultLimit": 50,
+    "evaluationCutoff": 10,
+    "vectorIndex": "exact",
+    "concurrency": 1,
+    "retry": 0,
+    "profile": {
+      "provider": "openrouter-perplexity",
+      "model": "perplexity/pplx-embed-v1-0.6b",
+      "version": "2026-03-16",
+      "dimensions": 1024,
+      "priceVersion": "openrouter-pplx-embed-2026-09-10",
+      "tokenizerVersion": "provider-reported-v1",
+      "approvalReference": "DEC-007-2026-09-10"
+    },
+    "profileHash": "9a3deda8d217f6c3599cc164e422193fd4bf7117f2459003924c07f90d420ab1"
+  },
+  "queryEmbeddingUsage": {
+    "calls": 39,
+    "actualTokens": 1258,
+    "actualMicroUsd": 6,
+    "actualUsd": 0.000006,
+    "p50LatencyMs": 248.77590000000055,
+    "p95LatencyMs": 429.67180000000053
+  },
+  "subsets": {
+    "entityRecallAt10": 0.65625,
+    "semanticRecallAt10": 0.8642857142857142
+  },
+  "variants": {
+    "ftsOnly": {
+      "metrics": {
+        "recallAt10": 0.40512820512820513,
+        "ndcgAt10": 0.32866056518534,
+        "mrr": 0.34059829059829055,
+        "p50DbLatencyMs": 640.2970999999998,
+        "p95DbLatencyMs": 885.6668,
+        "timeViolations": 0,
+        "provenanceViolations": 0,
+        "duplicateRedundancyAt10": 0
+      },
+      "observations": [
+        {
+          "id": "L-001",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 660.2240000000002,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-002",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 664.7862,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-003",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 666.0607999999993,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-004",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 885.6668,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-005",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 628.3157999999994,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-006",
+          "rankedRevisionIds": [
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "7f99c287-bee4-4128-a04d-006d9efd8418"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 716.3192999999992,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-007",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 544.9405000000006,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-008",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 502.2592999999997,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-009",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 530.2691999999988,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-010",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.6309297535714575,
+          "reciprocalRank": 0.5,
+          "latencyMs": 520.1357000000007,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-011",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 527.0455000000002,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-012",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.5,
+          "reciprocalRank": 0.3333333333333333,
+          "latencyMs": 532.1556999999993,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-013",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 0.6,
+          "ndcgAt10": 0.7227265726449519,
+          "reciprocalRank": 1,
+          "latencyMs": 756.1721000000016,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-014",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 532.6831000000002,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-015",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 524.8104000000003,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-016",
+          "rankedRevisionIds": [
+            "0e457314-c21a-493c-a74f-708d33846e1d"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 536.3352000000014,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-017",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 508.1938000000009,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-018",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 640.2970999999998,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-019",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 625.3626000000004,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-020",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 660.7798000000003,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-021",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 641.0008999999991,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-022",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 636.2092000000011,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-023",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 651.1127000000015,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-024",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 660.7116000000024,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-025",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 630.0702999999994,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-026",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.6309297535714575,
+          "reciprocalRank": 0.5,
+          "latencyMs": 670.7415000000001,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-027",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 642.5277999999998,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-028",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.5,
+          "reciprocalRank": 0.3333333333333333,
+          "latencyMs": 1254.5439000000006,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-029",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 647.2518000000018,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-030",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 665.4110000000001,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-031",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 667.1502999999975,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-032",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 664.3390999999974,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-033",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.43067655807339306,
+          "reciprocalRank": 0.25,
+          "latencyMs": 657.5138000000006,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-034",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.38685280723454163,
+          "reciprocalRank": 0.2,
+          "latencyMs": 654.4138000000021,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-035",
+          "rankedRevisionIds": [
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.3562071871080222,
+          "reciprocalRank": 0.16666666666666666,
+          "latencyMs": 633.8233000000037,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-036",
+          "rankedRevisionIds": [
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "c962667e-7868-4623-b443-8626f0966525"
+          ],
+          "recallAt10": 0.4,
+          "ndcgAt10": 0.5531464700081437,
+          "reciprocalRank": 1,
+          "latencyMs": 458.40610000000015,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-037",
+          "rankedRevisionIds": [
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2"
+          ],
+          "recallAt10": 0.4,
+          "ndcgAt10": 0.5531464700081437,
+          "reciprocalRank": 1,
+          "latencyMs": 405.34799999999814,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-038",
+          "rankedRevisionIds": [
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "2e89dffb-8856-407d-85d9-8326f31dde80"
+          ],
+          "recallAt10": 0.4,
+          "ndcgAt10": 0.5531464700081437,
+          "reciprocalRank": 1,
+          "latencyMs": 389.7618000000002,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-039",
+          "rankedRevisionIds": [
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 354.33520000000135,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        }
+      ]
+    },
+    "vectorExact": {
+      "metrics": {
+        "recallAt10": 0.6628205128205129,
+        "ndcgAt10": 0.48226441045155066,
+        "mrr": 0.4543752543752544,
+        "p50DbLatencyMs": 105.39460000000054,
+        "p95DbLatencyMs": 181.19610000000102,
+        "timeViolations": 0,
+        "provenanceViolations": 0,
+        "duplicateRedundancyAt10": 0
+      },
+      "observations": [
+        {
+          "id": "L-001",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "2bd15cb0-863b-4f51-bfdd-20ed9c8bc035"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 425.9978000000001,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-002",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "435fe69c-aaea-483c-8465-7cd70923b539"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 108.29400000000032,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-003",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 109.89899999999943,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-004",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 105.39460000000054,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-005",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "5578545b-3fa7-4882-9a54-1852068e07a5"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 92.71700000000055,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-006",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "cfeb08ef-a78c-4798-905b-9b380076840c"
+          ],
+          "recallAt10": 0.25,
+          "ndcgAt10": 0.3903800499921017,
+          "reciprocalRank": 1,
+          "latencyMs": 96.04399999999987,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-007",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 175.29979999999887,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-008",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "2e89dffb-8856-407d-85d9-8326f31dde80",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 173.3073999999997,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-009",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "2e89dffb-8856-407d-85d9-8326f31dde80",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "0e457314-c21a-493c-a74f-708d33846e1d"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.38685280723454163,
+          "reciprocalRank": 0.2,
+          "latencyMs": 173.1849999999995,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-010",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "2e89dffb-8856-407d-85d9-8326f31dde80",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.5,
+          "reciprocalRank": 0.3333333333333333,
+          "latencyMs": 99.80400000000009,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-011",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.43067655807339306,
+          "reciprocalRank": 0.25,
+          "latencyMs": 98.04709999999977,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-012",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.6309297535714575,
+          "reciprocalRank": 0.5,
+          "latencyMs": 97.97780000000057,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-013",
+          "rankedRevisionIds": [
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0.8,
+          "ndcgAt10": 0.8297197050122157,
+          "reciprocalRank": 1,
+          "latencyMs": 176.2605999999996,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-014",
+          "rankedRevisionIds": [
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "c962667e-7868-4623-b443-8626f0966525",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 96.73719999999958,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-015",
+          "rankedRevisionIds": [
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "c962667e-7868-4623-b443-8626f0966525",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 96.98089999999866,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-016",
+          "rankedRevisionIds": [
+            "0e457314-c21a-493c-a74f-708d33846e1d"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 98.85039999999935,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-017",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.6309297535714575,
+          "reciprocalRank": 0.5,
+          "latencyMs": 95.64030000000275,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-018",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.5,
+          "reciprocalRank": 0.3333333333333333,
+          "latencyMs": 94.54539999999906,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-019",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 109.47220000000016,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-020",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "5578545b-3fa7-4882-9a54-1852068e07a5"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.6309297535714575,
+          "reciprocalRank": 0.5,
+          "latencyMs": 93.40179999999964,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-021",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 106.79839999999967,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-022",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.3562071871080222,
+          "reciprocalRank": 0.16666666666666666,
+          "latencyMs": 94.33789999999863,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-023",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "5578545b-3fa7-4882-9a54-1852068e07a5"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.2890648263178879,
+          "reciprocalRank": 0.1,
+          "latencyMs": 109.18729999999778,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-024",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.3010299956639812,
+          "reciprocalRank": 0.1111111111111111,
+          "latencyMs": 112.33539999999994,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-025",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "c962667e-7868-4623-b443-8626f0966525",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 98.0392000000029,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-026",
+          "rankedRevisionIds": [
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "7f99c287-bee4-4128-a04d-006d9efd8418"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 106.64749999999913,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-027",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "7f99c287-bee4-4128-a04d-006d9efd8418"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 94.28899999999703,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-028",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 102.1430999999975,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-029",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "7f99c287-bee4-4128-a04d-006d9efd8418"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 133.78470000000016,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-030",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "5578545b-3fa7-4882-9a54-1852068e07a5"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.3333333333333333,
+          "reciprocalRank": 0.14285714285714285,
+          "latencyMs": 111.1327999999994,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-031",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 94.06229999999778,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-032",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 110.4380999999994,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-033",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "c962667e-7868-4623-b443-8626f0966525",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.43067655807339306,
+          "reciprocalRank": 0.25,
+          "latencyMs": 110.335699999996,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-034",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.5,
+          "reciprocalRank": 0.3333333333333333,
+          "latencyMs": 106.03570000000036,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-035",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "c962667e-7868-4623-b443-8626f0966525"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 107.4545999999973,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-036",
+          "rankedRevisionIds": [
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "c962667e-7868-4623-b443-8626f0966525"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 97.64089999999851,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-037",
+          "rankedRevisionIds": [
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "5578545b-3fa7-4882-9a54-1852068e07a5"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.9068250379649666,
+          "reciprocalRank": 1,
+          "latencyMs": 181.19610000000102,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-038",
+          "rankedRevisionIds": [
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b"
+          ],
+          "recallAt10": 0.8,
+          "ndcgAt10": 0.7607566881222602,
+          "reciprocalRank": 1,
+          "latencyMs": 88.44189999999799,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-039",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 93.1736000000019,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        }
+      ]
+    },
+    "hybridExactRrf": {
+      "metrics": {
+        "recallAt10": 0.6935897435897436,
+        "ndcgAt10": 0.4823497410952864,
+        "mrr": 0.433007733007733,
+        "p50DbLatencyMs": 736.8567999999941,
+        "p95DbLatencyMs": 1086.4894000000004,
+        "timeViolations": 0,
+        "provenanceViolations": 0,
+        "duplicateRedundancyAt10": 0
+      },
+      "observations": [
+        {
+          "id": "L-001",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "2bd15cb0-863b-4f51-bfdd-20ed9c8bc035"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 1086.4894000000004,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-002",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "435fe69c-aaea-483c-8465-7cd70923b539"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 773.1198000000004,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-003",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 776.0391999999983,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-004",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 991.1023000000005,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-005",
+          "rankedRevisionIds": [
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "5578545b-3fa7-4882-9a54-1852068e07a5"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 721.0641999999998,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-006",
+          "rankedRevisionIds": [
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "5578545b-3fa7-4882-9a54-1852068e07a5"
+          ],
+          "recallAt10": 0.25,
+          "ndcgAt10": 0.24630238874073,
+          "reciprocalRank": 0.5,
+          "latencyMs": 820.3284000000003,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-007",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 720.3004999999994,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-008",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "2e89dffb-8856-407d-85d9-8326f31dde80",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 675.6466999999993,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-009",
+          "rankedRevisionIds": [
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "2e89dffb-8856-407d-85d9-8326f31dde80",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "0e457314-c21a-493c-a74f-708d33846e1d"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.38685280723454163,
+          "reciprocalRank": 0.2,
+          "latencyMs": 703.5428999999986,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-010",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "2e89dffb-8856-407d-85d9-8326f31dde80",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.5,
+          "reciprocalRank": 0.3333333333333333,
+          "latencyMs": 619.9956000000002,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-011",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.43067655807339306,
+          "reciprocalRank": 0.25,
+          "latencyMs": 625.1248999999989,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-012",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.6309297535714575,
+          "reciprocalRank": 0.5,
+          "latencyMs": 630.1600999999991,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-013",
+          "rankedRevisionIds": [
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "a9d81e3d-3e8a-4eb4-8d06-60508e7db347",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 0.8,
+          "ndcgAt10": 0.8297197050122157,
+          "reciprocalRank": 1,
+          "latencyMs": 932.4890000000014,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-014",
+          "rankedRevisionIds": [
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "a3fd24d9-4c01-4beb-a0c6-0cd85dd8a96e",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "c962667e-7868-4623-b443-8626f0966525",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 629.4481999999989,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-015",
+          "rankedRevisionIds": [
+            "60c4d663-42f6-4795-ac40-17cef4e48446",
+            "0e457314-c21a-493c-a74f-708d33846e1d",
+            "7d4841e8-dff2-4503-8f5f-44f821ae1bd4",
+            "ad592f0f-0e97-48bf-ba6a-913805ebeb04",
+            "5578545b-3fa7-4882-9a54-1852068e07a5",
+            "7f99c287-bee4-4128-a04d-006d9efd8418",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "baf5ac61-9f7f-418c-8059-470d71bb9dcb",
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.6309297535714575,
+          "reciprocalRank": 0.5,
+          "latencyMs": 621.8495999999959,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-016",
+          "rankedRevisionIds": [
+            "0e457314-c21a-493c-a74f-708d33846e1d"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 635.1974000000009,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-017",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.31546487678572877,
+          "reciprocalRank": 0.125,
+          "latencyMs": 603.8868000000039,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-018",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.3010299956639812,
+          "reciprocalRank": 0.1111111111111111,
+          "latencyMs": 734.8814999999995,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-019",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 734.8701000000001,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-020",
+          "rankedRevisionIds": [
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.31546487678572877,
+          "reciprocalRank": 0.125,
+          "latencyMs": 754.2243999999992,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-021",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 747.8375999999989,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-022",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.2890648263178879,
+          "reciprocalRank": 0.1,
+          "latencyMs": 730.5846999999994,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-023",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 760.3353999999999,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-024",
+          "rankedRevisionIds": [
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 773.0820000000022,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-025",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 728.1467000000011,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-026",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.43067655807339306,
+          "reciprocalRank": 0.25,
+          "latencyMs": 777.4360000000015,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-027",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.5,
+          "reciprocalRank": 0.3333333333333333,
+          "latencyMs": 736.8567999999941,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-028",
+          "rankedRevisionIds": [
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.43067655807339306,
+          "reciprocalRank": 0.25,
+          "latencyMs": 1356.7245000000003,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-029",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.3333333333333333,
+          "reciprocalRank": 0.14285714285714285,
+          "latencyMs": 781.0757000000012,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-030",
+          "rankedRevisionIds": [
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 776.5843000000023,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-031",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "cfeb08ef-a78c-4798-905b-9b380076840c"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 761.2522999999965,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-032",
+          "rankedRevisionIds": [
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "7f99c287-bee4-4128-a04d-006d9efd8418"
+          ],
+          "recallAt10": 0,
+          "ndcgAt10": 0,
+          "reciprocalRank": 0,
+          "latencyMs": 774.8133999999991,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-033",
+          "rankedRevisionIds": [
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 767.89209999999,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-034",
+          "rankedRevisionIds": [
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 760.5615000000034,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-035",
+          "rankedRevisionIds": [
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.3562071871080222,
+          "reciprocalRank": 0.16666666666666666,
+          "latencyMs": 741.3173999999999,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-036",
+          "rankedRevisionIds": [
+            "86e02c43-e38b-4969-a83f-c57b269a10dd",
+            "c962667e-7868-4623-b443-8626f0966525",
+            "cfeb08ef-a78c-4798-905b-9b380076840c",
+            "5d1e150a-1b6a-41df-b417-62dd225c0b57",
+            "7f99c287-bee4-4128-a04d-006d9efd8418"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 556.1087999999945,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-037",
+          "rankedRevisionIds": [
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "4ca5cd26-5a08-494c-88c1-61ad9c4b59f1",
+            "ee189a2c-33ca-4e07-af00-9596c36681d2",
+            "5578545b-3fa7-4882-9a54-1852068e07a5"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.9512312000626861,
+          "reciprocalRank": 1,
+          "latencyMs": 586.5865999999951,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-038",
+          "rankedRevisionIds": [
+            "0fdbf48d-d715-411b-8bc2-3d128134143b",
+            "8e3b1095-ae70-44d5-ae9d-6d3c9a1d3545",
+            "b80761b4-c29e-491b-86ff-0c4fdc36de73",
+            "0a29baaa-8cd1-46f5-8f94-265187bc9ba2",
+            "435fe69c-aaea-483c-8465-7cd70923b539",
+            "154503a8-0f8f-480d-a81a-37c8ddd433cf",
+            "2e89dffb-8856-407d-85d9-8326f31dde80"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 0.9330795243082165,
+          "reciprocalRank": 1,
+          "latencyMs": 478.2526999999973,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        },
+        {
+          "id": "L-039",
+          "rankedRevisionIds": [
+            "d278a39c-20ea-40ed-ae79-7e0194289386",
+            "f735c14e-a6be-4cb2-8899-8a923d78799b",
+            "0fbf07e2-2e18-4e19-9815-49c9ce9d8e6e"
+          ],
+          "recallAt10": 1,
+          "ndcgAt10": 1,
+          "reciprocalRank": 1,
+          "latencyMs": 447.5301000000036,
+          "timeViolations": 0,
+          "provenanceViolations": 0,
+          "duplicateRedundancyAt10": 0
+        }
+      ]
+    }
+  },
+  "checks": {
+    "recallAt10": false,
+    "ndcgAt10": false,
+    "entityRecallAt10": false,
+    "semanticRecallAt10": true,
+    "timeViolations": true,
+    "provenanceViolations": true,
+    "duplicateRedundancyAt10": true,
+    "warmDbP95": false,
+    "queryCalls": true,
+    "queryTokens": true,
+    "spend": true
+  },
+  "gatePassed": false,
+  "failedChecks": [
+    "recallAt10",
+    "ndcgAt10",
+    "entityRecallAt10",
+    "warmDbP95"
+  ],
+  "notes": [
+    "Only immutable COV-009 revisions were searched.",
+    "Ranked artifacts contain IDs and scores, not source bodies or vectors.",
+    "Coverage-negative and answer-generation items are reserved for COV-010/EVAL-002."
+  ]
+}

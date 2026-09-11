@@ -174,3 +174,16 @@ export {
   type ExtractedRedditPostPayload,
   type RedditCursorData,
 } from './reddit.js';
+export {
+  buildCanonicalIdentity,
+  resolveTargetCapability,
+  createTargetRevision,
+  CollectorPageAdapter,
+  createCollectorPageAdapter,
+  type CollectorPageAdapterOptions,
+} from './targets.js';
+export {
+  SourceSearchAdapter,
+  createSourceSearchAdapter,
+  type SourceSearchAdapterOptions,
+} from './source-search.js';

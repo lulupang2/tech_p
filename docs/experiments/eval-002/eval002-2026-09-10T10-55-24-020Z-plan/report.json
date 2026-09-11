@@ -1,0 +1,776 @@
+{
+  "schemaVersion": 1,
+  "task": "EVAL-002",
+  "runId": "eval002-2026-09-10T10-55-24-020Z-plan",
+  "mode": "plan",
+  "executedAt": "2026-09-10T10:55:24.160Z",
+  "dataset": {
+    "runKey": "cov009-20260910-live-v1",
+    "sha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+    "revisions": 28,
+    "chunks": 500,
+    "embeddings": 500,
+    "from": "2026-06-12T03:50:22.000Z",
+    "to": "2026-09-10T03:50:22.000Z"
+  },
+  "labels": {
+    "sha256": "415db8671b8ba77e4c5349f3df62b2d388c425e7952b162c68c63308171215a6",
+    "status": "proposed-human-review-required"
+  },
+  "code": {
+    "commit": "c1b197d3c15821ed928b87abd26855d56d0abbbd",
+    "dirty": true,
+    "sourceManifestSha256": "a5163bbb0d5cf09aaade0ba0786fa33a8bcbda3798396df3c13160cb13ad3322"
+  },
+  "configuration": {
+    "candidatesPerRetriever": 20,
+    "fusionLimit": 10,
+    "rrfK": 60,
+    "concurrency": 1,
+    "retries": 0,
+    "fallback": 0,
+    "acquisition": false,
+    "liveSearch": false,
+    "corpusReembedding": false,
+    "frozenNow": "2026-09-10T03:50:22.000Z",
+    "percentileMethod": "nearest-rank",
+    "warmMethod": "one untimed FTS/vector pass per question, then sequential timed DB passes; embedding excluded",
+    "rankingUnit": "actual first ten chunks; a revision gains relevance only once",
+    "redundancyUnit": "repeated document/duplicate-cluster among actual first ten chunks",
+    "priceBasis": "token-derived conservative micro-USD ceiling, not a provider invoice"
+  },
+  "answerSubset": {
+    "ids": [
+      "L-013",
+      "L-036",
+      "L-037",
+      "L-038",
+      "L-006",
+      "L-039",
+      "L-014",
+      "L-001",
+      "L-002",
+      "L-003",
+      "L-004",
+      "L-005"
+    ],
+    "questions": 12,
+    "relevantRevisions": 28,
+    "relevantChunks": 500,
+    "complete": true
+  },
+  "baseline": {
+    "status": "draft-applicability-human-review-required",
+    "baselineLabelsSha256": "3878260c83617fb74fba7f98df2af15bf7ee0c980f89b69fd08ce8771fe2289c",
+    "denominator": {
+      "allItems": 43,
+      "liveApplicable": 5,
+      "coverageNotApplicable": 21,
+      "controlledFixtureRequired": 17,
+      "hardInvariantItems": 43,
+      "securityInjectionItems": 5,
+      "executed": 0
+    },
+    "rows": [
+      {
+        "id": "G-001",
+        "questionSha256": "5c3f5637c0a92429eb1e3f68b8e9671c46668d2de1d7f016d25a915de5ff695a",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Multi-source backend/community trends are not covered by releases alone.",
+        "neededSourceKeys": [
+          "users_rust_lang",
+          "stack_exchange",
+          "github_search"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-002",
+        "questionSha256": "727627277e6724a4e7b6e3edfd279b28b861a6ca4a5eb6f169c191167f794a0c",
+        "originalExpectedStatus": "answered",
+        "applicability": "live_applicable",
+        "reason": "Question can be checked against the fixed approved releases or their absence.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-003",
+        "questionSha256": "39c0333efedbc5e0d7c86c8fe7deb91d62b0031ab933ca51b4a4b3b06e9bc1a5",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Bun/Node downloads and attention time series are absent.",
+        "neededSourceKeys": [
+          "npm_downloads",
+          "github_search"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-004",
+        "questionSha256": "360555b23dda2c1fc5f9e1a56f9e802ffc13b2cbd13d86c39a1709292e0e2966",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "RAG papers and community mention changes are absent.",
+        "neededSourceKeys": [
+          "arxiv",
+          "github_search",
+          "users_rust_lang"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-005",
+        "questionSha256": "e2291c5e5113d4dcf0e67c2a7b6c336720412cff28c13df1831d9c819480bd17",
+        "originalExpectedStatus": "answered",
+        "applicability": "live_applicable",
+        "reason": "Question can be checked against the fixed approved releases or their absence.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-006",
+        "questionSha256": "00b1042cbd752c02a3c98d4040b9e90a51eb2f22c089aa9a07d4db00e37d90c9",
+        "originalExpectedStatus": "answered",
+        "applicability": "live_applicable",
+        "reason": "Question can be checked against the fixed approved releases or their absence.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-007",
+        "questionSha256": "91bb20f98341c19d80b11976c2e5b1e4a86801fdab10edff1e9e3577e4307a25",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Rust forum discussion corpus is not activated.",
+        "neededSourceKeys": [
+          "users_rust_lang"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-008",
+        "questionSha256": "6f0d53d1c82d5b09d261366d610e03d5072f97d81e95d421ec78925ce5a1340e",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Papers cannot be inferred from release notes.",
+        "neededSourceKeys": [
+          "arxiv"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-009",
+        "questionSha256": "e934163e3b5d2ec6c84b984e85a8f9a090f364df659a3a0760f8549fdcef162d",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Elysia release target is not activated.",
+        "neededSourceKeys": [
+          "github_releases"
+        ],
+        "neededTargets": [
+          "elysiajs/elysia"
+        ],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-010",
+        "questionSha256": "b8bd6205a9232868e058d767b8385a9be45231d075a7edc3c4643b5dc0063933",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Next.js candidates are outside the approved target set; ambiguity still requires a fixture.",
+        "neededSourceKeys": [
+          "github_releases",
+          "npm_registry"
+        ],
+        "neededTargets": [
+          "vercel/next.js"
+        ],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-011",
+        "questionSha256": "aa8618bc9e4a1341ec8a998716a8bea1da2d54e9d2316d0fb3f13a679ac1c616",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Chrome release/trial sources are not activated.",
+        "neededSourceKeys": [
+          "chrome_release_notes",
+          "chrome_origin_trials"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-012",
+        "questionSha256": "0f906785ed3a6f39bd065a3b8e479aa0f3c3d1f7b7a64df2b3610725b92f14f2",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "React blog announcements are a different evidence type from releases.",
+        "neededSourceKeys": [
+          "react_blog"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-013",
+        "questionSha256": "e3bc48c3e7c54b00c10d57f316c9d8c098ea7c228c65fb9ff557464ec9017192",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "Future-window parsing and abstention must be exercised without fabricating future data.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-014",
+        "questionSha256": "66cc7e274f9f91043048f69e310d3bf9f678d9efe1a0beb39c79c5b083909ae4",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "Exact source-history limitation requires the existing controlled policy fixture.",
+        "neededSourceKeys": [
+          "npm_downloads"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-015",
+        "questionSha256": "c5825253d1bb8e7d62455617e4d5f14993062ca1bed0123b82affeda91d93222",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "Non-backfillable historical attention requires the controlled collection-history fixture.",
+        "neededSourceKeys": [
+          "github_search"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-016",
+        "questionSha256": "d84cd074982b5ae0cfc9e19e7fbdb82f1bc3cda8f303d20d74958b3b1dccf710",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Download time series and 18-month clamping are not measurable on releases.",
+        "neededSourceKeys": [
+          "npm_downloads"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-017",
+        "questionSha256": "f7d0a90ead1f7aa7090e2624e59f265d6fbb0209975842920729818259f0bb93",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "An inactive Deno target cannot establish the original 24-hour coverage claim.",
+        "neededSourceKeys": [
+          "github_releases"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-018",
+        "questionSha256": "e445e0aeaa7ec4a84e4e50bd4ba8ad6d581bf19c61b21397083f78d331db2ead",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "Unknown-entity abstention must be exercised with the original negative fixture.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-019",
+        "questionSha256": "8f3821dc8ea9db3ed056f21da31ccb5c4ed1df39ea119068e88bcc14913c188b",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Bun stable release target is not activated.",
+        "neededSourceKeys": [
+          "github_releases",
+          "npm_registry"
+        ],
+        "neededTargets": [
+          "oven-sh/bun"
+        ],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-020",
+        "questionSha256": "c84897da01c6f5ab81bfa8123e669d7fde21c2a573ea11945b021d3eab5b6fc1",
+        "originalExpectedStatus": "answered",
+        "applicability": "live_applicable",
+        "reason": "Question can be checked against the fixed approved releases or their absence.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-021",
+        "questionSha256": "0481ab18cd4a28a3254509e72e3daf613bda3ec8e524b985a18a0f452a2826ef",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "The original React 19 release is outside the fixed 90-day snapshot; later patches do not establish its release date.",
+        "neededSourceKeys": [
+          "react_blog",
+          "github_releases"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-022",
+        "questionSha256": "1de4459804810fd8dea4b692950eae9f799198fd37f3cfec540e5e693416a08a",
+        "originalExpectedStatus": "unsupported_intent",
+        "applicability": "controlled_fixture_required",
+        "reason": "Unsupported forecasting intent remains an independent behavioral regression.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-023",
+        "questionSha256": "4e7fab36bd343dfdadd4f1d5870a643986e60ac79e973bbd84c6ac1849a944a3",
+        "originalExpectedStatus": "unsupported_intent",
+        "applicability": "controlled_fixture_required",
+        "reason": "Unsupported subjective recommendation remains an independent behavioral regression.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-024",
+        "questionSha256": "8b6df42f4c7b6484d770afdb58a828b01a38a144c1f4b7faee9a41b85aaed6f4",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "controlled_fixture_required",
+        "reason": "The low-volume noise threshold needs a controlled metric series.",
+        "neededSourceKeys": [
+          "npm_downloads"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-025",
+        "questionSha256": "a894221f089124d77208dfcbe4d82aa96dbfb439f29e65fce64241e7e6bbb403",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "New-package publication and download-spike observations are absent.",
+        "neededSourceKeys": [
+          "npm_registry",
+          "npm_downloads"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-026",
+        "questionSha256": "aa0eb61db560b084caa7e72ed64b499033048a8ac1b838de17a1821b3cd900d1",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Separate Vite/Vue metric series are absent; prohibited aggregate score is never an acceptable substitute.",
+        "neededSourceKeys": [
+          "npm_downloads",
+          "github_search",
+          "users_rust_lang"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-027",
+        "questionSha256": "2680c9bbc5569e9de547f997a65d3f2fe497ad8505f96fc6477373bc695fd862",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Separate mention and download observations are absent.",
+        "neededSourceKeys": [
+          "npm_downloads",
+          "users_rust_lang"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-028",
+        "questionSha256": "7f3f88f2488690f8dab50a85089dca7b9eaa6b9e2f500e31dc87d1415526e4f9",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Zero-baseline arithmetic needs controlled observations, not release text.",
+        "neededSourceKeys": [
+          "users_rust_lang"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-029",
+        "questionSha256": "3d7b901992dbd3083235967b364b56200fbf7e9262c0243de5e3f1dc7665467c",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Model-activity observations are absent.",
+        "neededSourceKeys": [
+          "huggingface_hub"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-030",
+        "questionSha256": "9e211b3f8532acdb452806a7cf2fe2fd18ae7d88742791b6a3a11d9066c4d8d1",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Verbatim Stack Exchange evidence is not in this corpus.",
+        "neededSourceKeys": [
+          "stack_exchange"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-031",
+        "questionSha256": "ca0fceaf28df6828f9eeb93a4d31af563d2ea70df713325d59cc79e1e5970efe",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Null-publication-date origin-trial evidence is absent.",
+        "neededSourceKeys": [
+          "chrome_origin_trials"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-032",
+        "questionSha256": "631f83cc477021d2e1eb79eb9ed05639dbd6e7490f5a64064b4997673e145ed4",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Chrome release-note attribution cannot be tested using GitHub release rights.",
+        "neededSourceKeys": [
+          "chrome_release_notes"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-033",
+        "questionSha256": "ce75ab2b6e070c128f1734fc763fd7240d4cb8651d405a43ba37136f0747e279",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Full-text redistribution request refers to a prior answer and needs a controlled conversation.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-034",
+        "questionSha256": "a0cce5abefa726db756915d14b987944064d3e8e0ab868ddde3884dc0a80b25f",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Mandatory injected system-prompt-exfiltration regression; NEVER waived by coverage.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": true,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-035",
+        "questionSha256": "c150a4fffe28648b5a738a94a74c52223b33d145561f0b6ede1ccba0eaca95d9",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Mandatory fake-citation/phishing regression; NEVER waived by coverage.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": true,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-036",
+        "questionSha256": "38591c5c4860c34fa53a96f0abf592c78f99ae4067524c2bb9bd3c4509f46745",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Mandatory SSRF/egress injection regression; NEVER waived by coverage.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": true,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-037",
+        "questionSha256": "8038bd16bb37f6daa8fe2a14f9b5f6128e207473b5a53ad467a13fbec3fa7f68",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Mandatory hidden-HTML sanitization regression; NEVER waived by coverage.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": true,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-038",
+        "questionSha256": "f9785b21733ffb2b5b5bd01c41a2f293d70a906e05b26cf428d9d28f4afb07a4",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Mandatory token-flooding regression; NEVER waived by coverage.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": true,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-039",
+        "questionSha256": "4bf41ef76b40d6f101fe3ad2f6017145e58cc5a5c83d1a2fe01fd31491843d66",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Single-source corpus cannot establish cross-source duplicate independence.",
+        "neededSourceKeys": [
+          "users_rust_lang",
+          "react_blog"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-040",
+        "questionSha256": "b4b2975438eb36e281c575dd9f28434092651499c26d633385b0a5433bf49eac",
+        "originalExpectedStatus": "answered",
+        "applicability": "controlled_fixture_required",
+        "reason": "Cross-source cluster provenance requires multiple-source members.",
+        "neededSourceKeys": [
+          "users_rust_lang",
+          "react_blog"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-041",
+        "questionSha256": "65eaf282fa23530910543b6bd56c4c32e608d0f8d6c191d44a991121b303e682",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Bun/Deno matched metric time series are absent.",
+        "neededSourceKeys": [
+          "npm_downloads",
+          "github_search"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-042",
+        "questionSha256": "06b949d4fb1a3e337928375f9672fb83d79ad9fc571fc31fc20b4cac789498fa",
+        "originalExpectedStatus": "answered",
+        "applicability": "coverage_not_applicable",
+        "reason": "Agent-tooling papers, forums and targets are not activated.",
+        "neededSourceKeys": [
+          "arxiv",
+          "users_rust_lang",
+          "github_search"
+        ],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      },
+      {
+        "id": "G-043",
+        "questionSha256": "039076f332f016ceaaf370959d89a71e78ce8c2a25775bb8740ac428dc7c74b0",
+        "originalExpectedStatus": "insufficient_evidence",
+        "applicability": "live_applicable",
+        "reason": "Question can be checked against the fixed approved releases or their absence.",
+        "neededSourceKeys": [],
+        "neededTargets": [],
+        "mandatoryHardInvariants": true,
+        "isSecurityInjection": false,
+        "executionState": "not_executed",
+        "semanticReview": "pending"
+      }
+    ],
+    "gatePassed": false
+  },
+  "budgetCaps": {
+    "microUsd": 250000,
+    "embeddingCalls": 100,
+    "embeddingInputTokens": 100000,
+    "chatCalls": 60,
+    "chatInputTokens": 300000,
+    "chatOutputTokens": 30000
+  },
+  "historicalUsage": {
+    "schemaVersion": 1,
+    "decision": "DEC-013",
+    "datasetSha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+    "reconciled": false,
+    "reconciliationReference": null,
+    "usage": {
+      "microUsd": 6,
+      "embeddingCalls": 39,
+      "embeddingInputTokens": 1258,
+      "chatCalls": 0,
+      "chatInputTokens": 0,
+      "chatOutputTokens": 0
+    },
+    "usageMeaning": "VERIFIED LOWER BOUND ONLY. Zero chat counters mean unaccounted here, not no historical chat calls.",
+    "verifiedEvidence": [
+      "docs/experiments/exp-002/live-measurement.json:queryEmbeddingUsage"
+    ],
+    "unreconciledEvidence": [
+      "The supplied continuation handoff reports three additional 39-query embedding measurements; exact independent attempt accounting must be reconciled.",
+      "The handoff also reports live negative smoke and minimum-answer calls without complete token/cost receipts.",
+      "Some ad-hoc calls may bypass the normal DB budget ledger. DB totals alone cannot establish complete evaluation usage."
+    ],
+    "liveExecutionAllowed": false,
+    "note": "Do not reset counters per run, initialize a fresh zero ledger, or infer a budget extension from the instruction to continue. Retain reservations with unknown outcomes. A new spending approval must be explicit if the original limits have been reached."
+  },
+  "retrieval": null,
+  "answers": null,
+  "providerCallsThisRun": 0,
+  "humanReview": {
+    "liveLabels": "pending",
+    "semanticCitationPrecision": null,
+    "semanticCitationCoverage": null,
+    "unsupportedClaimRate": null,
+    "reviewer": null,
+    "instruction": "No semantic judgment can be inferred from citation identity. Review must be tied to answer/evidence hashes."
+  },
+  "hardInvariants": {
+    "security": null,
+    "time": null,
+    "rights": null,
+    "profile": null,
+    "provenance": null
+  },
+  "releaseGatePassed": false,
+  "blockers": [
+    "live_label_review_pending",
+    "semantic_answer_review_pending",
+    "baseline_43_execution_pending",
+    "release_history_unreconciled"
+  ]
+}

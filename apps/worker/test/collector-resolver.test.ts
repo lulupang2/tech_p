@@ -1,111 +1,159 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'vitest';
-import { createCollectorForSource } from '../src/index.js';
-import type { PlaywrightBrowser } from '@techpulse/collectors';
-import type { SourceKey } from '@techpulse/domain';
-describe('Worker createCollectorForSource multi-target resolution', () => {
-  test('resolves github_releases with multi-repo configuration for Bun, Node, Playwright, TS, React', () => {
-    const collector = createCollectorForSource('github_releases', {
-      repositories: [
-        { owner: 'microsoft', repo: 'playwright' },
-        { owner: 'microsoft', repo: 'TypeScript' },
-        { owner: 'nodejs', repo: 'node' },
-        { owner: 'oven-sh', repo: 'bun' },
-        { owner: 'facebook', repo: 'react' },
-      ],
+import { createCollectorPageAdapter, createTargetRevision } from '@techpulse/collectors';
+import type { CollectionPartition } from '@techpulse/domain';
+import type { TargetCollectorResolver } from '../src/ingestion.js';
+
+describe('Worker Target-Aware Collector Resolution', () => {
+  const clock = new Date('2026-09-09T00:00:00Z');
+
+  function createSamplePartition(targetRevisionId: string): CollectionPartition {
+    return {
+      id: 'part-1',
+      targetRevisionId,
+      mode: 'incremental',
+      scopeKey: 'default',
+      window: {
+        from: new Date('2026-09-08T00:00:00Z'),
+        to: new Date('2026-09-09T00:00:00Z'),
+      },
+      timeBasis: 'published_at',
+      workflowVersion: '1',
+      state: 'running',
+      cursor: null,
+      pageSequence: 1,
+      leaseEpoch: 1,
+      leaseUntil: null,
+      dueAt: clock,
+      lastAttemptAt: null,
+      attemptCount: 0,
+      itemsCollected: 0,
+      bytesIngested: 0,
+      requestsMade: 0,
+      disposition: null,
+      reason: null,
+    };
+  }
+
+  test('resolves target-aware adapter for github_releases target', async () => {
+    const target = createTargetRevision({
+      targetId: 'tgt-gh',
+      sourceId: 'src-gh',
+      sourceKey: 'github_releases',
+      selector: { kind: 'repository', owner: 'microsoft', repository: 'playwright' },
+      enabled: true,
     });
 
-    assert.ok(collector);
-    assert.equal(collector.sourceKey, 'github_releases');
-  });
+    const fixtureFetch: typeof fetch = async () =>
+      new Response(
+        JSON.stringify([
+          {
+            id: 1,
+            tag_name: 'v1.40.0',
+            name: 'v1.40.0',
+            draft: false,
+            prerelease: false,
+            published_at: '2026-09-08T12:00:00Z',
+            html_url: 'https://github.com/microsoft/playwright/releases/tag/v1.40.0',
+          },
+        ]),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
 
-  test('resolves github_search with multi-query configuration', () => {
-    const collector = createCollectorForSource('github_search', {
-      queries: [
-        'topic:typescript stars:>500',
-        'topic:nodejs stars:>500',
-        'topic:bun stars:>100',
-        'topic:playwright stars:>100',
-        'topic:react stars:>500',
-      ],
+    const adapter = createCollectorPageAdapter({ fetch: fixtureFetch });
+    const result = await adapter.collectPage({
+      target,
+      partition: createSamplePartition(target.id),
+      limit: 10,
+      maxRequests: 5,
+      maxBytes: 1048576,
+      now: clock,
     });
 
-    assert.ok(collector);
-    assert.equal(collector.sourceKey, 'github_search');
-  });
-
-  test('resolves stack_exchange with multi-tag configuration', () => {
-    const collector = createCollectorForSource('stack_exchange', {
-      site: 'stackoverflow',
-      tags: ['typescript', 'node.js', 'bun', 'playwright', 'react'],
-    });
-
-    assert.ok(collector);
-    assert.equal(collector.sourceKey, 'stack_exchange');
-  });
-
-  test('resolves npm_registry and npm_downloads with target packages', () => {
-    const packages = ['typescript', 'react', 'playwright', '@playwright/test', 'bun-types'];
-    const regCollector = createCollectorForSource('npm_registry', { packages });
-    const dlCollector = createCollectorForSource('npm_downloads', { packages });
-
-    assert.ok(regCollector);
-    assert.equal(regCollector.sourceKey, 'npm_registry');
-
-    assert.ok(dlCollector);
-    assert.equal(dlCollector.sourceKey, 'npm_downloads');
-  });
-
-  test('resolves article collectors for react_blog and chrome_release_notes', () => {
-    const reactBlog = createCollectorForSource('react_blog');
-    const chromeNotes = createCollectorForSource('chrome_release_notes');
-
-    assert.ok(reactBlog);
-    assert.equal(reactBlog.sourceKey, 'react_blog');
-
-    assert.ok(chromeNotes);
-    assert.equal(chromeNotes.sourceKey, 'chrome_release_notes');
-  });
-
-  test('resolves arxiv, users_rust_lang, huggingface_hub, and chrome_origin_trials', () => {
-    const fakeBrowserFactory = async () => ({}) as PlaywrightBrowser;
-
-    const arxiv = createCollectorForSource('arxiv', { categories: ['cs.AI', 'cs.SE'] });
-    const rust = createCollectorForSource('users_rust_lang');
-    const hf = createCollectorForSource('huggingface_hub');
-    const trials = createCollectorForSource(
-      'chrome_origin_trials',
-      {},
-      { browserFactory: fakeBrowserFactory },
+    assert.equal(result.items.length, 1);
+    assert.equal(
+      result.items[0]?.metadata?.['canonicalUrl'],
+      'https://github.com/microsoft/playwright/releases/tag/v1.40.0',
     );
-
-    assert.ok(arxiv);
-    assert.equal(arxiv.sourceKey, 'arxiv');
-
-    assert.ok(rust);
-    assert.equal(rust.sourceKey, 'users_rust_lang');
-
-    assert.ok(hf);
-    assert.equal(hf.sourceKey, 'huggingface_hub');
-
-    assert.ok(trials);
-    assert.equal(trials.sourceKey, 'chrome_origin_trials');
+    assert.equal(result.items[0]?.externalId, 'github_releases:microsoft/playwright:1');
   });
 
-  test('resolves reddit with configured subreddit', () => {
-    const fakeBrowserFactory = async () => ({}) as PlaywrightBrowser;
-    const reddit = createCollectorForSource(
-      'reddit',
-      { subreddit: 'typescript' },
-      { browserFactory: fakeBrowserFactory },
+  test('resolves target-aware adapter for arxiv target', async () => {
+    const target = createTargetRevision({
+      targetId: 'tgt-arxiv',
+      sourceId: 'src-arxiv',
+      sourceKey: 'arxiv',
+      selector: { kind: 'category', category: 'cs.AI' },
+      enabled: true,
+    });
+
+    const sampleXml = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>cs.AI updates</title>
+  <entry>
+    <id>http://arxiv.org/abs/2609.00001v1</id>
+    <updated>2026-09-08T10:00:00Z</updated>
+    <published>2026-09-08T10:00:00Z</published>
+    <title>Sample AI Paper</title>
+    <summary>Sample abstract text.</summary>
+    <author><name>Test Author</name></author>
+  </entry>
+</feed>`;
+
+    const fixtureFetch: typeof fetch = async () =>
+      new Response(sampleXml, { status: 200, headers: { 'content-type': 'application/atom+xml' } });
+
+    const adapter = createCollectorPageAdapter({ fetch: fixtureFetch });
+    const result = await adapter.collectPage({
+      target,
+      partition: createSamplePartition(target.id),
+      limit: 10,
+      maxRequests: 5,
+      maxBytes: 1048576,
+      now: clock,
+    });
+
+    assert.equal(result.items.length, 1);
+    assert.ok(String(result.items[0]?.metadata?.['canonicalUrl']).includes('2609.00001'));
+  });
+
+  test('rejects unapproved or disabled target collection', async () => {
+    const disabledTarget = createTargetRevision({
+      targetId: 'tgt-disabled',
+      sourceId: 'src-gh',
+      sourceKey: 'github_releases',
+      selector: { kind: 'repository', owner: 'facebook', repository: 'react' },
+      enabled: false,
+    });
+
+    const adapter = createCollectorPageAdapter();
+    await assert.rejects(
+      () =>
+        adapter.collectPage({
+          target: disabledTarget,
+          partition: createSamplePartition(disabledTarget.id),
+          limit: 10,
+          maxRequests: 5,
+          maxBytes: 1048576,
+          now: clock,
+        }),
+      /policy_blocked/u,
     );
-
-    assert.ok(reddit);
-    assert.equal(reddit.sourceKey, 'reddit');
   });
 
-  test('returns undefined for unknown sourceKey', () => {
-    const unknown = createCollectorForSource('unknown_key' as unknown as SourceKey);
-    assert.equal(unknown, undefined);
+  test('resolves target-aware adapter through TargetCollectorResolver contract', () => {
+    const defaultAdapter = createCollectorPageAdapter();
+    const resolver: TargetCollectorResolver = () => defaultAdapter;
+
+    const target = createTargetRevision({
+      targetId: 'tgt-gh',
+      sourceId: 'src-gh',
+      sourceKey: 'github_releases',
+      selector: { kind: 'repository', owner: 'microsoft', repository: 'playwright' },
+      enabled: true,
+    });
+
+    const collector = resolver('github_releases', target);
+    assert.equal(collector, defaultAdapter);
   });
 });

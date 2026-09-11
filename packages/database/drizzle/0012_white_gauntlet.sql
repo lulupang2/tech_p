@@ -1,0 +1,2 @@
+CREATE INDEX "chunks_content_fts_idx" ON "chunks" USING gin (to_tsvector('simple', "content"));--> statement-breakpoint
+CREATE INDEX "document_revisions_title_fts_idx" ON "document_revisions" USING gin (to_tsvector('simple', "title"));

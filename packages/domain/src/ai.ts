@@ -16,8 +16,9 @@ export interface AiRequestOptions {
 
 export interface ChatCompletionRequest extends AiRequestOptions {
   readonly messages: readonly ChatMessage[];
-  /** Optional until DEC-007 selects a model. */
   readonly model?: string;
+  readonly responseFormat?: 'json_object';
+  readonly maxOutputTokens?: number;
 }
 
 export interface TokenUsage {
@@ -50,6 +51,7 @@ export interface EmbeddingMetadata {
   readonly model: string;
   readonly dimensions: number;
   readonly latencyMs: number;
+  readonly usage: Pick<TokenUsage, 'inputTokens' | 'totalTokens'>;
 }
 
 export interface EmbeddingResult {
@@ -62,12 +64,16 @@ export interface EmbeddingPort {
   embedMany(requests: readonly EmbeddingRequest[]): Promise<readonly EmbeddingResult[]>;
 }
 
-export type AiErrorKind = 'timeout' | 'unsupported_input' | 'provider_error';
+export type AiErrorKind = 'timeout' | 'rate_limited' | 'unsupported_input' | 'provider_error';
 export interface AiErrorMetadata {
   readonly model: string;
   readonly latencyMs: number;
   readonly dimensions?: number;
-  readonly usage?: TokenUsage;
+  readonly usage?: {
+    readonly inputTokens: number;
+    readonly outputTokens?: number;
+    readonly totalTokens: number;
+  };
 }
 /** Compatibility names for adapters that refer to provider ports directly. */
 export type ChatRequest = ChatCompletionRequest;
@@ -108,10 +114,28 @@ export class UnsupportedAiInputError extends AiPortError {
 }
 
 export class AiProviderError extends AiPortError {
-  constructor(message = 'AI provider request failed', metadata?: AiErrorMetadata, cause?: unknown) {
-    super('provider_error', message, { retryable: true, metadata });
+  constructor(
+    message = 'AI provider request failed',
+    metadata?: AiErrorMetadata,
+    cause?: unknown,
+    retryable = true,
+  ) {
+    super('provider_error', message, { retryable, metadata });
     this.name = 'AiProviderError';
     if (cause !== undefined) this.cause = cause;
+  }
+}
+
+export class AiRateLimitError extends AiPortError {
+  readonly retryAfterMs: number | undefined;
+
+  constructor(metadata?: AiErrorMetadata, retryAfterMs?: number) {
+    super('rate_limited', 'AI provider rate limit exceeded', {
+      retryable: true,
+      metadata,
+    });
+    this.name = 'AiRateLimitError';
+    this.retryAfterMs = retryAfterMs;
   }
 }
 
@@ -180,6 +204,14 @@ function validateMessages(messages: readonly ChatMessage[]): void {
   }
 }
 
+function parseRetryAfterMs(value: string | null): number | undefined {
+  if (!value) return undefined;
+  if (/^\d+$/u.test(value.trim())) return Number(value.trim()) * 1000;
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return undefined;
+  return Math.max(0, timestamp - Date.now());
+}
+
 export function createDeterministicChatPort(
   options: DeterministicChatOptions = {},
 ): DeterministicChatPort {
@@ -245,7 +277,13 @@ export function createDeterministicEmbeddingPort(
       throw new UnsupportedAiInputError('embedding input must be non-empty');
     assertTimeout(request.timeoutMs);
     calls.push({ ...request });
-    const metadata = { model, dimensions, latencyMs };
+    const inputTokens = tokenCount(request.input);
+    const metadata = {
+      model,
+      dimensions,
+      latencyMs,
+      usage: { inputTokens, totalTokens: inputTokens },
+    };
     await waitForLatency(latencyMs, request.signal, request.timeoutMs, metadata);
     if (options.failWith !== undefined) throw providerError(options.failWith, metadata);
     const vector = Array.from(
@@ -272,6 +310,7 @@ export interface OpenAiCompatibleChatOptions {
   readonly model?: string;
   readonly defaultTimeoutMs?: number;
   readonly temperature?: number;
+  readonly requireJsonObject?: boolean;
   readonly fetchFn?: typeof fetch;
 }
 
@@ -284,6 +323,7 @@ export function createOpenAiCompatibleChatPort(options: OpenAiCompatibleChatOpti
   const defaultModel = options.model ?? 'gpt-4o-mini';
   const fetchFn = options.fetchFn ?? globalThis.fetch;
   const temperature = options.temperature ?? 0.2;
+  const requireJsonObject = options.requireJsonObject ?? true;
 
   return {
     async complete(request: ChatCompletionRequest): Promise<ChatCompletionResult> {
@@ -317,6 +357,12 @@ export function createOpenAiCompatibleChatPort(options: OpenAiCompatibleChatOpti
             model,
             messages: request.messages.map((m) => ({ role: m.role, content: m.content })),
             temperature,
+            ...(requireJsonObject || request.responseFormat === 'json_object'
+              ? { response_format: { type: 'json_object' } }
+              : {}),
+            ...(request.maxOutputTokens !== undefined
+              ? { max_tokens: request.maxOutputTokens }
+              : {}),
           }),
           signal: controller.signal,
         });
@@ -328,8 +374,20 @@ export function createOpenAiCompatibleChatPort(options: OpenAiCompatibleChatOpti
           throw new AiTimeoutError('AI request timed out at upstream provider', metadata);
         }
 
+        if (response.status === 429) {
+          throw new AiRateLimitError(
+            metadata,
+            parseRetryAfterMs(response.headers.get('retry-after')),
+          );
+        }
+
         if (!response.ok) {
-          throw new AiProviderError(`AI provider returned HTTP ${response.status}`, metadata);
+          throw new AiProviderError(
+            `AI provider returned HTTP ${response.status}`,
+            metadata,
+            undefined,
+            response.status >= 500,
+          );
         }
 
         const rawData: unknown = await response.json();
@@ -337,6 +395,7 @@ export function createOpenAiCompatibleChatPort(options: OpenAiCompatibleChatOpti
         let promptTokens = 0;
         let completionTokens = 0;
         let totalTokens = 0;
+        let hasUsage = false;
         let responseModel = model;
 
         if (typeof rawData === 'object' && rawData !== null) {
@@ -357,6 +416,7 @@ export function createOpenAiCompatibleChatPort(options: OpenAiCompatibleChatOpti
             }
           }
           if (typeof dataObj['usage'] === 'object' && dataObj['usage'] !== null) {
+            hasUsage = true;
             const usageObj = dataObj['usage'] as Record<string, unknown>;
             if (typeof usageObj['prompt_tokens'] === 'number')
               promptTokens = usageObj['prompt_tokens'];
@@ -371,11 +431,21 @@ export function createOpenAiCompatibleChatPort(options: OpenAiCompatibleChatOpti
           throw new AiProviderError('AI provider response missing message content', metadata);
         }
 
-        const input = inputText(request.messages);
+        if (
+          !hasUsage ||
+          !Number.isSafeInteger(promptTokens) ||
+          promptTokens < 0 ||
+          !Number.isSafeInteger(completionTokens) ||
+          completionTokens < 0 ||
+          !Number.isSafeInteger(totalTokens) ||
+          totalTokens !== promptTokens + completionTokens
+        ) {
+          throw new AiProviderError('AI provider response missing valid usage', metadata);
+        }
         const usage: TokenUsage = {
-          inputTokens: promptTokens > 0 ? promptTokens : tokenCount(input),
-          outputTokens: completionTokens > 0 ? completionTokens : tokenCount(content),
-          totalTokens: totalTokens > 0 ? totalTokens : tokenCount(input) + tokenCount(content),
+          inputTokens: promptTokens,
+          outputTokens: completionTokens,
+          totalTokens,
         };
 
         return {
@@ -427,6 +497,8 @@ export interface OpenAiCompatibleEmbeddingOptions {
   readonly dimensions?: number;
   readonly defaultTimeoutMs?: number;
   readonly fetchFn?: typeof fetch;
+  /** Explicit provider response aliases that map to the configured model. */
+  readonly acceptedResponseModels?: readonly string[];
 }
 
 export function createOpenAiCompatibleEmbeddingPort(
@@ -440,6 +512,7 @@ export function createOpenAiCompatibleEmbeddingPort(
   const defaultModel = options.model ?? 'text-embedding-3-small';
   const fetchFn = options.fetchFn ?? globalThis.fetch;
   const expectedDimensions = options.dimensions;
+  const acceptedResponseModels = new Set([defaultModel, ...(options.acceptedResponseModels ?? [])]);
 
   const embedOne = async (request: EmbeddingRequest): Promise<EmbeddingResult> => {
     if (request.input.trim().length === 0) {
@@ -487,13 +560,27 @@ export function createOpenAiCompatibleEmbeddingPort(
         throw new AiTimeoutError('AI request timed out at upstream provider', metadata);
       }
 
+      if (response.status === 429) {
+        throw new AiRateLimitError(
+          metadata,
+          parseRetryAfterMs(response.headers.get('retry-after')),
+        );
+      }
+
       if (!response.ok) {
-        throw new AiProviderError(`AI provider returned HTTP ${response.status}`, metadata);
+        throw new AiProviderError(
+          `AI provider returned HTTP ${response.status}`,
+          metadata,
+          undefined,
+          response.status >= 500,
+        );
       }
 
       const rawData: unknown = await response.json();
       let vector: readonly number[] | undefined;
       let responseModel = model;
+      let inputTokens: number | undefined;
+      let totalTokens: number | undefined;
 
       if (typeof rawData === 'object' && rawData !== null) {
         const dataObj = rawData as Record<string, unknown>;
@@ -509,18 +596,41 @@ export function createOpenAiCompatibleEmbeddingPort(
             }
           }
         }
+        if (typeof dataObj['usage'] === 'object' && dataObj['usage'] !== null) {
+          const usageObj = dataObj['usage'] as Record<string, unknown>;
+          if (typeof usageObj['prompt_tokens'] === 'number')
+            inputTokens = usageObj['prompt_tokens'];
+          if (typeof usageObj['total_tokens'] === 'number') totalTokens = usageObj['total_tokens'];
+        }
       }
 
       if (!vector || vector.length === 0) {
         throw new AiProviderError('AI provider response missing data[0].embedding', metadata);
       }
+      if (!acceptedResponseModels.has(responseModel)) {
+        throw new AiProviderError('AI provider response model mismatch', metadata);
+      }
+      if (
+        !Number.isSafeInteger(inputTokens) ||
+        (inputTokens ?? -1) < 0 ||
+        !Number.isSafeInteger(totalTokens) ||
+        totalTokens !== inputTokens
+      ) {
+        throw new AiProviderError('AI provider response missing valid usage', metadata);
+      }
+      if (expectedDimensions !== undefined && vector.length !== expectedDimensions) {
+        throw new AiProviderError('AI provider response dimensions mismatch', metadata);
+      }
 
+      const billedInputTokens = inputTokens as number;
+      const billedTotalTokens = totalTokens as number;
       return {
         vector,
         metadata: {
-          model: responseModel,
+          model,
           dimensions: vector.length,
           latencyMs,
+          usage: { inputTokens: billedInputTokens, totalTokens: billedTotalTokens },
         },
       };
     } catch (err: unknown) {

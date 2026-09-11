@@ -25,13 +25,14 @@ describe('migration files and metadata structure', () => {
     };
 
     assert.ok(Array.isArray(journal.entries));
-    assert.equal(journal.entries.length, 12);
+    assert.equal(journal.entries.length, 13);
     assert.equal(journal.entries[0]?.tag, '0000_bootstrap_pgvector');
     assert.equal(journal.entries[1]?.tag, '0001_complete_puck');
     assert.equal(journal.entries[2]?.tag, '0002_mature_post');
     assert.equal(journal.entries[3]?.tag, '0003_amusing_stone_men');
     assert.equal(journal.entries[4]?.tag, '0004_pale_ironclad');
     assert.equal(journal.entries[5]?.tag, '0005_gray_domino');
+    assert.equal(journal.entries[12]?.tag, '0012_white_gauntlet');
   });
 
   test('meta/0000_snapshot.json exists and defines schema snapshot', () => {
@@ -56,9 +57,20 @@ describe('migration files and metadata structure', () => {
     assert.match(migration, /ON DELETE restrict/u);
     assert.match(migration, /'suggested', 'accepted', 'superseded'/u);
   });
+
+  test('RAG retrieval migration defines GIN indexes for title and chunk content FTS', () => {
+    const migration = readFileSync(
+      resolve(DEFAULT_MIGRATIONS_FOLDER, '0012_white_gauntlet.sql'),
+      'utf8',
+    );
+    assert.match(migration, /chunks_content_fts_idx/u);
+    assert.match(migration, /document_revisions_title_fts_idx/u);
+    assert.match(migration, /USING gin \(to_tsvector\('simple', "content"\)\)/u);
+    assert.match(migration, /USING gin \(to_tsvector\('simple', "title"\)\)/u);
+  });
 });
 
-const databaseUrl = process.env['DATABASE_URL'];
+const databaseUrl = process.env['DATABASE_URL_DIRECT'] || process.env['DATABASE_URL'];
 const describeIntegration = databaseUrl ? describe : describe.skip;
 
 describeIntegration('PostgreSQL Compose real migration integration', () => {
@@ -92,7 +104,7 @@ describeIntegration('PostgreSQL Compose real migration integration', () => {
         created_at: string;
       }>('SELECT id, hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id ASC;');
 
-      assert.equal(firstMigrations.rows.length, 7);
+      assert.equal(firstMigrations.rows.length, 13);
       const recordedHash = firstMigrations.rows[0]?.hash;
       assert.ok(recordedHash);
 
@@ -110,7 +122,7 @@ describeIntegration('PostgreSQL Compose real migration integration', () => {
         hash: string;
         created_at: string;
       }>('SELECT id, hash, created_at FROM drizzle.__drizzle_migrations ORDER BY id ASC;');
-      assert.equal(secondMigrations.rows.length, 7);
+      assert.equal(secondMigrations.rows.length, 13);
 
       // 9. Execute smoke pgvector query to verify vector calculations
       const queryResult = await client.pool.query<{

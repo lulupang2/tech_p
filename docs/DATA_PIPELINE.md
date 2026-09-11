@@ -9,6 +9,11 @@
 
 외부 개발 기술 신호를 재현 가능하게 가져와 원본을 보존하고, 검색 가능한 문서와 비교 가능한 시계열 관측값으로 발행한다. 파이프라인의 최종 산출물은 “요약문”이 아니라 provenance가 있는 `document/chunk`와 `metric observation`이다.
 
+DEC-012의 live 실행은 [ADR-0016](./adr/0016-low-cost-live-activation.md)에 한정한다. 승인된 GitHub
+Releases 5개 target만 최근 90일 backfill과 6시간 incremental schedule로 처리하며, API 200회/
+일·1,000회/전체, 25 MiB/일·250 MiB/전체, concurrency 1을 넘으면 fail closed한다. On-demand
+acquisition과 target 자동 확대는 이 실행에서 비활성이다.
+
 ## 2. 소스 선택 원칙
 
 1. 공식 API 또는 RSS/Atom을 브라우저 자동화보다 우선한다.

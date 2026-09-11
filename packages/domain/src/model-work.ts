@@ -12,7 +12,8 @@ export interface EmbeddingWorkKey {
   readonly inputHash: string;
   readonly profile: ModelProfile;
 }
-export type EmbeddingWorkState = 'pending' | 'claimed' | 'calling' | 'completed' | 'outcome_unknown' | 'failed';
+export type EmbeddingWorkState =
+  'pending' | 'claimed' | 'calling' | 'completed' | 'outcome_unknown' | 'failed';
 export interface EmbeddingWork {
   readonly id: string;
   readonly key: EmbeddingWorkKey;
@@ -29,7 +30,9 @@ export interface BudgetScope {
   readonly maxDailyUnits: number;
   readonly maxOutstandingUnits: number;
   readonly maxDailyTokens: number;
-  readonly laneLimits: Readonly<Record<string, { readonly maxDailyUnits: number; readonly maxDailyTokens: number }>>;
+  readonly laneLimits: Readonly<
+    Record<string, { readonly maxDailyUnits: number; readonly maxDailyTokens: number }>
+  >;
   readonly approvedModelProfiles: readonly string[];
 }
 export interface BudgetReservation {
@@ -42,19 +45,39 @@ export interface BudgetReservation {
 }
 export interface ProviderBudgetPort {
   configureScope(scope: BudgetScope): Promise<void>;
-  reserve(scopeId: string, attemptId: string, lane: string, units: number, tokens: number, now: Date): Promise<BudgetReservation>;
+  reserve(
+    scopeId: string,
+    attemptId: string,
+    lane: string,
+    units: number,
+    tokens: number,
+    now: Date,
+  ): Promise<BudgetReservation>;
   settle(id: string, units: number, tokens: number, now: Date): Promise<void>;
   holdUnknown(id: string, now: Date): Promise<void>;
   releaseUnsent(id: string, now: Date): Promise<void>;
 }
 export interface EmbeddingWorkPort {
-  claimOrReadCompleted(key: EmbeddingWorkKey, now: Date, leaseMs: number): Promise<EmbeddingWork | null>;
+  claimOrReadCompleted(
+    key: EmbeddingWorkKey,
+    now: Date,
+    leaseMs: number,
+  ): Promise<EmbeddingWork | null>;
   beginCall(id: string, epoch: number, reservationId: string, now: Date): Promise<void>;
   completeWork(id: string, epoch: number, vector: readonly number[], now: Date): Promise<void>;
   markOutcomeUnknown(id: string, epoch: number, now: Date): Promise<void>;
+  markFailed?(id: string, epoch: number, now: Date): Promise<void>;
 }
 export class ProviderBudgetError extends Error {
-  constructor(readonly code: 'budget_exhausted' | 'approval_required' | 'invalid_usage' | 'reservation_conflict' | 'stale_work' | 'outcome_unknown') {
+  constructor(
+    readonly code:
+      | 'budget_exhausted'
+      | 'approval_required'
+      | 'invalid_usage'
+      | 'reservation_conflict'
+      | 'stale_work'
+      | 'outcome_unknown',
+  ) {
     super(code);
     this.name = 'ProviderBudgetError';
   }

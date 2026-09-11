@@ -2,8 +2,18 @@ import type {
   CollectionContext,
   CollectionResult,
   CollectedRawItem,
+  CollectorPort,
+  CollectorPagePort,
+  CollectionPageRequest,
+  CollectionPageResult,
   PolicyGuardPort,
   SourcePolicy,
+} from '@techpulse/domain';
+import {
+  assertCollectableTarget,
+  decodePageCursor,
+  encodePageCursor,
+  validatePageResult,
 } from '@techpulse/domain';
 import { BaseCollector } from './base.js';
 import { SOURCE_POLICIES } from './policies.js';
@@ -103,7 +113,10 @@ export function detectTombstoneCandidates(params: {
  * Collector adapter for Stack Exchange API (v2.3) questions.
  * Implements COL-003 according to SOURCE_CATALOG.md §3 and SECURITY.md §8.
  */
-export class StackExchangeCollector extends BaseCollector {
+export class StackExchangeCollector
+  extends BaseCollector
+  implements CollectorPort, CollectorPagePort
+{
   readonly sourceKey = 'stack_exchange' as const;
   readonly policy: SourcePolicy = SOURCE_POLICIES['stack_exchange'];
 
@@ -429,5 +442,209 @@ export class StackExchangeCollector extends BaseCollector {
       tombstoneCandidates,
       ...(data.backoff !== undefined ? { backoffSeconds: data.backoff } : {}),
     };
+  }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+
+    const site =
+      request.target.selector.kind === 'tag'
+        ? request.target.selector.site
+        : (this.options.defaultSite ?? 'stackoverflow');
+    const tag =
+      request.target.selector.kind === 'tag'
+        ? request.target.selector.tag
+        : (this.options.defaultTag ?? undefined);
+
+    let page = 1;
+    if (request.partition.cursor) {
+      const decoded = decodePageCursor(request.partition, request.target.capability.cursorVersion);
+      if (decoded) {
+        try {
+          const parsed = JSON.parse(decoded) as { page?: number };
+          if (typeof parsed.page === 'number' && parsed.page >= 1) {
+            page = parsed.page;
+          }
+        } catch {
+          // Fallback
+        }
+      }
+    }
+
+    const limit = request.limit > 0 ? Math.min(request.limit, 100) : 30;
+    const fromSec = Math.floor(request.partition.window.from.getTime() / 1000);
+    const toSec = Math.floor(request.partition.window.to.getTime() / 1000);
+    const timeBasis = request.partition.timeBasis ?? 'published_at';
+    const sort = timeBasis === 'updated_at' ? 'activity' : 'creation';
+    const filter = this.options.defaultFilter ?? 'default';
+
+    const url = new URL('https://api.stackexchange.com/2.3/questions');
+    url.searchParams.set('site', site);
+    if (tag) {
+      url.searchParams.set('tagged', tag);
+    }
+    url.searchParams.set('page', String(page));
+    url.searchParams.set('pagesize', String(limit));
+    url.searchParams.set('order', 'desc');
+    url.searchParams.set('sort', sort);
+    url.searchParams.set('filter', filter);
+    url.searchParams.set('fromdate', String(fromSec));
+    url.searchParams.set('todate', String(toSec));
+    if (this.options.apiKey) {
+      url.searchParams.set('key', this.options.apiKey);
+    }
+    if (this.options.accessToken) {
+      url.searchParams.set('access_token', this.options.accessToken);
+    }
+
+    const urlValidation = this.guard.validateUrl(url.toString(), this.policy);
+    if (!urlValidation.valid) {
+      throw new Error(`SSRF guard rejected URL: ${urlValidation.reason}`);
+    }
+
+    const baseFetch = this.options.fetchFn ?? globalThis.fetch;
+    const fetchFn = createHardenedFetch({ guard: this.guard, policy: this.policy, baseFetch });
+
+    let response: Response;
+    try {
+      response = await fetchFn(url.toString(), {
+        ...(request.signal !== undefined ? { signal: request.signal } : {}),
+        headers: { Accept: 'application/json' },
+      });
+    } catch (err) {
+      throw new Error(
+        `Network failure while fetching Stack Exchange data: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
+    if (response.status === 429) {
+      const retryAfterHeader = response.headers.get('retry-after');
+      const retryAt = retryAfterHeader
+        ? new Date(request.now().getTime() + Number.parseInt(retryAfterHeader, 10) * 1000)
+        : new Date(request.now().getTime() + 60000);
+      const result: CollectionPageResult = {
+        items: [],
+        nextCursor: null,
+        disposition: 'deferred',
+        reason: null,
+        retryAt,
+        requests: 1,
+        bytes: 0,
+      };
+      validatePageResult(request.partition, result);
+      return result;
+    }
+
+    if (!response.ok) {
+      throw new Error(`Stack Exchange API error: HTTP ${response.status} ${response.statusText}`);
+    }
+
+    const responseText = await response.text();
+    const bytesFetched = Buffer.byteLength(responseText, 'utf8');
+    const body = JSON.parse(responseText) as StackExchangeApiResponse;
+
+    if (body.error_id !== undefined) {
+      if (body.error_name === 'throttle_violation' || body.error_id === 502) {
+        const retryAt = new Date(request.now().getTime() + 60000);
+        const result: CollectionPageResult = {
+          items: [],
+          nextCursor: null,
+          disposition: 'deferred',
+          reason: null,
+          retryAt,
+          requests: 1,
+          bytes: bytesFetched,
+        };
+        validatePageResult(request.partition, result);
+        return result;
+      }
+      throw new Error(
+        `Stack Exchange API error (${body.error_id} ${body.error_name}): ${body.error_message}`,
+      );
+    }
+
+    const window = request.partition.window;
+    const rawQuestions = body.items ?? [];
+    const items: CollectedRawItem[] = [];
+
+    for (const q of rawQuestions) {
+      const publishedAt =
+        typeof q.creation_date === 'number' ? new Date(q.creation_date * 1000) : null;
+      const updatedAt =
+        typeof q.last_activity_date === 'number' ? new Date(q.last_activity_date * 1000) : null;
+      const targetDate = timeBasis === 'updated_at' ? (updatedAt ?? publishedAt) : publishedAt;
+
+      if (targetDate) {
+        if (
+          targetDate.getTime() < window.from.getTime() ||
+          targetDate.getTime() >= window.to.getTime()
+        ) {
+          continue;
+        }
+      }
+
+      const externalId = `stack_exchange:${site}:${q.question_id}`;
+      const metadata: Record<string, unknown> = {
+        canonical_url: q.link,
+        content_license: q.content_license ?? null,
+        verbatim_only: this.policy.verbatimOnly,
+        site,
+        tags: q.tags ?? [],
+        ...(q.title !== undefined ? { title: q.title } : {}),
+        ...(q.score !== undefined ? { score: q.score } : {}),
+        ...(q.view_count !== undefined ? { view_count: q.view_count } : {}),
+        ...(q.answer_count !== undefined ? { answer_count: q.answer_count } : {}),
+        ...(q.is_answered !== undefined ? { is_answered: q.is_answered } : {}),
+        ...(q.closed_date !== undefined
+          ? { closed_date: new Date(q.closed_date * 1000).toISOString() }
+          : {}),
+        ...(q.locked_date !== undefined
+          ? { locked_date: new Date(q.locked_date * 1000).toISOString() }
+          : {}),
+        ...(q.last_activity_date !== undefined
+          ? { last_activity_date: new Date(q.last_activity_date * 1000).toISOString() }
+          : {}),
+      };
+
+      items.push(
+        this.createRawItem({
+          externalId,
+          payload: q as Record<string, unknown>,
+          publishedAt,
+          cursor: String(q.question_id),
+          metadata,
+        }),
+      );
+    }
+
+    let disposition: CollectionPageResult['disposition'];
+    let nextCursor: string | null = null;
+
+    if (body.has_more) {
+      disposition = 'continue';
+      nextCursor = encodePageCursor(
+        request.partition,
+        request.target.capability.cursorVersion,
+        JSON.stringify({ page: page + 1 }),
+      );
+    } else {
+      disposition = 'complete';
+      nextCursor = null;
+    }
+
+    const result: CollectionPageResult = {
+      items,
+      nextCursor,
+      disposition,
+      reason: null,
+      retryAt: null,
+      requests: 1,
+      bytes: bytesFetched,
+    };
+    validatePageResult(request.partition, result);
+    return result;
   }
 }

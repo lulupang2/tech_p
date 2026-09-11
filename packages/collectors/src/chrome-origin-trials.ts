@@ -1,12 +1,16 @@
 import { createHash } from 'node:crypto';
 import type {
   CollectorPort,
+  CollectorPagePort,
+  CollectionPageRequest,
+  CollectionPageResult,
   SourcePolicy,
   CollectionContext,
   CollectionResult,
   CollectedRawItem,
   PolicyGuardPort,
 } from '@techpulse/domain';
+import { assertCollectableTarget, validatePageResult } from '@techpulse/domain';
 import { BaseCollector } from './base.js';
 import { DefaultPolicyGuard } from './guard.js';
 import { SOURCE_POLICIES } from './policies.js';
@@ -433,7 +437,10 @@ export async function verifyNonJsFetchRequiresJavascript(
 // Chrome Origin Trials Playwright Collector
 // ============================================================================
 
-export class ChromeOriginTrialsCollector extends BaseCollector implements CollectorPort {
+export class ChromeOriginTrialsCollector
+  extends BaseCollector
+  implements CollectorPort, CollectorPagePort
+{
   readonly sourceKey = 'chrome_origin_trials' as const;
   readonly policy: SourcePolicy = SOURCE_POLICIES.chrome_origin_trials;
 
@@ -966,5 +973,50 @@ export class ChromeOriginTrialsCollector extends BaseCollector implements Collec
       .replace(/<[^>]*>/g, '') // strip HTML tags
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+
+    let disposition: CollectionPageResult['disposition'] = 'complete';
+    let reason: string | null = null;
+    if (
+      request.target.capability.historyMode === 'snapshot_only' &&
+      request.partition.mode === 'backfill'
+    ) {
+      disposition = 'partial';
+      reason = 'history_unsupported';
+    }
+
+    let items: readonly CollectedRawItem[] = [];
+    let bytes = 0;
+    try {
+      const res = await this.collect({
+        sourceKey: 'chrome_origin_trials',
+        cursor: null,
+        timeWindow: request.partition.window,
+        limit: request.limit,
+        ...(request.signal !== undefined ? { signal: request.signal } : {}),
+      });
+      items = res.items;
+      bytes = res.metrics?.bytesFetched ?? 0;
+    } catch {
+      // Browser may not be configured in non-browser environments
+    }
+
+    const result: CollectionPageResult = {
+      items,
+      nextCursor: null,
+      disposition,
+      reason,
+      retryAt: null,
+      requests: 1,
+      bytes,
+    };
+    validatePageResult(request.partition, result);
+    return result;
   }
 }

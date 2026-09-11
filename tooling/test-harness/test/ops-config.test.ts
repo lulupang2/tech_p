@@ -153,18 +153,22 @@ describe('OPS-004 production deployment configuration', () => {
     expect(compose).toContain('image: ${IMAGE_PREFIX}/api:${IMAGE_TAG}');
     expect(compose).toContain('image: ${IMAGE_PREFIX}/web:${IMAGE_TAG}');
     expect(compose).toContain('image: ${IMAGE_PREFIX}/worker:${IMAGE_TAG}');
-    expect(compose).toContain("'127.0.0.1:3000:3000'");
-    expect(compose).toContain("'127.0.0.1:5173:5173'");
+    const apiPortMatch = normalizedCompose.match(/['"]?127\.0\.0\.1:(\d+):3000['"]?/u);
+    expect(apiPortMatch).not.toBeNull();
+    const apiHostPort = apiPortMatch![1];
+
+    const webPortMatch = normalizedCompose.match(/['"]?127\.0\.0\.1:(\d+):5173['"]?/u);
+    expect(webPortMatch).not.toBeNull();
+    const webHostPort = webPortMatch![1];
+
     expect(compose).toContain('__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: signal.jisung.lol');
     expect(compose).not.toContain('caddy:');
-    expect(compose).not.toContain("'80:80'");
-    expect(compose).not.toContain("'443:443'");
+    expect(compose).not.toMatch(/['"]?(?:0\.0\.0\.0:)?(?:80:80|443:443)['"]?/u);
     expect(compose).toContain('condition: service_healthy');
     expect(caddy).toContain('signal.jisung.lol');
-    expect(caddy).toContain('reverse_proxy 127.0.0.1:3000');
-    expect(caddy).toContain('reverse_proxy 127.0.0.1:5173');
+    expect(caddy).toContain(`reverse_proxy 127.0.0.1:${apiHostPort}`);
+    expect(caddy).toContain(`reverse_proxy 127.0.0.1:${webHostPort}`);
   });
-
   it('requires the operations API key in the api service environment', () => {
     const compose = readRootFile('compose.production.yaml').replace(/\r\n/gu, '\n');
     const apiService = compose.match(/^( {2})api:\n.*?(?=^ {2}worker:)/ms)?.[0];

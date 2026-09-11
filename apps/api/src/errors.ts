@@ -97,6 +97,73 @@ export function formatErrorToEnvelope(error: unknown, requestId: string): Saniti
 
   if (typeof error === 'object' && error !== null) {
     const errObj = error as Record<string, unknown>;
+    if (
+      errObj['name'] === 'ContractValidationError' ||
+      (Array.isArray(errObj['issues']) && errObj['issues'].length > 0)
+    ) {
+      const issues = (errObj['issues'] as ValidationIssue[]) || [];
+      return {
+        status: 400,
+        envelope: createErrorEnvelope(
+          requestId,
+          'INVALID_REQUEST',
+          'Request validation failed',
+          issues,
+          false,
+        ),
+      };
+    }
+    if (errObj['name'] === 'CollectionStateError') {
+      const code = String(errObj['code'] || '');
+      if (code === 'not_found') {
+        return {
+          status: 404,
+          envelope: createErrorEnvelope(
+            requestId,
+            'NOT_FOUND',
+            'The requested resource was not found',
+            [],
+            false,
+          ),
+        };
+      }
+      if (code === 'policy_blocked') {
+        return {
+          status: 422,
+          envelope: createErrorEnvelope(
+            requestId,
+            'FORBIDDEN',
+            'Operation blocked by policy',
+            [],
+            false,
+          ),
+        };
+      }
+      if (code === 'stale_lease') {
+        return {
+          status: 409,
+          envelope: createErrorEnvelope(
+            requestId,
+            'IDEMPOTENCY_CONFLICT',
+            'Operation failed due to stale lease or conflict',
+            [],
+            false,
+          ),
+        };
+      }
+      return {
+        status: 400,
+        envelope: createErrorEnvelope(
+          requestId,
+          'INVALID_REQUEST',
+          typeof errObj['message'] === 'string'
+            ? errObj['message']
+            : 'Invalid collection state request',
+          [{ path: '', reason: code || 'invalid_state' }],
+          false,
+        ),
+      };
+    }
     if (errObj['name'] === 'InvalidTimeRangeError' || errObj['code'] === 'INVALID_TIME_RANGE') {
       return {
         status: 400,

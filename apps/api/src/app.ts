@@ -4,6 +4,12 @@ import {
   createSourceRepository,
   createTopicRepository,
   createCollectionRunRepository,
+  createCollectionStateRepository,
+  createCoverageRepository,
+  createDiscoveryStateRepository,
+  createEmbeddingWorkRepository,
+  createProviderBudgetRepository,
+  createDatabaseReplayPorts,
 } from '@techpulse/database';
 import {
   type SourceRepositoryPort,
@@ -12,6 +18,12 @@ import {
   type ReplayRequest,
   type ReplayResult,
   type TombstoneServicePort,
+  type CoveragePort,
+  type CollectionStatePort,
+  type DiscoveryStatePort,
+  type EmbeddingWorkPort,
+  type ProviderBudgetPort,
+  createReplayService,
 } from '@techpulse/domain';
 import { type AnswerServicePort } from '@techpulse/rag';
 import { node } from '@elysiajs/node';
@@ -21,12 +33,18 @@ import { ConcurrencyLimiter, DailyBudgetTracker, MemoryRateLimiter } from './abu
 import { resolveRequestCorrelation } from './correlation.js';
 import { ApiHttpError, formatErrorToEnvelope } from './errors.js';
 import { createAnswerRoutes } from './routes/answers.js';
-import { createHealthRoutes, type DatabaseHealthCheck } from './routes/health.js';
+import { createCoverageRoutes } from './routes/coverage.js';
+import {
+  createHealthRoutes,
+  type DatabaseHealthCheck,
+  type DependencyHealthCheck,
+} from './routes/health.js';
 import {
   createOpsRoutes,
   type CollectionDispatcher,
   type IdempotencyStore,
   type OpsAuditEvent,
+  type OpsRouteOptions,
 } from './routes/ops.js';
 import { createSourceRoutes } from './routes/sources.js';
 import { createTopicRoutes } from './routes/topics.js';
@@ -43,6 +61,12 @@ export interface AppOptions {
   readonly replayService?:
     { readonly replay: (request: ReplayRequest) => Promise<ReplayResult> } | undefined;
   readonly tombstoneService?: TombstoneServicePort | undefined;
+  readonly coveragePort?: CoveragePort | undefined;
+  readonly collectionStatePort?: CollectionStatePort | undefined;
+  readonly resolveTargetPolicy?: OpsRouteOptions['resolveTargetPolicy'];
+  readonly discoveryStatePort?: DiscoveryStatePort | undefined;
+  readonly embeddingWorkPort?: EmbeddingWorkPort | undefined;
+  readonly providerBudgetPort?: ProviderBudgetPort | undefined;
   readonly corsAllowedOrigins?: readonly string[] | undefined;
   readonly rateLimiter?: MemoryRateLimiter | undefined;
   readonly concurrencyLimiter?: ConcurrencyLimiter | undefined;
@@ -50,6 +74,8 @@ export interface AppOptions {
   readonly opsApiKey?: string | undefined;
   readonly idempotencyStore?: IdempotencyStore | undefined;
   readonly auditSink?: ((event: OpsAuditEvent) => void | Promise<void>) | undefined;
+  readonly checkRedisHealth?: DependencyHealthCheck | undefined;
+  readonly checkWorkerHealth?: DependencyHealthCheck | undefined;
 }
 export function createApp(options: AppOptions = {}) {
   const logger = options.logger ?? createStructuredLogger({ service: 'api' });
@@ -65,6 +91,32 @@ export function createApp(options: AppOptions = {}) {
   const collectionRunRepository =
     options.collectionRunRepository ??
     (options.databaseClient ? createCollectionRunRepository(options.databaseClient.db) : undefined);
+  const collectionStatePort =
+    options.collectionStatePort ??
+    (options.databaseClient
+      ? createCollectionStateRepository(options.databaseClient.db)
+      : undefined);
+  const coveragePort =
+    options.coveragePort ??
+    (options.databaseClient ? createCoverageRepository(options.databaseClient.db) : undefined);
+  const discoveryStatePort =
+    options.discoveryStatePort ??
+    (options.databaseClient
+      ? createDiscoveryStateRepository(options.databaseClient.db)
+      : undefined);
+  const embeddingWorkPort =
+    options.embeddingWorkPort ??
+    (options.databaseClient ? createEmbeddingWorkRepository(options.databaseClient.db) : undefined);
+  const providerBudgetPort =
+    options.providerBudgetPort ??
+    (options.databaseClient
+      ? createProviderBudgetRepository(options.databaseClient.db)
+      : undefined);
+  const replayService =
+    options.replayService ??
+    (options.databaseClient && typeof createDatabaseReplayPorts === 'function'
+      ? createReplayService(createDatabaseReplayPorts(options.databaseClient.db))
+      : undefined);
   const corsAllowedOrigins = options.corsAllowedOrigins ?? [
     'http://localhost:5173',
     'http://localhost:3000',
@@ -147,7 +199,13 @@ export function createApp(options: AppOptions = {}) {
 
       return result.envelope;
     })
-    .use(createHealthRoutes({ checkDatabaseHealth }))
+    .use(
+      createHealthRoutes({
+        checkDatabaseHealth,
+        checkRedisHealth: options.checkRedisHealth,
+        checkWorkerHealth: options.checkWorkerHealth,
+      }),
+    )
     .group('/api/v1', (v1) =>
       v1
         .onBeforeHandle(({ request, set }) => {
@@ -196,6 +254,7 @@ export function createApp(options: AppOptions = {}) {
         })
         .use(createSourceRoutes({ sourceRepository }))
         .use(createTopicRoutes({ topicRepository }))
+        .use(createCoverageRoutes({ coveragePort }))
         .use(
           createAnswerRoutes({
             answerService: options.answerService,
@@ -209,11 +268,17 @@ export function createApp(options: AppOptions = {}) {
             sourceRepository,
             collectionRunRepository,
             collectionDispatcher: options.collectionDispatcher,
-            replayService: options.replayService,
+            replayService,
             tombstoneService: options.tombstoneService,
             logger,
             auditSink: options.auditSink,
             idempotencyStore: options.idempotencyStore,
+            collectionStatePort,
+            resolveTargetPolicy: options.resolveTargetPolicy,
+            discoveryStatePort,
+            embeddingWorkPort,
+            providerBudgetPort,
+            coveragePort,
           }),
         ),
     );

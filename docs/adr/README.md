@@ -18,8 +18,9 @@ ADR은 중요한 기술 선택의 맥락과 승인을 기록한다. `Proposed` A
 | [ADR-0003](./0003-queue-and-scheduling.md) | Queue and scheduling | **Accepted** (2026-09-01) | Redis + BullMQ, 전달·예약 계층 한정 |
 | [ADR-0004](./0004-initial-data-sources.md) | Initial data sources | **Accepted** (2026-09-01) | GitHub Releases + Stack Exchange + Rust forum + arXiv + Chrome + react.dev + npm + GitHub search + Hugging Face |
 | [ADR-0005](./0005-frontend.md) | Frontend | **Superseded** by ADR-0008 | Next.js (더 이상 유효하지 않음) |
-| [ADR-0006](./0006-model-providers.md) | LLM and embedding providers | Proposed* (embedding만 검증됨, chat 재승인 필요) | embedding은 EXP-003 통과, chat 미승인 [ADR-0012](./0012-chat-provider-revalidation.md) |
-| [ADR-0012](./0012-chat-provider-revalidation.md) | Chat provider 재검증 | **Proposed** | EXP-003 gate 실패로 chat 승인 보류, embedding 유지, deterministic validation + blind review 후 재평가 |
+| [ADR-0006](./0006-model-providers.md) | LLM and embedding providers | **Accepted** (2026-09-10 갱신) | RunInfra chat + OpenRouter `perplexity/pplx-embed-v1-0.6b`; chat 모델은 ADR-0017 |
+| [ADR-0012](./0012-chat-provider-revalidation.md) | Chat provider 재검증 | **Superseded** (2026-09-10) | Chat 선택은 ADR-0017로 대체; 기존 DeepSeek 측정 보존 |
+| [ADR-0017](./0017-nemotron-chat-model.md) | Nemotron chat model 변경 | **Accepted** (2026-09-10) | RunInfra `nemotron-3-5-lightning-30b`; 기존 품질·보안 gate 통과 전 운영 답변 출시 차단 |
 | [ADR-0007](./0007-repository-layout.md) | Repository layout | **Superseded** by ADR-0010 | 당시 pnpm workspaces, 초기 build orchestrator 없음 |
 | [ADR-0008](./0008-frontend-sveltekit.md) | Frontend framework change to SvelteKit | **Accepted** (2026-09-01) | SvelteKit, UI 전달과 최소 BFF로 제한 |
 | [ADR-0009](./0009-drizzle-orm-migrations.md) | Drizzle ORM and Drizzle Kit migration strategy | **Accepted** (2026-09-01) | Drizzle ORM + Drizzle Kit, 검토·커밋된 forward-only SQL migration |
@@ -27,6 +28,10 @@ ADR은 중요한 기술 선택의 맥락과 승인을 기록한다. `Proposed` A
 | [ADR-0011](./0011-neon-serverless-postgresql.md) | Serverless Neon PostgreSQL runtime and connection strategy | **Accepted** (2026-09-02) | Neon Serverless Postgres, Drizzle 유지, pooled runtime·WebSocket transaction·direct migration endpoint |
 | [ADR-0013](./0013-production-deployment.md) | Production deployment with Compose, GHCR, and SSH | **Accepted** (2026-09-03) | Docker Compose + GHCR + SSH, GitHub production approval, host Caddy snippet/reload, loopback API/web, SHA rollback |
 | [ADR-0015](./0015-coverage-driven-collection-retrieval.md) | Coverage-driven collection and bounded retrieval expansion | **Accepted** (2026-09-08) | A1–A6: target별 backfill/checkpoint, 관측 집합 분리, 제한적 외부 취득, embedding 재사용·예산 예약; 권리/provider/지출 gate 유지 |
+| [ADR-0016](./0016-low-cost-live-activation.md) | Low-cost live source activation and operating envelope | **Accepted** (2026-09-10) | GitHub Releases 5개 target, COV-009 전체 provider USD 2 hard cap |
+| [ADR-0018](./0018-expanded-corpus-quality-acceptance.md) | Expanded corpus quality and performance acceptance | **Accepted** (2026-09-10) | 기존 43개 회귀 gate와 COV-009 live 평가 분리, 평가 추가 지출 USD 0.25 hard cap |
+| [ADR-0019](./0019-portfolio-mvp-evaluation-scope.md) | Portfolio MVP evaluation scope | **Accepted** (2026-09-11) | MVP blocking live 평가를 대표 8문항 + 기존 deterministic hard invariants로 축소 |
+| [ADR-0020](./0020-additional-evaluation-allowance.md) | Additional one-time evaluation allowance | **Accepted** (2026-09-11) | DEC-014: 과거 사용량을 보존하고 USD 0.25 / embedding 100 / chat 60의 추가 tranche를 별도 ledger로 추적 |
 
 ## 작성 규칙
 

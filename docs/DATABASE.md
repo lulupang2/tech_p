@@ -1,5 +1,11 @@
 # Signal Archive Database Design
 
+DEC-012 retention은 [ADR-0016](./adr/0016-low-cost-live-activation.md)을 따른다. Raw revision과
+그 lineage의 document/chunk/embedding은 120일, metric observation은 365일, question/answer/
+assembled prompt는 30일, operational log는 14일 보존한다. Purge는 citation dependency를
+dry-run으로 확인하고 tombstone 및 vector/lexical reindex를 먼저 적용한다. Source deletion과
+권리 철회는 기간보다 우선한다.
+
 - 상태: Draft (conceptual schema)
 - 작성일: 2026-09-01
 - 데이터베이스: PostgreSQL + pgvector (확정)
@@ -236,6 +242,14 @@ PostgreSQL 및 pgvector 데이터베이스의 일관성과 백업 무결성을 �
    - `status = 'searchable'`과 `status = 'tombstoned'` 문서 분리 확인 (tombstone된 데이터의 검색 제외 유지 확인)
    - 코사인 거리 pgvector 검색 쿼리 sanity 검증
    - 복구 훈련 실행 이력 `restore_drill_execution` 감사 이벤트 기록
+### 8.4 COV-011 coverage count 범위
+
+`createCoverageRepository`는 단일 SQL snapshot에서 활성·정책 검토 source/target → 허용 partition → acquisition membership → raw/revision/chunk의 동일 범위를 사용한다. `scopeKeys`와 canonical `targetIdentities`는 trusted composition에서 고정하며, topic 조건과 교집합으로 적용한다. 명시적 빈 scope/target 목록은 전체 조회가 아니라 0건이다. target의 topic assignment가 비어 있어도 canonical identity로 조회할 수 있으며 taxonomy를 임의로 추가하지 않는다.
+
+raw count는 publication `[from,to)`와 권리 조건을 만족한 raw identity 수다. lexical count는 그 집합의 searchable·lexical-ready·chunk 보유 revision 수이며, vector count는 동일 revision의 모든 chunk가 승인 provider/model/dimensions/profile/input hash와 일치해야 한다. profile 미지정 또는 embed 권리 부재는 vector 0이다. 다른 target의 문서, on-demand-only membership, 잘못된 source/revision 연결을 섞지 않는다. `retrieval_miss`는 정확한 window/topic에 대응하는 명시적 라벨과 현재 scope 안의 lexical revision이 있을 때만 보고한다.
+
+이 count 수정은 독립 COV-011 acceptance이며 COV-010의 실제 품질·freshness·coverage 종합 gate를 완료하지 않는다.
+
 ## 9. 미결정 사항
 
 - PostgreSQL 최소 버전과 pgvector 버전 pin

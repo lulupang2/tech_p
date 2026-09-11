@@ -47,6 +47,10 @@
 | delivery outbox | DB commit된 ID-only 전달 의도. sent와 business completed를 분리 | COLLECTION_CONTRACTS §3 |
 | embedding work / outcome_unknown | input/profile별 호출 소유·결과 상태. 외부 성공/과금 불명 시 자동 재호출 보류 | COLLECTION_CONTRACTS §5 |
 | budget reservation / settlement | 호출 전 승인 상한 예약과 usage 기반 정산. query count와 구분 | COLLECTION_CONTRACTS §5 |
+| `coverage_not_applicable` | 현재 corpus가 지원하지 않는 평가 항목의 annotation. 원래 expected status·전체 분모·보안 invariant를 보존하며 통과나 공개 answer status가 아님 | ADR-0018, EVAL-002 README |
+| release budget journal | DEC-013 역사 사용량 digest에 연결한 일회성 평가 append-only reservation/settlement 기록. 운영 PostgreSQL 예산과 별도의 누적 입장 제한 | EVAL-002 README |
+| verified usage lower bound | 독립 성공 실행에서 증명된 최소 사용량. exact total이나 0으로 미기록된 사용량의 부재를 뜻하지 않음 | EVAL-002 historical-usage-audit.json |
+| `chunk-cutoff10-unique-revision-v2` | 실제 첫 10개 chunk를 먼저 자르고 원래 rank에서 revision당 한 번 relevance gain을 계산하는 평가 score version | RAG §11, TESTING §7.4 |
 
 ## 2.1 source key
 

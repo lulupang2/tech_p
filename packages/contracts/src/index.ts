@@ -1,19 +1,10 @@
 export * from './coverage-manifest.js';
 export * from './coverage.js';
-export {
-  COLLECTION_QUEUE_JOB_NAME,
-  COLLECTION_QUEUE_JOB_SCHEMA_VERSION,
-  createCollectionQueueJobData,
-  type CollectionQueueJobData,
-  type CollectionScheduleWindow,
-} from './collection-queue.js';
 
 export {
   AnswerRequestSchema,
   AnswerResponseSchema,
   CitationSchema,
-  CollectionJobPayloadSchema,
-  ReplayJobPayloadSchema,
   CONTRACT_SCHEMA_VERSION,
   CONTRACT_VERSION,
   CoverageSchema,
@@ -46,8 +37,6 @@ export type {
   AnswerRequest,
   AnswerResponse,
   Citation,
-  CollectionJobPayload,
-  ReplayJobPayload,
   ContractError,
   Coverage,
   ErrorCode,
@@ -79,11 +68,9 @@ export {
   mapValidationFailureTo400,
   parseAnswerRequest,
   parseAnswerResponse,
-  parseCollectionJobPayload,
   parseErrorEnvelope,
   parseHealthLiveResponse,
   parseHealthReadyResponse,
-  parseReplayJobPayload,
   parseSourceDetailResponse,
   parseSourceListQuery,
   parseSourceListResponse,
@@ -93,11 +80,9 @@ export {
   parseTopicSummary,
   safeParseAnswerRequest,
   safeParseAnswerResponse,
-  safeParseCollectionJobPayload,
   safeParseErrorEnvelope,
   safeParseHealthLiveResponse,
   safeParseHealthReadyResponse,
-  safeParseReplayJobPayload,
   safeParseSourceDetailResponse,
   safeParseSourceListQuery,
   safeParseSourceListResponse,

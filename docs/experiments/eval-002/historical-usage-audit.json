@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "decision": "DEC-013",
+  "auditedOn": "2026-09-10",
+  "method": "Existing sanitized artifacts and local execution recordings only; no new DB/source/provider calls.",
+  "datasetSha256": "0cb1435f0629039f5189008ac189013c85d8766e8d7507328409355eb80f655f",
+  "recordingSessionId": "2026-09-10-da56e01a",
+  "successfulCallDefinition": "Counters increment after a successful approved embedding-port response. A command start and its terminal poll count as one execution.",
+  "distinctExecutions": [
+    {
+      "id": "original-exp-002",
+      "evidence": "docs/experiments/exp-002/live-measurement.json:queryEmbeddingUsage",
+      "executedAt": "2026-09-10T04:14:52.841Z",
+      "successfulEmbeddingCalls": 39,
+      "reportedEmbeddingTokens": 1258
+    },
+    {
+      "id": "ad-hoc-pre-optimization-30",
+      "startTool": "TC1",
+      "terminalTool": "TC4",
+      "startedAt": "2026-09-10T10:21:58.352Z",
+      "terminalRecordedAt": "2026-09-10T10:22:32.755Z",
+      "processSessionId": 9079,
+      "terminalChunk": "8e4c75",
+      "exitCode": 0,
+      "successfulEmbeddingCalls": 39,
+      "reportedEmbeddingTokens": 1258,
+      "identityMarkerWarmDbP95Ms": 1112.2286999999997
+    },
+    {
+      "id": "ad-hoc-intermediate-30",
+      "startTool": "TCD",
+      "terminalTool": "TCE",
+      "startedAt": "2026-09-10T10:23:55.888Z",
+      "terminalRecordedAt": "2026-09-10T10:24:29.886Z",
+      "processSessionId": 36015,
+      "terminalChunk": "14e5f6",
+      "exitCode": 0,
+      "successfulEmbeddingCalls": 39,
+      "reportedEmbeddingTokens": 1258,
+      "identityMarkerWarmDbP95Ms": 1058.7412000000004
+    },
+    {
+      "id": "ad-hoc-optimized-30",
+      "startTool": "TCL",
+      "terminalTool": "TCL",
+      "startedAt": "2026-09-10T10:26:00.462Z",
+      "terminalChunk": "52ad65",
+      "exitCode": 0,
+      "successfulEmbeddingCalls": 39,
+      "reportedEmbeddingTokens": 1258,
+      "identityMarkerWarmDbP95Ms": 523.1483999999982
+    },
+    {
+      "id": "ad-hoc-optimized-20",
+      "startTool": "TCN",
+      "terminalTool": "TCN",
+      "startedAt": "2026-09-10T10:26:52.677Z",
+      "terminalChunk": "08c8d0",
+      "exitCode": 0,
+      "successfulEmbeddingCalls": 39,
+      "reportedEmbeddingTokens": 1258,
+      "identityMarkerWarmDbP95Ms": 406.6900999999998
+    }
+  ],
+  "verifiedLowerBound": {
+    "successfulEmbeddingCalls": 195,
+    "reportedEmbeddingTokens": 6290,
+    "approvedEmbeddingCallCap": 100,
+    "minimumCallOverrun": 95
+  },
+  "excludedFromSubtotal": [
+    { "reference": "2026-09-10-da56e01a/TD2", "reason": "Negative smoke output lacks complete embedding call/token counters. Do not infer successful calls from answer statuses." },
+    { "reference": "Handoffs, repeated summaries and worker reports", "reason": "Not independent provider executions; add zero calls." }
+  ],
+  "exactHistoricalEmbeddingCalls": null,
+  "exactHistoricalEmbeddingTokens": null,
+  "exactHistoricalChatUsage": null,
+  "exactHistoricalProviderCostUsd": null,
+  "moneyAccounting": "prior-usage.json retains only the original EXP-002 monetary lower bound of 6 micro-USD. Token-derived estimates are not complete invoices or a complete spend reconciliation.",
+  "conclusion": "The total embedding-call cap was breached. This does not establish a token/USD-cap breach or a passing quality gate.",
+  "reconciled": false,
+  "liveExecutionAllowed": false,
+  "requiredAction": "Preserve all historical usage and unknown reservations. Further paid evaluation requires explicit new or amended approval specifying call/token/USD limits. Reconciliation alone does not restore headroom; never reset the ledger."
+}

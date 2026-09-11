@@ -1,7 +1,8 @@
 import type { CollectionWindow } from './collection-state.js';
 import type { ModelProfile } from './model-work.js';
 
-export type CoverageReason = 'raw_shortage' | 'processing_pending' | 'period_gap' | 'retrieval_miss' | 'unknown';
+export type CoverageReason =
+  'raw_shortage' | 'processing_pending' | 'period_gap' | 'retrieval_miss' | 'unknown';
 export interface CoverageReport {
   readonly generatedAt: string;
   readonly from: string;
@@ -15,7 +16,11 @@ export interface CoverageReport {
   readonly reasons: readonly CoverageReason[];
 }
 export interface CoveragePort {
-  getCoverage(window: CollectionWindow, topicIds: readonly string[], now: Date): Promise<CoverageReport>;
+  getCoverage(
+    window: CollectionWindow,
+    topicIds: readonly string[],
+    now: Date,
+  ): Promise<CoverageReport>;
 }
 export interface SearchReadinessPort {
   markLexicalReady(revisionId: string, now: Date): Promise<void>;
@@ -49,5 +54,11 @@ export interface CohortPersistencePort {
   getCohortVersion(id: string): Promise<ObservationCohort | null>;
 }
 export interface CohortPort extends CohortPersistencePort {
-  compareWindows(cohortId: string, metric: string, unit: string, baseline: CollectionWindow, current: CollectionWindow): Promise<CohortComparison>;
+  compareWindows(
+    cohortId: string,
+    metric: string,
+    unit: string,
+    baseline: CollectionWindow,
+    current: CollectionWindow,
+  ): Promise<CohortComparison>;
 }

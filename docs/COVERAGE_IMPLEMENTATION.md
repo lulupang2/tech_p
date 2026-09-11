@@ -4,7 +4,7 @@
 - 설계: [ADR-0015](./adr/0015-coverage-driven-collection-retrieval.md) Accepted, A1–A6
 - 공통 계약: [COLLECTION_CONTRACTS](./COLLECTION_CONTRACTS.md)
 - 작업/상태: [TASKS §12](../TASKS.md), [TRACEABILITY](./TRACEABILITY.md)
-- 최신 실행 지시: 현재 세션은 지시·조정만 담당한다. 코드 편집과 구현 테스트는 병렬 코딩 세션이 담당하며, 이 문서만으로 세션을 자동 실행하지 않는다. 이전 현재 세션 구현 허용 지시보다 이 경계를 우선한다.
+- COV-007 구현·통합은 2026-09-09 승인된 새 세션에서 수행하며, 이 문서의 이전 “현재 세션은 지시·조정만 담당” 문구는 해당 task에 대해 대체된다. COV-008은 여전히 별도 통합 담당이다.
 
 ## 공통 실행 규칙
 

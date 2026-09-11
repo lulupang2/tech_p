@@ -1,11 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'vitest';
-import {
-  createDeduplicationJobData,
-  parseDeduplicationJobData,
-  createDeduplicationJobHandler,
-  WorkerJobValidationError,
-} from '../src/index.js';
+import { createDeduplicationJobHandler, type DeduplicationRequest } from '../src/deduplication.js';
 import {
   createDeduplicationService,
   type CreateDuplicateClusterInput,
@@ -261,42 +256,6 @@ function createFakeRepositories() {
 }
 
 describe('PIPE-004 Worker Deduplication Job Handler', () => {
-  describe('1. Deduplication Job Data Contract Validation', () => {
-    test('creates and parses valid deduplication job data', () => {
-      const jobData = createDeduplicationJobData({
-        documentId: 'doc-123',
-        revisionId: 'rev-456',
-        rawItemId: 'raw-789',
-        sourceKey: 'github_releases',
-        externalId: 'ext-100',
-      });
-
-      assert.equal(jobData.stage, 'deduplication');
-      assert.equal(jobData.documentId, 'doc-123');
-
-      const parsed = parseDeduplicationJobData(jobData);
-      assert.deepEqual(parsed, jobData);
-    });
-
-    test('rejects invalid schemaVersion, stage, or empty documentId', () => {
-      assert.throws(
-        () =>
-          parseDeduplicationJobData({ schemaVersion: 2, stage: 'deduplication', documentId: 'd1' }),
-        WorkerJobValidationError,
-      );
-      assert.throws(
-        () =>
-          parseDeduplicationJobData({ schemaVersion: 1, stage: 'wrong_stage', documentId: 'd1' }),
-        WorkerJobValidationError,
-      );
-      assert.throws(
-        () =>
-          parseDeduplicationJobData({ schemaVersion: 1, stage: 'deduplication', documentId: '' }),
-        WorkerJobValidationError,
-      );
-    });
-  });
-
   describe('2. Deduplication Worker Execution with Repositories', () => {
     test('creates duplicate_cluster on exact canonical URL match and links both documents without deleting originals', async () => {
       const fakes = createFakeRepositories();
@@ -335,12 +294,12 @@ describe('PIPE-004 Worker Deduplication Job Handler', () => {
       const doc2 = saveRes2.document;
 
       // Execute deduplication for doc2
-      const jobData = createDeduplicationJobData({
+      const jobData: DeduplicationRequest = {
         documentId: doc2.id,
         revisionId: saveRes2.revision.id,
         rawItemId: 'raw-2',
         sourceKey: 'react_blog',
-      });
+      };
 
       const execResult = await handler(jobData);
 
@@ -415,11 +374,11 @@ describe('PIPE-004 Worker Deduplication Job Handler', () => {
         rawItemId: 'raw-mirror',
       });
 
-      const jobData = createDeduplicationJobData({
+      const jobData: DeduplicationRequest = {
         documentId: saveResNew.document.id,
         rawItemId: 'raw-mirror',
         sourceKey: 'react_blog',
-      });
+      };
 
       const execResult = await handler(jobData);
 
@@ -464,10 +423,10 @@ describe('PIPE-004 Worker Deduplication Job Handler', () => {
         rawItemId: 'raw-2',
       });
 
-      const jobData = createDeduplicationJobData({
+      const jobData: DeduplicationRequest = {
         documentId: saveRes2.document.id,
         rawItemId: 'raw-2',
-      });
+      };
 
       const firstRun = await handler(jobData);
       const secondRun = await handler(jobData);
@@ -506,13 +465,12 @@ describe('PIPE-004 Worker Deduplication Job Handler', () => {
         rawItemId: 'raw-target',
       });
 
-      const result = await handler(
-        createDeduplicationJobData({
-          documentId: target.document.id,
-          revisionId: target.revision.id,
-          rawItemId: 'raw-target',
-        }),
-      );
+      const jobData: DeduplicationRequest = {
+        documentId: target.document.id,
+        revisionId: target.revision.id,
+        rawItemId: 'raw-target',
+      };
+      const result = await handler(jobData);
 
       assert.equal(result.status, 'succeeded');
       assert.equal(result.isExactDuplicate, false);

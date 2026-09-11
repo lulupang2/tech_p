@@ -41,9 +41,9 @@ jobs:
     name: 'integration: Postgres/pgvector'
     needs: [basic-ci]
     runs-on: ubuntu-latest
-    # Unregistered/conditional until DATABASE_URL secret or Neon isolated branch environment is injected.
-    # When DATABASE_URL is absent, skipped rather than creating a fake pass.
-    if: ${{ secrets.DATABASE_URL != '' || vars.TECHPULSE_CI_ENABLE_INTEGRATION == 'true' }}
+    # Enable explicitly after configuring DATABASE_URL for an isolated test database.
+    # GitHub does not allow the secrets context in a job-level condition.
+    if: ${{ vars.TECHPULSE_CI_ENABLE_INTEGRATION == 'true' }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

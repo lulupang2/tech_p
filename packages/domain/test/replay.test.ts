@@ -8,9 +8,12 @@ describe('replay', () => {
     const service = createReplayService({
       targets: { exists: async () => true, isEnabled: async () => true },
       publisher: {
-        publish: async (job) => {
+        replan: async (job) => {
           jobs.push(job);
-          return { duplicate: jobs.length > 1 };
+          return {
+            duplicate: jobs.length > 1,
+            deliveryIds: ['123e4567-e89b-42d3-a456-426614174000'],
+          };
         },
       },
     });
@@ -18,17 +21,18 @@ describe('replay', () => {
     const second = await service.replay({ scope: 'run', targetId: 'run-1', requestedAt: at });
     expect(first.status).toBe('queued');
     expect(second.status).toBe('duplicate');
-    expect(first.jobs[0]?.naturalKey).toBe('replay:v1:run:run-1:normalization');
-    expect(first.jobs[0]?.requestedAt).toBe(at.toISOString());
+    expect(first.jobs).toEqual([
+      { schemaVersion: 2, deliveryId: '123e4567-e89b-42d3-a456-426614174000' },
+    ]);
   });
   it('does not enqueue disabled or unknown targets', async () => {
     let published = 0;
     const service = createReplayService({
       targets: { exists: async (scope, id) => id !== 'missing', isEnabled: async () => false },
       publisher: {
-        publish: async () => {
+        replan: async () => {
           published++;
-          return { duplicate: false };
+          return { duplicate: false, deliveryIds: [] };
         },
       },
     });
@@ -44,7 +48,7 @@ describe('replay', () => {
     await expect(
       createReplayService({
         targets: { exists: async () => true, isEnabled: async () => true },
-        publisher: { publish: async () => ({ duplicate: false }) },
+        publisher: { replan: async () => ({ duplicate: false, deliveryIds: [] }) },
       }).replay({ scope: 'stage', targetId: 'raw-1', requestedAt: at }),
     ).rejects.toThrow('Stage replay requires stage');
     expect(classifyFailure({ isTransient: true }, 1, 3)).toBe('retryable');

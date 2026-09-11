@@ -4,6 +4,8 @@ import { ApiClient, ApiClientError, createApiClient } from '../src/lib/api-clien
 import type {
   AnswerRequest,
   AnswerResponse,
+  CoverageQuery,
+  CoverageReportResponse,
   HealthLiveResponse,
   HealthReadyResponse,
   SourceDetailResponse,
@@ -520,6 +522,104 @@ describe('ApiClient', () => {
       const status = client.getAnswerEndpointStatus();
       assert.equal(status.available, true);
       assert.ok(status.reason.length > 0);
+    });
+  });
+
+  describe('getCoverage', () => {
+    const validCoverageResponse: CoverageReportResponse = {
+      generatedAt: '2026-09-09T00:00:00.000Z',
+      from: '2026-08-10T00:00:00.000Z',
+      to: '2026-09-09T00:00:00.000Z',
+      rawDocuments: 1500,
+      lexicalDocuments: 1450,
+      vectorDocuments: 1400,
+      partitionsChecked: 10,
+      partitionsCompleted: 9,
+      partitionsPartial: 1,
+      reasons: ['processing_pending'],
+    };
+
+    it('returns parsed CoverageReportResponse on success', async () => {
+      let capturedUrl = '';
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetch: async (input) => {
+          capturedUrl = String(input);
+          return new Response(JSON.stringify(validCoverageResponse), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        },
+      });
+
+      const query: CoverageQuery = {
+        from: '2026-08-10T00:00:00.000Z',
+        to: '2026-09-09T00:00:00.000Z',
+      };
+      const result = await client.getCoverage(query);
+
+      assert.ok(capturedUrl.includes('/api/v1/coverage'));
+      assert.ok(capturedUrl.includes('from=2026-08-10T00%3A00%3A00.000Z'));
+      assert.ok(capturedUrl.includes('to=2026-09-09T00%3A00%3A00.000Z'));
+      assert.equal(result.rawDocuments, 1500);
+      assert.equal(result.lexicalDocuments, 1450);
+      assert.equal(result.vectorDocuments, 1400);
+      assert.equal(result.partitionsChecked, 10);
+      assert.equal(result.partitionsCompleted, 9);
+      assert.equal(result.partitionsPartial, 1);
+      assert.deepEqual(result.reasons, ['processing_pending']);
+    });
+
+    it('includes optional topicId in query params when provided', async () => {
+      let capturedUrl = '';
+      const client = new ApiClient({
+        baseUrl: 'http://localhost:3000',
+        fetch: async (input) => {
+          capturedUrl = String(input);
+          return new Response(JSON.stringify(validCoverageResponse), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        },
+      });
+
+      const topicUuid = '11111111-2222-3333-4444-555555555555';
+      await client.getCoverage({
+        from: '2026-08-10T00:00:00.000Z',
+        to: '2026-09-09T00:00:00.000Z',
+        topicId: topicUuid,
+      });
+
+      assert.ok(capturedUrl.includes(`topicId=${topicUuid}`));
+    });
+
+    it('throws ApiClientError with INVALID_RESPONSE when coverage report violates contract', async () => {
+      const client = new ApiClient({
+        fetch: async () =>
+          new Response(
+            JSON.stringify({
+              from: 'invalid-date',
+              rawDocuments: -5,
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          ),
+      });
+
+      await assert.rejects(
+        () =>
+          client.getCoverage({
+            from: '2026-08-10T00:00:00.000Z',
+            to: '2026-09-09T00:00:00.000Z',
+          }),
+        (err: unknown) => {
+          assert.ok(err instanceof ApiClientError);
+          assert.equal(err.code, 'INVALID_RESPONSE');
+          return true;
+        },
+      );
     });
   });
 });

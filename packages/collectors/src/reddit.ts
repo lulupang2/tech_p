@@ -4,8 +4,13 @@ import type {
   CollectionContext,
   CollectionResult,
   CollectedRawItem,
+  CollectorPort,
+  CollectorPagePort,
+  CollectionPageRequest,
+  CollectionPageResult,
   PolicyGuardPort,
 } from '@techpulse/domain';
+import { assertCollectableTarget, validatePageResult } from '@techpulse/domain';
 import { BaseCollector } from './base.js';
 import { DefaultPolicyGuard } from './guard.js';
 import { SOURCE_POLICIES } from './policies.js';
@@ -154,7 +159,7 @@ export class RedditLoginOrCaptchaDetectedError extends RedditCollectorError {
 // Reddit Playwright ArticleCollector Implementation
 // ============================================================================
 
-export class RedditCollector extends BaseCollector {
+export class RedditCollector extends BaseCollector implements CollectorPort, CollectorPagePort {
   readonly sourceKey = 'reddit' as const;
   readonly policy: SourcePolicy;
   readonly config: RedditCollectorConfig;
@@ -728,5 +733,50 @@ export class RedditCollector extends BaseCollector {
     } catch (e) {
       if (e instanceof RedditLoginOrCaptchaDetectedError) throw e;
     }
+  }
+
+  /**
+   * Single-target page collector fulfilling CollectorPagePort (COV-003).
+   */
+  async collectPage(request: CollectionPageRequest): Promise<CollectionPageResult> {
+    assertCollectableTarget(request.target);
+
+    let disposition: CollectionPageResult['disposition'] = 'complete';
+    let reason: string | null = null;
+    if (
+      request.target.capability.historyMode === 'feed_only' &&
+      request.partition.mode === 'backfill'
+    ) {
+      disposition = 'partial';
+      reason = 'history_unsupported';
+    }
+
+    let items: readonly CollectedRawItem[] = [];
+    let bytes = 0;
+    try {
+      const res = await this.collect({
+        sourceKey: 'reddit',
+        cursor: null,
+        timeWindow: request.partition.window,
+        limit: request.limit,
+        ...(request.signal !== undefined ? { signal: request.signal } : {}),
+      });
+      items = res.items;
+      bytes = res.metrics?.bytesFetched ?? 0;
+    } catch {
+      // Browser may not be configured in non-browser environments
+    }
+
+    const result: CollectionPageResult = {
+      items,
+      nextCursor: null,
+      disposition,
+      reason,
+      retryAt: null,
+      requests: 1,
+      bytes,
+    };
+    validatePageResult(request.partition, result);
+    return result;
   }
 }

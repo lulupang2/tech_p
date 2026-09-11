@@ -8,6 +8,8 @@
     "format": "pnpm --dir ../.. exec prettier --check apps/api",
     "lint": "eslint .",
     "ops": "node --import=tsx/esm src/ops-cli.ts",
+    "evaluate:release": "node --env-file=.env --import=tsx/esm src/release-evaluation-cli.ts",
+    "review:release": "node --import=tsx/esm src/release-review-cli.ts",
     "start": "node --env-file=.env --import=tsx/esm src/index.ts",
     "static": "pnpm run typecheck && pnpm run lint && pnpm run format",
     "test": "vitest run",
@@ -15,6 +17,7 @@
   },
   "dependencies": {
     "@elysiajs/node": "^1.4.0",
+    "@techpulse/collectors": "workspace:*",
     "@techpulse/contracts": "workspace:*",
     "@techpulse/database": "workspace:*",
     "@techpulse/domain": "workspace:*",

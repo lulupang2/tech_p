@@ -13,7 +13,13 @@ import {
   type RawItemRecord,
   type RawItemRepositoryPort,
 } from '@techpulse/domain';
-import type { DeduplicationJobData } from './jobs.js';
+export interface DeduplicationRequest {
+  readonly documentId: string;
+  readonly revisionId?: string;
+  readonly rawItemId?: string;
+  readonly sourceKey?: string;
+  readonly externalId?: string;
+}
 
 export interface DeduplicationJobHandlerOptions {
   readonly deduplicationService: DeduplicationServicePort;
@@ -42,7 +48,7 @@ export interface DeduplicationExecutionResult {
 }
 
 export type DeduplicationOperation = (
-  jobData: DeduplicationJobData,
+  jobData: DeduplicationRequest,
 ) => Promise<DeduplicationExecutionResult>;
 
 /**
@@ -70,7 +76,7 @@ export function createDeduplicationJobHandler(
     pipelineEventRepository,
   } = options;
 
-  return async (jobData: DeduplicationJobData): Promise<DeduplicationExecutionResult> => {
+  return async (jobData: DeduplicationRequest): Promise<DeduplicationExecutionResult> => {
     try {
       const doc = await documentRepository.findById(jobData.documentId);
       if (!doc) {
